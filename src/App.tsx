@@ -1304,68 +1304,6 @@ function HeroGraph() {
   )
 }
 
-/* Volumetric funnel beam: three flared SVG paths, each pin-narrow at the top
-   and sweeping into a wide curved skirt across the dashboard's top edge —
-   an inverted light fountain. Vertical gradients dissolve every layer to
-   transparent at the top; the blurred skirt pools over the panel so the
-   dashboard appears to emit the light. viewBox is 900×1000, stretched to the
-   positioned container by preserveAspectRatio="none". */
-function HeroBeam() {
-  return (
-    <svg
-      className="hero-beam"
-      viewBox="0 0 900 1000"
-      preserveAspectRatio="none"
-      aria-hidden="true"
-    >
-      <defs>
-        {/* All diffusion is mathematical: one horizontal vector gradient
-            walks transparent → emerald → bright mint → solid white at the
-            dead-centre 50% stop and back out. No raster-stretching CSS
-            blurs, so it renders crisp at any resolution. */}
-        <linearGradient id="beamX" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0" stopColor="#10b981" stopOpacity="0" />
-          <stop offset="0.2" stopColor="#10b981" stopOpacity="0.07" />
-          <stop offset="0.36" stopColor="#10b981" stopOpacity="0.2" />
-          <stop offset="0.45" stopColor="#00ff9d" stopOpacity="0.4" />
-          <stop offset="0.5" stopColor="#ffffff" stopOpacity="0.9" />
-          <stop offset="0.55" stopColor="#00ff9d" stopOpacity="0.4" />
-          <stop offset="0.64" stopColor="#10b981" stopOpacity="0.2" />
-          <stop offset="0.8" stopColor="#10b981" stopOpacity="0.07" />
-          <stop offset="1" stopColor="#10b981" stopOpacity="0" />
-        </linearGradient>
-        <linearGradient id="beamWideX" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0" stopColor="#10b981" stopOpacity="0" />
-          <stop offset="0.3" stopColor="#10b981" stopOpacity="0.06" />
-          <stop offset="0.5" stopColor="#10b981" stopOpacity="0.16" />
-          <stop offset="0.7" stopColor="#10b981" stopOpacity="0.06" />
-          <stop offset="1" stopColor="#10b981" stopOpacity="0" />
-        </linearGradient>
-        {/* Gentle native vector blurs — soften the white core into a lens
-            flare while staying resolution-independent */}
-        <filter id="beamSoft" x="-40%" y="-10%" width="180%" height="120%">
-          <feGaussianBlur stdDeviation="8" />
-        </filter>
-        <filter id="beamSofter" x="-60%" y="-10%" width="220%" height="120%">
-          <feGaussianBlur stdDeviation="18" />
-        </filter>
-      </defs>
-      {/* Wide atmospheric skirt of the funnel */}
-      <path
-        d="M400,0 C400,420 330,760 -60,1000 L960,1000 C570,760 500,420 500,0 Z"
-        fill="url(#beamWideX)"
-        filter="url(#beamSofter)"
-      />
-      {/* Main funnel: white-hot centre diffusing through mint into emerald */}
-      <path
-        d="M430,0 C430,470 390,800 170,1000 L730,1000 C510,800 470,470 470,0 Z"
-        fill="url(#beamX)"
-        filter="url(#beamSoft)"
-      />
-    </svg>
-  )
-}
-
 function Hero({ fade }: { fade: number }) {
   const magnet = useMagnetic()
   return (
@@ -1424,8 +1362,6 @@ function Hero({ fade }: { fade: number }) {
         style={{ animationDelay: '0.9s' }}
         aria-hidden="true"
       >
-        {/* Volumetric funnel beam pouring onto the panel's top edge */}
-        <HeroBeam />
         <div className="glow-border rounded-2xl bg-[#101318]/55 backdrop-blur-[16px] p-3 sm:p-4 shadow-[0_0_90px_rgba(16,185,129,0.13)]">
           <div className="flex gap-3">
             {/* Sidebar skeleton */}
