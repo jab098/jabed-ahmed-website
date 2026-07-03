@@ -46,6 +46,15 @@ html {
   animation-name: heroFadeUp;
   animation-duration: 1s;
 }
+/* Hide horizontal scrollbar on the service carousel */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-anim {
     animation: none;

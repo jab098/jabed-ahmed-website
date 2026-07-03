@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { ArrowUpRight, ChevronDown, Menu } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { ArrowUpRight, ChevronDown, ChevronLeft, ChevronRight, Menu } from 'lucide-react'
 
 const NAV_LINKS = ['Home', 'Service', 'Contact']
 const CALENDLY_URL = 'https://calendly.com/jabed098/30min'
@@ -10,36 +10,48 @@ const SERVICES = [
     number: '01',
     overline: 'Implementation',
     headline: 'Tag Management',
+    blurb:
+      'Tag ecosystems managed across five international markets — dataLayer design specs, documentation and QA standards that keep tracking consistent at scale.',
     stack: ['GTM', 'Tealium iQ', 'Snowplow', 'Custom templates', 'dataLayer architecture'],
   },
   {
     number: '02',
     overline: 'Infrastructure',
     headline: 'Server-Side Tracking',
+    blurb:
+      'End-to-end behavioural pipelines: browser-level capture, collector configuration, stream processing and enrichment — delivered cleanly into the warehouse.',
     stack: ['sGTM', 'GA4', 'Tealium EventStream', 'First-party cookies'],
   },
   {
     number: '03',
     overline: 'Experimentation',
     headline: 'CRO & Testing',
+    blurb:
+      'Adobe Target A/B and personalisation programmes with measurable impact — contributing over €2M in annual revenue uplift for a global telco.',
     stack: ['Adobe Target', 'A/B testing', 'Personalisation rules'],
   },
   {
     number: '04',
     overline: 'Compliance',
     headline: 'Consent & Privacy',
+    blurb:
+      'OneTrust administration and GDPR-aligned consent across multiple markets, including ATT and SKAdNetwork compliance after the iOS privacy changes.',
     stack: ['OneTrust', 'Consent Mode v2', 'GDPR-aligned tagging'],
   },
   {
     number: '05',
     overline: 'Reporting',
     headline: 'BI & Data Modelling',
+    blurb:
+      'GA4-powered pipelines feeding the data lake, with downstream Power BI and Looker reporting — governed, accurate and stakeholder-ready.',
     stack: ['Power BI', 'Looker', 'SQL', 'Dashboarding'],
   },
   {
     number: '06',
     overline: 'Engineering',
     headline: 'Front-End Instrumentation',
+    blurb:
+      'First-class Software Engineering foundations. Custom JavaScript event tracking with structured QA and validation baked into every release.',
     stack: ['JavaScript', 'Custom event tracking', 'QA validation'],
   },
 ]
@@ -153,12 +165,93 @@ function Hero({ fade }: { fade: number }) {
   )
 }
 
-function Service({ fade }: { fade: number }) {
+function CarouselArrows({ onPrev, onNext }: { onPrev: () => void; onNext: () => void }) {
   return (
-    <section
-      id="service"
-      className="relative overflow-hidden bg-black px-5 sm:px-10 md:px-14 py-24 md:py-32"
-    >
+    <div className="flex items-center gap-4 shrink-0">
+      <button
+        onClick={onPrev}
+        aria-label="Previous services"
+        className="w-16 h-16 rounded-full border border-white/25 bg-black/40 backdrop-blur-sm text-white flex items-center justify-center transition-all hover:bg-white/10 hover:border-white/50 active:scale-95"
+      >
+        <ChevronLeft size={30} />
+      </button>
+      <button
+        onClick={onNext}
+        aria-label="Next services"
+        className="w-16 h-16 rounded-full border border-white/25 bg-black/40 backdrop-blur-sm text-white flex items-center justify-center transition-all hover:bg-white/10 hover:border-white/50 active:scale-95"
+      >
+        <ChevronRight size={30} />
+      </button>
+    </div>
+  )
+}
+
+function Service({ fade }: { fade: number }) {
+  const trackRef = useRef<HTMLDivElement>(null)
+  const [scrollable, setScrollable] = useState(false)
+
+  const scrollByCard = (direction: number) => {
+    const track = trackRef.current
+    if (!track) return
+    const card = track.querySelector('article')
+    const gap = 20
+    const step = card ? card.clientWidth + gap : 400
+    track.scrollBy({ left: direction * step, behavior: 'smooth' })
+  }
+
+  // When every card fits in the window, show them all and hide the controls.
+  // When the track overflows, the cards that fully fit from the current snap
+  // position are "selected"; the rest recede: transparent + scaled down.
+  useEffect(() => {
+    const track = trackRef.current
+    if (!track) return
+    let raf = 0
+
+    const updateCards = () => {
+      const cards = track.querySelectorAll('article')
+      const first = cards[0]
+      if (!first) return
+
+      const hasOverflow = track.scrollWidth > track.clientWidth + 4
+      setScrollable(hasOverflow)
+
+      const gap = 20
+      const step = first.clientWidth + gap
+      const padLeft = parseFloat(getComputedStyle(track).paddingLeft) || 0
+      const visibleCount = Math.max(
+        1,
+        Math.floor((track.clientWidth - 2 * padLeft + gap) / step),
+      )
+      let start = Math.round(track.scrollLeft / step)
+      // At the end of the track there's less than a full step left to scroll,
+      // so anchor the selection to the last fully visible cards instead
+      const maxScroll = track.scrollWidth - track.clientWidth
+      if (track.scrollLeft >= maxScroll - 4) {
+        start = cards.length - visibleCount
+      }
+      cards.forEach((card, i) => {
+        const selected = !hasOverflow || (i >= start && i < start + visibleCount)
+        card.style.opacity = selected ? '1' : '0.22'
+        card.style.transform = selected ? 'scale(1)' : 'scale(0.94)'
+      })
+    }
+    const onScroll = () => {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(updateCards)
+    }
+
+    updateCards()
+    track.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    return () => {
+      cancelAnimationFrame(raf)
+      track.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+    }
+  }, [])
+
+  return (
+    <section id="service" className="relative overflow-hidden bg-black py-24 md:py-32">
       {/* Background video — anchored to this section only */}
       <video
         className="absolute inset-0 w-full h-full object-cover"
@@ -176,52 +269,64 @@ function Service({ fade }: { fade: number }) {
       {/* Scroll-linked fade to black */}
       <div className="absolute inset-0 bg-black pointer-events-none" style={{ opacity: fade }} />
 
-      <div className="relative z-10 max-w-6xl mx-auto">
-        {/* Section header */}
-        <p className="text-[#e8702a] text-xs font-semibold tracking-[0.25em] uppercase mb-5">
-          Service
-        </p>
-        <h2 className="text-white leading-[1.05] text-4xl sm:text-5xl md:text-6xl max-w-3xl mb-16 md:mb-24">
-          Six disciplines,{' '}
-          <span className="font-playfair italic" style={{ letterSpacing: '-0.04em' }}>
-            one robust
-          </span>
-          <span className="block font-playfair italic" style={{ letterSpacing: '-0.04em' }}>
-            data infrastructure.
-          </span>
-        </h2>
+      <div className="relative z-10">
+        {/* Section header + carousel arrows */}
+        <div className="max-w-6xl mx-auto px-5 sm:px-10 md:px-14 flex flex-col md:flex-row md:items-end md:justify-between gap-8 mb-14 md:mb-20">
+          <div>
+            <p className="text-[#e8702a] text-xs font-semibold tracking-[0.25em] uppercase mb-5">
+              Service
+            </p>
+            <h2 className="text-white leading-[1.05] text-4xl sm:text-5xl md:text-6xl max-w-3xl">
+              Six disciplines,{' '}
+              <span className="font-playfair italic" style={{ letterSpacing: '-0.04em' }}>
+                one robust
+              </span>
+              <span className="block font-playfair italic" style={{ letterSpacing: '-0.04em' }}>
+                data infrastructure.
+              </span>
+            </h2>
+          </div>
+          {scrollable && (
+            <CarouselArrows onPrev={() => scrollByCard(-1)} onNext={() => scrollByCard(1)} />
+          )}
+        </div>
 
-        {/* Service grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+        {/* Carousel — full-bleed so neighbouring cards peek at the edges */}
+        <div
+          ref={trackRef}
+          className="flex gap-5 overflow-x-auto snap-x snap-mandatory scrollbar-hide px-[8vw]"
+          style={{ scrollPaddingLeft: '8vw' }}
+        >
           {SERVICES.map((service) => (
-            <div
+            <article
               key={service.number}
-              className="group relative border border-white/10 rounded-3xl p-8 flex flex-col gap-14 bg-black/30 backdrop-blur-sm transition-all duration-300 hover:border-[#e8702a]/40 hover:bg-black/45 hover:shadow-[0_0_35px_rgba(232,112,42,0.14)]"
+              className="group relative snap-start shrink-0 w-[72vw] sm:w-[40vw] md:w-[340px] min-h-[540px] md:min-h-[620px] border border-white/10 rounded-3xl p-8 flex flex-col bg-black/35 backdrop-blur-sm transition-all duration-300 hover:border-[#e8702a]/40 hover:bg-black/50 hover:shadow-[0_0_35px_rgba(232,112,42,0.14)]"
             >
-              <div className="flex items-start justify-between">
-                <span className="font-playfair italic text-3xl text-[#e8702a]">
+              <div className="flex items-start justify-between mb-10">
+                <span className="font-playfair italic text-4xl text-[#e8702a]">
                   {service.number}
                 </span>
-                <span className="text-white/40 text-xs font-medium tracking-[0.2em] uppercase pt-2">
+                <span className="text-white/40 text-xs font-medium tracking-[0.2em] uppercase pt-2.5">
                   {service.overline}
                 </span>
               </div>
-              <div>
-                <h3 className="text-white text-2xl font-bold uppercase leading-tight mb-5">
-                  {service.headline}
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {service.stack.map((tech) => (
-                    <span
-                      key={tech}
-                      className="border border-white/15 bg-white/[0.06] text-white/75 text-xs font-medium px-3 py-1.5 rounded-full transition-colors group-hover:border-white/25 group-hover:text-white/90"
-                    >
-                      {tech}
-                    </span>
-                  ))}
-                </div>
+
+              <h3 className="text-white text-2xl lg:text-3xl font-bold uppercase leading-tight mb-4">
+                {service.headline}
+              </h3>
+              <p className="text-white/60 text-sm leading-relaxed">{service.blurb}</p>
+
+              <div className="flex flex-wrap gap-2 mt-auto pt-8">
+                {service.stack.map((tech) => (
+                  <span
+                    key={tech}
+                    className="border border-white/15 bg-white/[0.06] text-white/75 text-xs font-medium px-3 py-1.5 rounded-full transition-colors group-hover:border-white/25 group-hover:text-white/90"
+                  >
+                    {tech}
+                  </span>
+                ))}
               </div>
-            </div>
+            </article>
           ))}
         </div>
       </div>
