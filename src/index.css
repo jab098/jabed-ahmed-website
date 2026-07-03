@@ -72,8 +72,8 @@ body {
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    rgba(232, 112, 42, 0.14) 0%,
-    rgba(232, 112, 42, 0.06) 35%,
+    rgba(16, 185, 129, 0.14) 0%,
+    rgba(16, 185, 129, 0.06) 35%,
     transparent 70%
   );
   pointer-events: none;
@@ -84,6 +84,314 @@ body {
   will-change: transform;
 }
 
+/* ——— Hero animated backdrop (emerald theme) ———
+   All motion is transform/opacity-only CSS keyframes, so every layer runs
+   on the compositor with zero JavaScript in the loop. */
+.hero-mesh,
+.hero-mesh2 {
+  position: absolute;
+  inset: -22%;
+  pointer-events: none;
+  will-change: transform;
+  /* screen-blend the glows into the canvas so their outer falloff can never
+     produce a visible seam against the black */
+  mix-blend-mode: screen;
+}
+.hero-mesh {
+  background:
+    radial-gradient(
+      42% 34% at 28% 32%,
+      rgba(16, 185, 129, 0.13) 0%,
+      rgba(16, 185, 129, 0.05) 45%,
+      rgba(16, 185, 129, 0.015) 72%,
+      transparent 100%
+    ),
+    radial-gradient(
+      50% 40% at 74% 64%,
+      rgba(13, 148, 136, 0.09) 0%,
+      rgba(13, 148, 136, 0.035) 45%,
+      rgba(13, 148, 136, 0.01) 72%,
+      transparent 100%
+    ),
+    radial-gradient(
+      60% 55% at 50% 110%,
+      rgba(16, 185, 129, 0.11) 0%,
+      rgba(16, 185, 129, 0.04) 45%,
+      rgba(16, 185, 129, 0.012) 72%,
+      transparent 100%
+    );
+  animation: meshDrift 46s ease-in-out infinite alternate;
+}
+.hero-mesh2 {
+  background:
+    radial-gradient(
+      36% 30% at 70% 22%,
+      rgba(45, 212, 191, 0.065) 0%,
+      rgba(45, 212, 191, 0.025) 45%,
+      rgba(45, 212, 191, 0.008) 72%,
+      transparent 100%
+    ),
+    radial-gradient(
+      45% 40% at 20% 80%,
+      rgba(16, 185, 129, 0.08) 0%,
+      rgba(16, 185, 129, 0.03) 45%,
+      rgba(16, 185, 129, 0.01) 72%,
+      transparent 100%
+    );
+  animation: meshDrift2 64s ease-in-out infinite alternate;
+}
+@keyframes meshDrift {
+  from {
+    transform: translate3d(-2%, -1%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(2%, 2%, 0) scale(1.08);
+  }
+}
+@keyframes meshDrift2 {
+  from {
+    transform: translate3d(2%, 1%, 0) scale(1.06);
+  }
+  to {
+    transform: translate3d(-2%, -2%, 0) scale(1);
+  }
+}
+
+/* Large breathing emerald light blooms behind the dashboard */
+.hero-bloom {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+  pointer-events: none;
+  will-change: transform;
+  mix-blend-mode: screen;
+}
+.hero-bloom-a {
+  width: 55vw;
+  height: 55vw;
+  left: 8%;
+  top: 32%;
+  background: radial-gradient(
+    circle,
+    rgba(16, 185, 129, 0.18) 0%,
+    rgba(16, 185, 129, 0.07) 40%,
+    rgba(16, 185, 129, 0.02) 70%,
+    transparent 100%
+  );
+  animation: bloomA 26s ease-in-out infinite alternate;
+}
+.hero-bloom-b {
+  width: 45vw;
+  height: 45vw;
+  right: 4%;
+  top: 45%;
+  background: radial-gradient(
+    circle,
+    rgba(20, 184, 166, 0.14) 0%,
+    rgba(20, 184, 166, 0.055) 40%,
+    rgba(20, 184, 166, 0.015) 70%,
+    transparent 100%
+  );
+  animation: bloomB 32s ease-in-out infinite alternate;
+}
+@keyframes bloomA {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(6vw, -4vh, 0) scale(1.09);
+  }
+}
+@keyframes bloomB {
+  from {
+    transform: translate3d(0, 0, 0) scale(1.07);
+  }
+  to {
+    transform: translate3d(-5vw, 3vh, 0) scale(0.97);
+  }
+}
+
+/* Moving film-grain texture, barely-there */
+.hero-grain {
+  position: absolute;
+  inset: -80px;
+  pointer-events: none;
+  opacity: 0.025;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grainShift 1.2s steps(5) infinite;
+}
+@keyframes grainShift {
+  to {
+    transform: translate3d(-80px, 80px, 0);
+  }
+}
+
+/* Emerald light trace slowly orbiting the dashboard's border */
+@property --gb-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+.glow-border {
+  position: relative;
+}
+.glow-border::before {
+  content: '';
+  position: absolute;
+  inset: -1.5px;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--gb-angle),
+    rgba(16, 185, 129, 0.22),
+    rgba(110, 231, 183, 0.95) 8%,
+    rgba(52, 211, 153, 0.45) 16%,
+    rgba(16, 185, 129, 0.22) 26%,
+    rgba(16, 185, 129, 0.22)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  animation: gbSpin 9s linear infinite;
+  pointer-events: none;
+}
+@keyframes gbSpin {
+  to {
+    --gb-angle: 360deg;
+  }
+}
+
+/* Infinitely crawling diagonal graph. The path repeats every 400 SVG units
+   with an 80-unit rise, so translating the group by exactly (-400, +80) per
+   cycle lands on an identical frame — the chart reads as climbing upward
+   forever. The window mask melts the line into the card at both edges. */
+.hero-graph-window {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent);
+}
+.hero-graph-crawl {
+  animation: graphCrawl 13s linear infinite;
+  will-change: transform;
+}
+@keyframes graphCrawl {
+  from {
+    transform: translate(0px, 0px);
+  }
+  to {
+    transform: translate(-400px, 80px);
+  }
+}
+.hero-node {
+  animation: nodePulse 3.2s ease-in-out infinite;
+}
+@keyframes nodePulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+/* Volumetric funnel beam (Huly-style inverted light fountain). The geometry
+   lives in an SVG — three flared <path> layers that start pin-narrow at the
+   top and sweep wide across the dashboard's top edge. This class only
+   positions the SVG: anchored to the dashboard wrapper so the flare always
+   rests exactly on the panel, stretching one viewport height upward. */
+.hero-beam {
+  position: absolute;
+  bottom: 99%;
+  left: 50%;
+  width: min(94vw, 980px);
+  height: 100vh;
+  transform: translateX(-50%);
+  pointer-events: none;
+  /* Vertical dissolve: nothing survives at the very top, and the pool melts
+     into the panel edge instead of ending on a line */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 30%, #000 92%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 30%, #000 92%, transparent 100%);
+  animation: beamBreathe 5.5s ease-in-out infinite;
+}
+@keyframes beamBreathe {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+/* Short viewports: a full-height funnel would overshoot the section top and
+   sit behind the title, so compress it */
+@media (max-width: 640px) {
+  .hero-beam {
+    height: 58vh;
+    width: 100vw;
+  }
+}
+
+/* Smoky drifting fade at the foot of the hero */
+.hero-smoke {
+  position: absolute;
+  bottom: -6vh;
+  left: -10%;
+  right: -10%;
+  height: 26vh;
+  z-index: 40;
+  pointer-events: none;
+  filter: blur(28px);
+  background:
+    radial-gradient(45% 70% at 30% 100%, rgba(2, 4, 6, 0.95), transparent 70%),
+    radial-gradient(50% 80% at 75% 100%, rgba(2, 4, 6, 0.9), transparent 72%);
+  animation: smokeDrift 36s ease-in-out infinite alternate;
+  will-change: transform;
+}
+@keyframes smokeDrift {
+  from {
+    transform: translate3d(-3%, 0, 0);
+  }
+  to {
+    transform: translate3d(3%, -2%, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-mesh,
+  .hero-mesh2,
+  .hero-bloom,
+  .hero-grain,
+  .hero-smoke,
+  .hero-graph-crawl,
+  .glow-border::before,
+  .hero-node,
+  .hero-beam {
+    animation: none;
+  }
+}
+
+/* Dashboard dropdown menus */
+.menu-pop {
+  transform-origin: top right;
+  animation: menuPop 0.16s ease-out;
+}
+@keyframes menuPop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* Insights walkthrough section — staggered entrance + tab crossfades.
    .wt-anim elements stay hidden until the section gains .wt-in (set by an
    IntersectionObserver), then rise one by one via inline animation-delay.
@@ -91,62 +399,104 @@ body {
    change (or on first reveal) replays them; their delays are offset by
    --wt-base, which the component sets large during the entrance sequence
    and zero afterwards, so tab switches respond instantly. */
+/* The reveal is a "snake fade": a soft gradient mask (solid at its bottom,
+   transparent at its top) three times the element's height sweeps upward, so
+   the bottom of each element materialises first and the top trails behind —
+   paired with long durations for an unhurried, luxury pace. */
 .wt-anim {
   opacity: 0;
 }
+.wt-in .wt-anim,
+.wt-swap,
+.wt-swap-pop {
+  -webkit-mask-image: linear-gradient(to top, #000 40%, transparent 75%);
+  mask-image: linear-gradient(to top, #000 40%, transparent 75%);
+  -webkit-mask-size: 100% 300%;
+  mask-size: 100% 300%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
 .wt-in .wt-anim {
-  animation: wtRise 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: wtRise 1.15s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .wt-in .wt-pop {
   animation-name: wtPop;
-  animation-duration: 0.9s;
+  animation-duration: 1.3s;
   /* soft elastic overshoot */
-  animation-timing-function: cubic-bezier(0.34, 1.4, 0.64, 1);
+  animation-timing-function: cubic-bezier(0.3, 1.15, 0.4, 1);
 }
 @keyframes wtRise {
-  from {
+  0% {
     opacity: 0;
-    transform: translateY(28px);
+    transform: translateY(46px);
+    -webkit-mask-position: 0% 0%;
+    mask-position: 0% 0%;
   }
-  to {
+  30% {
+    opacity: 1;
+  }
+  100% {
     opacity: 1;
     transform: translateY(0);
+    -webkit-mask-position: 0% 100%;
+    mask-position: 0% 100%;
   }
 }
 @keyframes wtPop {
-  from {
+  0% {
     opacity: 0;
-    transform: translateY(36px) scale(0.96);
+    transform: translateY(56px) scale(0.965);
+    -webkit-mask-position: 0% 0%;
+    mask-position: 0% 0%;
   }
-  to {
+  30% {
+    opacity: 1;
+  }
+  100% {
     opacity: 1;
     transform: translateY(0) scale(1);
+    -webkit-mask-position: 0% 100%;
+    mask-position: 0% 100%;
   }
 }
 .wt-swap {
-  animation: wtSwap 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: wtSwap 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .wt-swap-pop {
-  animation: wtSwapPop 0.65s cubic-bezier(0.34, 1.45, 0.64, 1) both;
+  animation: wtSwapPop 0.85s cubic-bezier(0.3, 1.2, 0.4, 1) both;
 }
 @keyframes wtSwap {
-  from {
+  0% {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(20px);
+    -webkit-mask-position: 0% 0%;
+    mask-position: 0% 0%;
   }
-  to {
+  35% {
+    opacity: 1;
+  }
+  100% {
     opacity: 1;
     transform: translateY(0);
+    -webkit-mask-position: 0% 100%;
+    mask-position: 0% 100%;
   }
 }
 @keyframes wtSwapPop {
-  from {
+  0% {
     opacity: 0;
-    transform: translateY(18px) scale(0.94);
+    transform: translateY(24px) scale(0.95);
+    -webkit-mask-position: 0% 0%;
+    mask-position: 0% 0%;
   }
-  to {
+  35% {
+    opacity: 1;
+  }
+  100% {
     opacity: 1;
     transform: translateY(0) scale(1);
+    -webkit-mask-position: 0% 100%;
+    mask-position: 0% 100%;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -158,6 +508,12 @@ body {
   .wt-swap,
   .wt-swap-pop {
     animation: none;
+  }
+  .wt-in .wt-anim,
+  .wt-swap,
+  .wt-swap-pop {
+    -webkit-mask-image: none;
+    mask-image: none;
   }
 }
 
