@@ -56,7 +56,68 @@ const SERVICES = [
   },
 ]
 
-function Navbar({ active, scrolled }: { active: string; scrolled: boolean }) {
+/* Logo sources: simple-icons pinned to @13 — the last major that still ships
+   the Adobe glyph (removed upstream in v14; @latest only serves it from a
+   stale CDN cache). Optimizely, Tealium and Amplitude were never part of
+   simple-icons, so they come from the gilbarbara/logos set, also on jsDelivr.
+   Snowplow and OneTrust exist on no public icon CDN at all — their official
+   brand SVGs are vendored in public/assets/logos/. */
+const SIMPLE_ICONS = 'https://cdn.jsdelivr.net/npm/simple-icons@13/icons'
+const GILBARBARA = 'https://cdn.jsdelivr.net/gh/gilbarbara/logos@main/logos'
+const LOGOS = [
+  { name: 'Google Analytics', src: `${SIMPLE_ICONS}/googleanalytics.svg` },
+  { name: 'Google Tag Manager', src: `${SIMPLE_ICONS}/googletagmanager.svg` },
+  { name: 'Google BigQuery', src: `${SIMPLE_ICONS}/googlebigquery.svg` },
+  { name: 'Mixpanel', src: `${SIMPLE_ICONS}/mixpanel.svg` },
+  { name: 'Optimizely', src: `${GILBARBARA}/optimizely-icon.svg` },
+  { name: 'Tealium', src: `${GILBARBARA}/tealium.svg` },
+  { name: 'Adobe Analytics', src: `${SIMPLE_ICONS}/adobe.svg` },
+  { name: 'Snowplow', src: '/assets/logos/snowplow.svg' },
+  { name: 'OneTrust', src: '/assets/logos/onetrust.svg' },
+  { name: 'Amplitude', src: `${GILBARBARA}/amplitude-icon.svg` },
+  { name: 'PostgreSQL', src: `${SIMPLE_ICONS}/postgresql.svg` },
+]
+
+function LogoMarquee() {
+  return (
+    <div className="logo-marquee mt-20 md:mt-28" aria-label="Platforms and tools I work with">
+      <div className="logo-marquee-fade">
+        <div className="logo-marquee-track">
+          {/* Five identical copies back to back: translating the track -20%
+              (exactly one copy) lands on an identical frame, so the loop
+              resets without a visible seam. Five (not two) so the copies
+              behind the animated one always cover ultra-wide viewports —
+              with two, any screen wider than a single copy (~1200px) saw
+              a gap and a blink at the reset point. */}
+          {[0, 1, 2, 3, 4].map((copy) => (
+            <div className="logo-marquee-group" key={copy} aria-hidden={copy > 0}>
+              {LOGOS.map((logo) => (
+                <img
+                  key={logo.name}
+                  src={logo.src}
+                  alt={copy === 0 ? logo.name : ''}
+                  title={logo.name}
+                  loading="lazy"
+                  draggable={false}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Navbar({
+  active,
+  scrolled,
+  dimmed,
+}: {
+  active: string
+  scrolled: boolean
+  dimmed: boolean
+}) {
   return (
     <nav className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between px-4 sm:px-5 pt-6 sm:pt-8 pb-4">
       {/* Logo + wordmark — fades out once the hero scrolls away so it never
@@ -73,8 +134,12 @@ function Navbar({ active, scrolled }: { active: string; scrolled: boolean }) {
         <span className="text-white text-2xl font-playfair italic">Jabed Ahmed</span>
       </a>
 
-      {/* Center pill nav */}
-      <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 bg-white/20 backdrop-blur-md border border-white/30 rounded-full px-2 py-2 items-center gap-1">
+      {/* Center pill nav — recedes while scrolling down, returns on scroll up */}
+      <div
+        className={`hidden md:flex absolute left-1/2 -translate-x-1/2 bg-white/20 backdrop-blur-md border border-white/30 rounded-full px-2 py-2 items-center gap-1 transition-opacity duration-500 ${
+          dimmed ? 'opacity-45' : 'opacity-100'
+        }`}
+      >
         {NAV_LINKS.map((link) => (
           <a
             key={link}
@@ -96,6 +161,60 @@ function Navbar({ active, scrolled }: { active: string; scrolled: boolean }) {
       </button>
     </nav>
   )
+}
+
+/* Magnetic CTAs: the button stays exactly in place and keeps its shape — it
+   only grows as the cursor approaches, from 1 at the edge of the radius up
+   to a capped maximum right over the button. The slow lerp gives it the
+   unhurried feel of the landing-page background, and the same lerp eases it
+   back down when the cursor retreats. The rAF loop self-stops once settled. */
+function useMagnetic() {
+  const ref = useRef<HTMLAnchorElement>(null)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    // Touch devices have no hovering cursor; honour reduced-motion
+    if (
+      window.matchMedia('(pointer: coarse)').matches ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    )
+      return
+
+    let raf = 0
+    let scale = 1
+    let target = 1
+    const MAX_GROWTH = 0.07
+    const EASE = 0.06
+
+    const tick = () => {
+      scale += (target - scale) * EASE
+      const settled = Math.abs(target - scale) < 0.0005
+      if (settled) scale = target
+      el.style.transform = `scale(${scale})`
+      raf = settled ? 0 : requestAnimationFrame(tick)
+    }
+
+    const onMove = (e: PointerEvent) => {
+      const rect = el.getBoundingClientRect()
+      const dx = Math.max(rect.left - e.clientX, 0, e.clientX - rect.right)
+      const dy = Math.max(rect.top - e.clientY, 0, e.clientY - rect.bottom)
+      const radius = window.innerWidth < 1024 ? 52 : 72
+      const dist = Math.hypot(dx, dy)
+      // growth is 0 at the radius edge and caps at MAX_GROWTH on the button
+      target = dist < radius ? 1 + (1 - dist / radius) * MAX_GROWTH : 1
+      if (!raf) raf = requestAnimationFrame(tick)
+    }
+
+    window.addEventListener('pointermove', onMove, { passive: true })
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('pointermove', onMove)
+      el.style.transform = ''
+    }
+  }, [])
+
+  return { ref }
 }
 
 function CursorGlow() {
@@ -150,6 +269,7 @@ function CursorGlow() {
 }
 
 function Hero({ fade }: { fade: number }) {
+  const magnet = useMagnetic()
   return (
     <section
       id="home"
@@ -198,21 +318,25 @@ function Hero({ fade }: { fade: number }) {
         >
           by Jabed Ahmed
         </p>
-        <a
-          href={CALENDLY_URL}
-          target="_blank"
-          rel="noreferrer"
-          className="mt-8 bg-[#e8702a] hover:bg-[#d2611f] text-white text-sm font-medium px-7 py-3 rounded-full transition-all hover:scale-[1.03] active:scale-95 hover:shadow-lg hover:shadow-[#e8702a]/30 hero-anim hero-fade"
-          style={{ animationDelay: '0.72s' }}
-        >
-          Schedule a Call
-        </a>
+        {/* Entrance animation lives on the wrapper: its fill-mode pins a final
+            transform that would otherwise override the magnetic offset */}
+        <div className="mt-8 hero-anim hero-fade" style={{ animationDelay: '0.72s' }}>
+          <a
+            ref={magnet.ref}
+            href={CALENDLY_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-block bg-[#e8702a] hover:bg-[#d2611f] text-white text-sm font-medium px-7 py-3 rounded-full transition-[background-color,scale,box-shadow] active:scale-95 hover:shadow-lg hover:shadow-[#e8702a]/30"
+          >
+            <span className="inline-block">Schedule a Call</span>
+          </a>
+        </div>
       </div>
 
       {/* Scroll indicator */}
       <a
         href="#service"
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-1.5 text-white/70 hover:text-white transition-colors hero-anim hero-fade"
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-1.5 text-white/80 hover:text-white transition-colors hero-anim hero-fade rounded-full px-6 py-3.5 bg-black/25 backdrop-blur-sm border border-white/10 hover:border-white/20"
         style={{ animationDelay: '1.1s' }}
       >
         <span className="text-xs font-medium tracking-wide uppercase">Scroll</span>
@@ -386,12 +510,15 @@ function Service({ fade }: { fade: number }) {
             </article>
           ))}
         </div>
+
+        <LogoMarquee />
       </div>
     </section>
   )
 }
 
 function Contact() {
+  const magnet = useMagnetic()
   return (
     <section
       id="contact"
@@ -410,13 +537,16 @@ function Contact() {
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-8 sm:gap-12">
           <a
+            ref={magnet.ref}
             href={CALENDLY_URL}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center justify-center gap-2 self-start bg-[#e8702a] hover:bg-[#d2611f] text-white text-sm font-medium px-7 py-3 rounded-full transition-all hover:scale-[1.03] active:scale-95 hover:shadow-lg hover:shadow-[#e8702a]/30"
+            className="inline-flex items-center justify-center self-start bg-[#e8702a] hover:bg-[#d2611f] text-white text-sm font-medium px-7 py-3 rounded-full transition-[background-color,scale,box-shadow] active:scale-95 hover:shadow-lg hover:shadow-[#e8702a]/30"
           >
-            Schedule a Call
-            <ArrowUpRight size={16} />
+            <span className="inline-flex items-center gap-2">
+              Schedule a Call
+              <ArrowUpRight size={16} />
+            </span>
           </a>
           <div>
             <p className="text-white/40 text-xs font-medium tracking-[0.2em] uppercase mb-1.5">
@@ -448,8 +578,10 @@ export default function App() {
   const [serviceFade, setServiceFade] = useState(0)
   const [active, setActive] = useState('Home')
   const [scrolled, setScrolled] = useState(false)
+  const [navDimmed, setNavDimmed] = useState(false)
 
   useEffect(() => {
+    let lastY = window.scrollY
     const onScroll = () => {
       const y = window.scrollY
       const vh = window.innerHeight
@@ -459,6 +591,12 @@ export default function App() {
 
       // Past the hero, section headings reach the top of the viewport
       setScrolled(y > vh * 0.5)
+
+      // Nav pill recedes while scrolling down, returns on any upward scroll.
+      // The few-pixel deadband stops it flickering on tiny scroll jitters.
+      if (y > lastY + 4 && y > 100) setNavDimmed(true)
+      else if (y < lastY - 4 || y <= 100) setNavDimmed(false)
+      lastY = y
 
       // Service background fades to black as the section scrolls out of view
       const service = document.getElementById('service')
@@ -482,7 +620,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-black tracking-[-0.02em]" style={{ fontFamily: "'Inter', sans-serif" }}>
       <CursorGlow />
-      <Navbar active={active} scrolled={scrolled} />
+      <Navbar active={active} scrolled={scrolled} dimmed={navDimmed} />
       <Hero fade={heroFade} />
       <Service fade={serviceFade} />
       <Contact />
