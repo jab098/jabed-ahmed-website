@@ -56,11 +56,17 @@ const SERVICES = [
   },
 ]
 
-function Navbar({ active }: { active: string }) {
+function Navbar({ active, scrolled }: { active: string; scrolled: boolean }) {
   return (
     <nav className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between px-4 sm:px-5 pt-6 sm:pt-8 pb-4">
-      {/* Logo + wordmark */}
-      <a href="#home" className="flex items-center gap-2.5">
+      {/* Logo + wordmark — fades out once the hero scrolls away so it never
+          overlaps section headings */}
+      <a
+        href="#home"
+        className={`flex items-center gap-2.5 transition-opacity duration-300 ${
+          scrolled ? 'opacity-0 pointer-events-none' : ''
+        }`}
+      >
         <svg width="26" height="26" viewBox="0 0 256 256" fill="#ffffff" aria-hidden="true">
           <path d="M 256 256 L 128 256 L 0 128 L 128 128 Z M 256 128 L 128 128 L 0 0 L 128 0 Z" />
         </svg>
@@ -90,6 +96,57 @@ function Navbar({ active }: { active: string }) {
       </button>
     </nav>
   )
+}
+
+function CursorGlow() {
+  const glowRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const glow = glowRef.current
+    if (!glow) return
+    // Touch devices have no persistent cursor to follow
+    if (window.matchMedia('(pointer: coarse)').matches) return
+
+    const half = glow.offsetWidth / 2
+    let targetX = window.innerWidth / 2
+    let targetY = window.innerHeight / 2
+    let x = targetX
+    let y = targetY
+    let raf = 0
+
+    // Lerp toward the cursor each frame — the gap between the glow and the
+    // pointer closes exponentially, which reads as soft elastic trailing
+    const tick = () => {
+      x += (targetX - x) * 0.1
+      y += (targetY - y) * 0.1
+      glow.style.transform = `translate3d(${x - half}px, ${y - half}px, 0)`
+      if (Math.abs(targetX - x) > 0.3 || Math.abs(targetY - y) > 0.3) {
+        raf = requestAnimationFrame(tick)
+      } else {
+        raf = 0
+      }
+    }
+
+    const onMove = (e: PointerEvent) => {
+      targetX = e.clientX
+      targetY = e.clientY
+      glow.style.opacity = '1'
+      if (!raf) raf = requestAnimationFrame(tick)
+    }
+    const onLeave = () => {
+      glow.style.opacity = '0'
+    }
+
+    window.addEventListener('pointermove', onMove, { passive: true })
+    document.documentElement.addEventListener('pointerleave', onLeave)
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('pointermove', onMove)
+      document.documentElement.removeEventListener('pointerleave', onLeave)
+    }
+  }, [])
+
+  return <div ref={glowRef} className="cursor-glow" aria-hidden="true" />
 }
 
 function Hero({ fade }: { fade: number }) {
@@ -390,6 +447,7 @@ export default function App() {
   const [heroFade, setHeroFade] = useState(0)
   const [serviceFade, setServiceFade] = useState(0)
   const [active, setActive] = useState('Home')
+  const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
     const onScroll = () => {
@@ -398,6 +456,9 @@ export default function App() {
 
       // Hero background fades fully to black before the hero leaves the viewport
       setHeroFade(Math.min(y / (vh * 0.75), 1))
+
+      // Past the hero, section headings reach the top of the viewport
+      setScrolled(y > vh * 0.5)
 
       // Service background fades to black as the section scrolls out of view
       const service = document.getElementById('service')
@@ -420,7 +481,8 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-black tracking-[-0.02em]" style={{ fontFamily: "'Inter', sans-serif" }}>
-      <Navbar active={active} />
+      <CursorGlow />
+      <Navbar active={active} scrolled={scrolled} />
       <Hero fade={heroFade} />
       <Service fade={serviceFade} />
       <Contact />
