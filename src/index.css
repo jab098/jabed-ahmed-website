@@ -84,6 +84,83 @@ body {
   will-change: transform;
 }
 
+/* Insights walkthrough section — staggered entrance + tab crossfades.
+   .wt-anim elements stay hidden until the section gains .wt-in (set by an
+   IntersectionObserver), then rise one by one via inline animation-delay.
+   .wt-swap/.wt-swap-pop run on mount, so re-keying the panel content on tab
+   change (or on first reveal) replays them; their delays are offset by
+   --wt-base, which the component sets large during the entrance sequence
+   and zero afterwards, so tab switches respond instantly. */
+.wt-anim {
+  opacity: 0;
+}
+.wt-in .wt-anim {
+  animation: wtRise 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.wt-in .wt-pop {
+  animation-name: wtPop;
+  animation-duration: 0.9s;
+  /* soft elastic overshoot */
+  animation-timing-function: cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+@keyframes wtRise {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes wtPop {
+  from {
+    opacity: 0;
+    transform: translateY(36px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.wt-swap {
+  animation: wtSwap 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.wt-swap-pop {
+  animation: wtSwapPop 0.65s cubic-bezier(0.34, 1.45, 0.64, 1) both;
+}
+@keyframes wtSwap {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes wtSwapPop {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wt-anim,
+  .wt-in .wt-anim {
+    animation: none;
+    opacity: 1;
+  }
+  .wt-swap,
+  .wt-swap-pop {
+    animation: none;
+  }
+}
+
 /* Infinite logo marquee — motion is a single linear CSS keyframe animation
    on the track (no JS involved), so it runs entirely on the compositor */
 .logo-marquee {
