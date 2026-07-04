@@ -17,6 +17,7 @@ import {
   Settings,
   ShieldCheck,
   Tag,
+  X,
 } from 'lucide-react'
 
 /* The site's brand glyph — same path as the top-left logo, reused across
@@ -671,26 +672,26 @@ const AI_QUERY_ROWS: AiQuery[][] = [
   [
     { icon: AI_ICON('meta'), text: 'How does HubSpot usability differ on desktop versus mobile?' },
     { icon: AI_ICON('openai'), text: 'How easy is it to set up a CRM for the first time?' },
-    { text: 'What training or tutorials are included with Attio?' },
+    { icon: AI_ICON('githubcopilot'), text: 'What onboarding do analytics platforms include?' },
     { icon: AI_ICON('googlegemini'), text: 'Which analytics platform is best for a startup?' },
     { icon: AI_ICON('claude'), text: 'What are the best server-side tagging solutions?' },
-    { text: 'Do CRMs integrate with Google Analytics 4?' },
+    { icon: AI_ICON('x'), text: 'Do CRMs integrate with Google Analytics 4?' },
   ],
   [
     { icon: AI_ICON('openai'), text: 'What core features should a CRM include?' },
     { icon: AI_ICON('claude'), text: 'How do CRMs handle customer service or support workflows?' },
-    { text: 'How does a CRM compare to spreadsheets or manual tracking?' },
+    { icon: AI_ICON('huggingface'), text: 'How does a CRM compare to spreadsheets or manual tracking?' },
     { icon: AI_ICON('perplexity'), text: 'Which consent platforms are GDPR compliant?' },
     { icon: AI_ICON('googlegemini'), text: 'What is the most accurate attribution model in 2026?' },
-    { text: 'How do brands appear in AI-generated answers?' },
+    { icon: AI_ICON('githubcopilot'), text: 'How do brands appear in AI-generated answers?' },
   ],
   [
-    { text: 'How easy is CRM data migration from another system?' },
+    { icon: AI_ICON('x'), text: 'How easy is CRM data migration from another system?' },
     { icon: AI_ICON('openai'), text: 'What security certifications do CRMs typically have?' },
     { icon: AI_ICON('perplexity'), text: 'How do CRMs handle GDPR or HIPAA compliance?' },
     { icon: AI_ICON('meta'), text: 'Which data warehouse should an enterprise choose?' },
     { icon: AI_ICON('claude'), text: 'What is the best tool for A/B testing at scale?' },
-    { text: 'How reliable is AI search for product recommendations?' },
+    { icon: AI_ICON('huggingface'), text: 'How reliable is AI search for product recommendations?' },
   ],
 ]
 
@@ -717,9 +718,36 @@ const HOW_ITEMS = [
   },
 ]
 
+/* Height collapse/expand with symmetric motion: content stays mounted, so
+   closing glides through the same animation as opening instead of snapping */
+function Collapse({ open, children }: { open: boolean; children: React.ReactNode }) {
+  const innerRef = useRef<HTMLDivElement>(null)
+  const [height, setHeight] = useState(0)
+
+  useEffect(() => {
+    const el = innerRef.current
+    if (!el) return
+    const ro = new ResizeObserver(() => setHeight(el.offsetHeight))
+    ro.observe(el)
+    setHeight(el.offsetHeight)
+    return () => ro.disconnect()
+  }, [])
+
+  return (
+    <div
+      className="overflow-hidden transition-[height,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+      style={{ height: open ? height : 0, opacity: open ? 1 : 0 }}
+      aria-hidden={!open}
+    >
+      <div ref={innerRef}>{children}</div>
+    </div>
+  )
+}
+
 function QueryRow({ items, reverse }: { items: AiQuery[]; reverse?: boolean }) {
   return (
-    <div className="overflow-hidden">
+    // py keeps pill borders and shadows inside the clip box
+    <div className="overflow-hidden py-1">
       <div className={`flex w-max gap-3 ${reverse ? 'q-marquee-r' : 'q-marquee'}`}>
         {[0, 1].map((copy) => (
           <div key={copy} className="flex gap-3 pr-3" aria-hidden={copy === 1}>
@@ -767,23 +795,21 @@ function AiSearch() {
             className={`transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
           />
         </button>
-        <div className="w-full max-w-[880px]">
-          <AnimatedHeight>
-            {open && (
-              /* padding (not margin) so the measured height includes the gap
-                 and the panel's bottom edge is never clipped */
-              <div className="pt-8 pb-1">
-                <div className="bg-white border border-black/10 rounded-[24px] p-7 md:p-9 text-left space-y-6 shadow-lg">
-                  {HOW_ITEMS.map((item) => (
-                    <div key={item.title}>
-                      <p className="font-semibold text-[16px]">{item.title}</p>
-                      <p className="text-[14px] text-black/70 mt-1.5 leading-relaxed">{item.desc}</p>
-                    </div>
-                  ))}
-                </div>
+        <div className="w-full max-w-[900px]">
+          <Collapse open={open}>
+            {/* padding on all sides keeps the panel's shadow and rounded
+                corners clear of the clip box */}
+            <div className="pt-8 pb-6 px-3">
+              <div className="bg-white border border-black/10 rounded-[24px] p-7 md:p-9 text-left space-y-6 shadow-lg">
+                {HOW_ITEMS.map((item) => (
+                  <div key={item.title}>
+                    <p className="font-semibold text-[16px]">{item.title}</p>
+                    <p className="text-[14px] text-black/70 mt-1.5 leading-relaxed">{item.desc}</p>
+                  </div>
+                ))}
               </div>
-            )}
-          </AnimatedHeight>
+            </div>
+          </Collapse>
         </div>
       </div>
     </div>
@@ -818,7 +844,9 @@ function AnimatedHeight({ children }: { children: React.ReactNode }) {
 
 function Insights() {
   const [visible, setVisible] = useState(false)
+  const [chartIn, setChartIn] = useState(false)
   const [booted, setBooted] = useState(false)
+  const chartRef = useRef<HTMLDivElement>(null)
   const [page, setPage] = useState('Overview')
   const [metric, setMetric] = useState<MetricTab>('Visibility')
   const [slice, setSlice] = useState(0)
@@ -834,7 +862,7 @@ function Insights() {
       current.includes(model) ? current.filter((m) => m !== model) : [...current, model],
     )
 
-  // Play the entrance sequence the first time the section scrolls into view
+  // Title/marker reveal as soon as the section arrives…
   useEffect(() => {
     const el = sectionRef.current
     if (!el) return
@@ -845,7 +873,25 @@ function Insights() {
           io.disconnect()
         }
       },
-      { threshold: 0.15 },
+      { threshold: 0.05 },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+
+  // …but the dashboard holds its entrance until half the chart card is
+  // actually on screen, so quick scrollers see the animation, not its wake
+  useEffect(() => {
+    const el = chartRef.current
+    if (!el) return
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setChartIn(true)
+          io.disconnect()
+        }
+      },
+      { threshold: 0.5 },
     )
     io.observe(el)
     return () => io.disconnect()
@@ -854,10 +900,10 @@ function Insights() {
   // While the entrance runs, panel content waits its turn (--wt-base); once
   // booted, tab switches replay the same animations with no base delay
   useEffect(() => {
-    if (!visible) return
+    if (!chartIn) return
     const t = setTimeout(() => setBooted(true), 2400)
     return () => clearTimeout(t)
-  }, [visible])
+  }, [chartIn])
 
   const delay = (s: number) => ({ animationDelay: `calc(var(--wt-base) + ${s}s)` })
 
@@ -867,7 +913,7 @@ function Insights() {
     <section
       ref={sectionRef}
       id="insights"
-      className={`w-full px-6 lg:px-12 pt-32 pb-16 bg-[#f4f4f5] text-black ${visible ? 'rv-in wt-in' : ''}`}
+      className={`w-full px-6 lg:px-12 pt-32 pb-16 bg-[#f4f4f5] text-black ${visible ? 'rv-in' : ''} ${chartIn ? 'wt-in' : ''}`}
       style={{ '--wt-base': booted ? '0s' : '0.9s' } as React.CSSProperties}
     >
       {/* ~25/75 split: title column left, vertical separator, chart right —
@@ -908,13 +954,49 @@ function Insights() {
         <div className="lg:col-span-9 relative lg:border-l lg:border-black/10 lg:pl-10">
           <div className="dots-light absolute -inset-y-8 -right-6 left-0 lg:left-6" aria-hidden="true" />
           <div
+            ref={chartRef}
             className="rv relative w-full bg-[#111] rounded-[40px] overflow-hidden shadow-2xl p-4 md:p-8 border-t border-x border-b-0 border-[#00f09633]"
             style={{ animationDelay: '0.25s' }}
           >
+        {/* Mobile: static, presentation-style dashboard (Attio-like) — the
+            interactive shell is desktop-only */}
+        <div className="md:hidden text-left wt-anim" aria-hidden="true">
+          <div className="flex items-center gap-2 px-2 pb-4">
+            <LogoMark size={12} className="text-[#f4f4f5]" />
+            <span className="text-[#f4f4f5] text-sm font-medium">Jabed's Dashboard</span>
+            <span className="text-[#52525b]">/</span>
+            <span className="text-[#a1a1aa] text-sm">Overview</span>
+          </div>
+          <div className="rounded-xl border border-[#27272a] border-t-white/10 bg-[#0e0e11] p-4 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.8)]">
+            <p className="text-[#f4f4f5] text-sm font-semibold">Visibility</p>
+            <p className="text-[#71717a] text-xs mt-1 mb-3">
+              Share of AI answers mentioning each platform
+            </p>
+            <DashChart tab="Visibility" />
+          </div>
+          <div className="rounded-xl border border-[#27272a] bg-[#0e0e11] p-4 mt-4">
+            <p className="text-[#f4f4f5] text-sm font-semibold mb-2">Platforms</p>
+            {COMPETITORS.slice(0, 3).map((c) => (
+              <div
+                key={c.brand}
+                className="flex items-center gap-2.5 py-2.5 border-t border-[#1f1f23] first:border-t-0"
+              >
+                <span
+                  className={`w-5 h-5 rounded ${c.tone} text-[9px] font-bold text-white flex items-center justify-center shrink-0`}
+                >
+                  {c.brand[0]}
+                </span>
+                <span className="text-[#f4f4f5] text-xs">{c.brand}</span>
+                <span className="ml-auto text-[#f4f4f5] text-xs">{c.visibility}</span>
+                <span className={`text-[10px] ${deltaTone(c.visDelta)}`}>{c.visDelta}</span>
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* Dashboard shell */}
         <div
-          className="wt-anim wt-pop rounded-2xl border border-emerald-400/15 bg-[#0a0a0c]/90 backdrop-blur-sm shadow-[0_0_45px_rgba(16,185,129,0.13),0_0_130px_rgba(16,185,129,0.07),0_30px_80px_-20px_rgba(0,0,0,0.85)] overflow-hidden flex text-left"
+          className="wt-anim wt-pop rounded-2xl border border-emerald-400/15 bg-[#0a0a0c]/90 backdrop-blur-sm shadow-[0_0_45px_rgba(16,185,129,0.13),0_0_130px_rgba(16,185,129,0.07),0_30px_80px_-20px_rgba(0,0,0,0.85)] overflow-hidden hidden md:flex text-left"
           style={{ animationDelay: '0.4s' }}
         >
           {/* Left sidebar */}
@@ -1080,7 +1162,7 @@ function Insights() {
 
             {/* Metric visualisation — each metric gets its own chart type,
                 re-keyed so switches crossfade */}
-            <div key={`chart-${visible}-${metric}`} className="wt-swap px-4 sm:px-6 pt-4 pb-6" style={delay(0.15)}>
+            <div key={`chart-${chartIn}-${metric}`} className="wt-swap px-4 sm:px-6 pt-4 pb-6" style={delay(0.15)}>
               {/* Elevated chart card: layered drop shadow + hairline top light
                   so the graph reads as a mounted panel, not raw lines */}
               <div className="rounded-xl border border-[#27272a] border-t-white/10 bg-[#0e0e11] p-4 sm:p-5 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.8),0_8px_18px_rgba(0,0,0,0.55)]">
@@ -1092,7 +1174,7 @@ function Insights() {
 
             {/* Lower analytics grid */}
             <div
-              key={`lower-${visible}`}
+              key={`lower-${chartIn}`}
               className="wt-swap grid lg:grid-cols-3 border-t border-[#27272a]"
               style={delay(0.3)}
             >
@@ -1232,7 +1314,7 @@ function Insights() {
               </>
             ) : (
               /* Sidebar pages — each gets a purpose-built mock view */
-              <div key={`page-${page}-${visible}`} className="wt-swap p-4 sm:p-6" style={delay(0.2)}>
+              <div key={`page-${page}-${chartIn}`} className="wt-swap p-4 sm:p-6" style={delay(0.2)}>
                 {page === 'Prompts' && <PromptsView />}
                 {page === 'Sources' && <SourcesView />}
                 {page === 'Models' && <ModelsView />}
@@ -1285,6 +1367,7 @@ function useReveal<T extends HTMLElement>(threshold = 0.12, rootMargin = '0px') 
 function SiteNav() {
   const [hidden, setHidden] = useState(false)
   const [onLight, setOnLight] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     let lastY = window.scrollY
@@ -1342,11 +1425,29 @@ function SiteNav() {
         ))}
       </div>
       <button
+        onClick={() => setMenuOpen((o) => !o)}
         className={`md:hidden p-2 transition-colors ${onLight ? 'text-black' : 'text-white'}`}
-        aria-label="Open menu"
+        aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+        aria-expanded={menuOpen}
       >
-        <Menu size={22} />
+        {menuOpen ? <X size={22} /> : <Menu size={22} />}
       </button>
+
+      {/* Mobile menu panel — self-coloured, so it works over any section */}
+      {menuOpen && (
+        <div className="menu-pop md:hidden absolute top-full right-6 left-6 mt-1 rounded-2xl bg-[#0A0D10]/95 backdrop-blur-md border border-white/10 p-3 flex flex-col shadow-2xl">
+          {NAV_LINKS.map((link) => (
+            <a
+              key={link.label}
+              href={link.href}
+              onClick={() => setMenuOpen(false)}
+              className="px-4 py-3 rounded-xl text-[15px] text-white/80 hover:text-white hover:bg-white/5 transition-colors"
+            >
+              {link.label}
+            </a>
+          ))}
+        </div>
+      )}
     </nav>
   )
 }
@@ -1517,6 +1618,75 @@ function HeroGraph() {
   )
 }
 
+/* Simulated click-tracking cursor: drifts into a random spot on its half of
+   the dashboard, waits a beat, clicks (pulse + ripple), pops an event chip
+   ("Tracked" / "Conversion" / "Accepted"), then fades away and respawns
+   elsewhere. The two instances run the same cycle length with different
+   start offsets and label rotations, so clicks never coincide and the two
+   visible chips never match. */
+const CLICK_LABELS = ['Tracked', 'Conversion', 'Accepted']
+
+function FakeCursor({ side, offsetMs }: { side: 'left' | 'right'; offsetMs: number }) {
+  const [phase, setPhase] = useState<'hidden' | 'idle' | 'click' | 'label' | 'leave'>('hidden')
+  const [pos, setPos] = useState({ x: side === 'left' ? 20 : 75, y: 40 })
+  const [labelIdx, setLabelIdx] = useState(side === 'left' ? 0 : 1)
+
+  useEffect(() => {
+    let alive = true
+    const timers: number[] = []
+    const wait = (ms: number) =>
+      new Promise<void>((resolve) => {
+        timers.push(window.setTimeout(resolve, ms))
+      })
+    const run = async () => {
+      await wait(offsetMs)
+      while (alive) {
+        setPos({
+          x: side === 'left' ? 8 + Math.random() * 30 : 60 + Math.random() * 30,
+          y: 18 + Math.random() * 58,
+        })
+        if (!alive) break
+        setPhase('idle') // drift in
+        await wait(1000)
+        setPhase('click') // press pulse + ripple
+        await wait(350)
+        setPhase('label') // event chip pops
+        await wait(1100)
+        setPhase('leave') // fade out
+        await wait(500)
+        setPhase('hidden')
+        setLabelIdx((i) => (i + 1) % CLICK_LABELS.length)
+        await wait(900)
+      }
+    }
+    run()
+    return () => {
+      alive = false
+      timers.forEach(clearTimeout)
+    }
+  }, [side, offsetMs])
+
+  return (
+    <div
+      className={`fake-cursor ${phase}`}
+      style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
+      aria-hidden="true"
+    >
+      <span className="fc-chip">{CLICK_LABELS[labelIdx]}</span>
+      <span className="fc-ripple" />
+      <svg className="fc-arrow" width="22" height="22" viewBox="0 0 24 24">
+        <path
+          d="M5 3 L19 12 L12 13.5 L9.5 20 Z"
+          fill="#ffffff"
+          stroke="#0A0D10"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </div>
+  )
+}
+
 function Hero() {
   const ctaMagnet = useMagnetic()
   return (
@@ -1534,6 +1704,8 @@ function Hero() {
         <div className="hero-bloom hero-bloom-a" />
         <div className="hero-bloom hero-bloom-b" />
         <div className="hero-grid" />
+        <div className="hero-grid2" />
+        <div className="hero-grid3" />
         <div className="hero-grain" />
       </div>
 
@@ -1601,6 +1773,12 @@ function Hero() {
           <div className="hero-graph-window absolute inset-x-6 top-16 bottom-0">
             <HeroGraph />
           </div>
+        </div>
+
+        {/* Roaming click-tracking cursors, one per half, offset in time */}
+        <div className="absolute inset-0 z-40 pointer-events-none">
+          <FakeCursor side="left" offsetMs={900} />
+          <FakeCursor side="right" offsetMs={3100} />
         </div>
       </div>
 
@@ -1704,18 +1882,19 @@ function WhoAmI() {
               stats.inView ? 'is-visible' : ''
             }`}
           >
-            {WHO_STATS.map((stat) => (
-              <div
-                key={stat.tag}
-                className="stat-card opacity-0 bg-[#eaeaea] rounded-[32px] p-8 flex flex-col justify-between relative h-[240px] translate-y-[60px]"
-              >
-                <p className="text-[64px] lg:text-[80px] font-medium leading-none text-black">
-                  {stat.value}
-                </p>
-                <p className="text-[14px] text-black/60 mt-auto">{stat.label}</p>
-                <span className="absolute bottom-8 right-8 text-[13px] text-black/30">
-                  {stat.tag}
-                </span>
+            {WHO_STATS.map((stat, i) => (
+              /* entrance keyframes live on the wrapper; the inner card keeps
+                 its slow hover free of the animation's transform */
+              <div key={stat.tag} className="stat-rise" style={{ animationDelay: `${i * 0.15}s` }}>
+                <div className="bg-[#eaeaea] rounded-[32px] p-8 flex flex-col justify-between relative h-[240px] transition-[transform,box-shadow] duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2 hover:shadow-xl">
+                  <p className="text-[64px] lg:text-[80px] font-medium leading-none text-black">
+                    {stat.value}
+                  </p>
+                  <p className="text-[14px] text-black/60 mt-auto">{stat.label}</p>
+                  <span className="absolute bottom-8 right-8 text-[13px] text-black/30">
+                    {stat.tag}
+                  </span>
+                </div>
               </div>
             ))}
           </div>
@@ -1728,11 +1907,12 @@ function WhoAmI() {
 /* Each card observes itself, so it floats up when it scrolls into view —
    not when the section header does */
 function ServiceCard({ service, index }: { service: (typeof SERVICES)[number]; index: number }) {
-  const { ref, inView } = useReveal<HTMLElement>()
+  // Deep threshold: the card only rises once most of it is actually in view
+  const { ref, inView } = useReveal<HTMLElement>(0.5)
   return (
     <article
       ref={ref}
-      className={`rv-solo ${inView ? 'rv-solo-in' : ''} group bg-white border border-black/10 rounded-[32px] p-8 flex flex-col relative min-h-[320px] shadow-md transition-[transform,box-shadow,border-color] duration-700 ease-out hover:-translate-y-2 hover:shadow-2xl hover:border-[#00df8e]`}
+      className={`rv-solo ${inView ? 'rv-solo-in' : ''} group bg-white border border-black/10 rounded-[32px] p-8 flex flex-col relative min-h-[320px] shadow-md transition-[transform,box-shadow,border-color] duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2 hover:shadow-2xl hover:border-[#00df8e]`}
       style={{ animationDelay: `${(index % 3) * 0.1}s` }}
     >
       <div className="flex items-start justify-between">
@@ -1740,7 +1920,7 @@ function ServiceCard({ service, index }: { service: (typeof SERVICES)[number]; i
         <span className="w-10 h-10 rounded-xl bg-[#00df8e] text-black text-[15px] font-mono font-semibold flex items-center justify-center">
           {service.number}
         </span>
-        <span className="text-black/35 text-[11px] font-medium tracking-[0.2em] uppercase pt-1">
+        <span className="bg-black/[0.05] text-black/60 text-[10px] font-semibold tracking-[0.16em] uppercase px-2.5 py-1 rounded-full">
           {service.overline}
         </span>
       </div>
@@ -1750,12 +1930,13 @@ function ServiceCard({ service, index }: { service: (typeof SERVICES)[number]; i
       </div>
       <p className="text-[14px] text-black/80 mt-4 flex-grow leading-relaxed">{service.blurb}</p>
       <div className="flex flex-wrap gap-2 mt-6">
-        {service.stack.map((tech) => (
+        {service.stack.map((tech, j) => (
           <span
             key={tech}
-            className="bg-[#00df8e]/10 text-[#00996a] rounded-full px-3 py-1 text-[11px] font-medium"
+            className="pill-streak bg-[#00df8e]/10 text-[#00996a] rounded-full px-3 py-1 text-[11px] font-medium"
+            style={{ '--ps-delay': `${j * 70}ms` } as React.CSSProperties}
           >
-            {tech}
+            <span className="relative z-10">{tech}</span>
           </span>
         ))}
       </div>
