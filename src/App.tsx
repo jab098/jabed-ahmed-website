@@ -1,16 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
 import {
+  BarChart3,
   Calendar,
   Check,
   ChevronDown,
+  Code2,
   Cpu,
   Download,
+  FlaskConical,
   Globe,
   HelpCircle,
   LayoutDashboard,
   Menu,
   MessageSquare,
+  Server,
   Settings,
+  ShieldCheck,
+  Tag,
 } from 'lucide-react'
 
 /* The site's brand glyph — same path as the top-left logo, reused across
@@ -30,13 +36,21 @@ function LogoMark({ size = 16, className = '' }: { size?: number; className?: st
   )
 }
 
-const NAV_LINKS = ['Home', 'Insights', 'Service', 'Contact']
+const NAV_LINKS = [
+  { label: 'Home', href: '#home' },
+  { label: 'Who Am I', href: '#who' },
+  { label: 'Insights', href: '#insights' },
+  { label: 'Service', href: '#service' },
+  { label: 'Contact', href: '#contact' },
+]
+const LINKEDIN_URL = 'https://linkedin.com/in/jabed98'
 const CALENDLY_URL = 'https://calendly.com/jabed098/30min'
 const EMAIL = 'consulting@jabed.co.uk'
 
 const SERVICES = [
   {
     number: '01',
+    icon: Tag,
     overline: 'Implementation',
     headline: 'Tag Management',
     blurb:
@@ -45,6 +59,7 @@ const SERVICES = [
   },
   {
     number: '02',
+    icon: Server,
     overline: 'Infrastructure',
     headline: 'Server-Side Tracking',
     blurb:
@@ -53,6 +68,7 @@ const SERVICES = [
   },
   {
     number: '03',
+    icon: FlaskConical,
     overline: 'Experimentation',
     headline: 'CRO & Testing',
     blurb:
@@ -61,6 +77,7 @@ const SERVICES = [
   },
   {
     number: '04',
+    icon: ShieldCheck,
     overline: 'Compliance',
     headline: 'Consent & Privacy',
     blurb:
@@ -69,6 +86,7 @@ const SERVICES = [
   },
   {
     number: '05',
+    icon: BarChart3,
     overline: 'Reporting',
     headline: 'BI & Data Modelling',
     blurb:
@@ -77,6 +95,7 @@ const SERVICES = [
   },
   {
     number: '06',
+    icon: Code2,
     overline: 'Engineering',
     headline: 'Front-End Instrumentation',
     blurb:
@@ -256,6 +275,15 @@ const LOGOS = [
   { name: 'OneTrust', src: '/assets/logos/onetrust.svg' },
   { name: 'Amplitude', src: `${GILBARBARA}/amplitude-icon.svg` },
   { name: 'PostgreSQL', src: `${SIMPLE_ICONS}/postgresql.svg` },
+  { name: 'Apache Kafka', src: `${SIMPLE_ICONS}/apachekafka.svg` },
+  { name: 'Snowflake', src: `${SIMPLE_ICONS}/snowflake.svg` },
+  { name: 'Looker', src: `${SIMPLE_ICONS}/looker.svg` },
+  { name: 'Tableau', src: `${SIMPLE_ICONS}/tableau.svg` },
+  { name: 'Twilio Segment', src: `${GILBARBARA}/segment-icon.svg` },
+  { name: 'mParticle', src: `${GILBARBARA}/mparticle-icon.svg` },
+  { name: 'Heap', src: `${GILBARBARA}/heap-icon.svg` },
+  { name: 'Microsoft Power BI', src: `${GILBARBARA}/microsoft-power-bi.svg` },
+  { name: 'VWO', src: `${GILBARBARA}/vwo.svg` },
 ]
 
 function LogoMarquee() {
@@ -263,13 +291,11 @@ function LogoMarquee() {
     <div className="logo-marquee mt-20 md:mt-28" aria-label="Platforms and tools I work with">
       <div className="logo-marquee-fade">
         <div className="logo-marquee-track">
-          {/* Five identical copies back to back: translating the track -20%
-              (exactly one copy) lands on an identical frame, so the loop
-              resets without a visible seam. Five (not two) so the copies
-              behind the animated one always cover ultra-wide viewports —
-              with two, any screen wider than a single copy (~1200px) saw
-              a gap and a blink at the reset point. */}
-          {[0, 1, 2, 3, 4].map((copy) => (
+          {/* Three identical copies back to back: translating the track
+              -33.33% (exactly one copy) lands on an identical frame, so the
+              loop resets without a visible seam. With 20 logos a single copy
+              is ~2300px wide, so two trailing copies cover any viewport. */}
+          {[0, 1, 2].map((copy) => (
             <div className="logo-marquee-group" key={copy} aria-hidden={copy > 0}>
               {LOGOS.map((logo) => (
                 <img
@@ -633,6 +659,133 @@ function SettingsView() {
   )
 }
 
+/* ——— AI search strategy section (bottom of Insights) ——— */
+const AI_ICON = (slug: string) => `https://cdn.jsdelivr.net/npm/simple-icons@13/icons/${slug}.svg`
+
+interface AiQuery {
+  icon?: string
+  text: string
+}
+
+const AI_QUERY_ROWS: AiQuery[][] = [
+  [
+    { icon: AI_ICON('meta'), text: 'How does HubSpot usability differ on desktop versus mobile?' },
+    { icon: AI_ICON('openai'), text: 'How easy is it to set up a CRM for the first time?' },
+    { text: 'What training or tutorials are included with Attio?' },
+    { icon: AI_ICON('googlegemini'), text: 'Which analytics platform is best for a startup?' },
+    { icon: AI_ICON('claude'), text: 'What are the best server-side tagging solutions?' },
+    { text: 'Do CRMs integrate with Google Analytics 4?' },
+  ],
+  [
+    { icon: AI_ICON('openai'), text: 'What core features should a CRM include?' },
+    { icon: AI_ICON('claude'), text: 'How do CRMs handle customer service or support workflows?' },
+    { text: 'How does a CRM compare to spreadsheets or manual tracking?' },
+    { icon: AI_ICON('perplexity'), text: 'Which consent platforms are GDPR compliant?' },
+    { icon: AI_ICON('googlegemini'), text: 'What is the most accurate attribution model in 2026?' },
+    { text: 'How do brands appear in AI-generated answers?' },
+  ],
+  [
+    { text: 'How easy is CRM data migration from another system?' },
+    { icon: AI_ICON('openai'), text: 'What security certifications do CRMs typically have?' },
+    { icon: AI_ICON('perplexity'), text: 'How do CRMs handle GDPR or HIPAA compliance?' },
+    { icon: AI_ICON('meta'), text: 'Which data warehouse should an enterprise choose?' },
+    { icon: AI_ICON('claude'), text: 'What is the best tool for A/B testing at scale?' },
+    { text: 'How reliable is AI search for product recommendations?' },
+  ],
+]
+
+const HOW_ITEMS = [
+  {
+    title: 'Semantic Data Architecture',
+    desc: 'I implement rigorous JSON-LD structured data and schema markup, ensuring that LLMs can accurately parse, index, and surface your business information with absolute confidence (e.g., using Product and Organization schema to enhance AI-generated snippets).',
+  },
+  {
+    title: 'Prompt-Level Attribution',
+    desc: 'My infrastructure tracks the specific user-initiated prompts that lead to brand citations within AI summaries, providing visibility into traffic sources that traditional analytics ignore (e.g., mapping brand mentions to specific query inputs in GA4).',
+  },
+  {
+    title: 'Validated Data Pipelines',
+    desc: "By leveraging strict payload validation—such as Snowplow's Iglu registries—I ensure that the data feeding into your models and analytics tools is consistently accurate, clean, and reliable (e.g., rejecting malformed event payloads before they reach the warehouse).",
+  },
+  {
+    title: 'AI Sentiment Quantification',
+    desc: 'I configure custom dashboards that ingest AI search results, allowing brands to measure their position, visibility, and sentiment within AI-generated responses (e.g., tracking the frequency of positive vs. neutral mentions in LLM summaries).',
+  },
+  {
+    title: 'Contextual Intelligence',
+    desc: "Through advanced behavioural pipelines, I inject real-time user intent data back into your site's AI agents, delivering hyper-personalized, data-informed responses that drive engagement (e.g., tailoring AI chatbot responses based on a user's previous purchase history).",
+  },
+]
+
+function QueryRow({ items, reverse }: { items: AiQuery[]; reverse?: boolean }) {
+  return (
+    <div className="overflow-hidden">
+      <div className={`flex w-max gap-3 ${reverse ? 'q-marquee-r' : 'q-marquee'}`}>
+        {[0, 1].map((copy) => (
+          <div key={copy} className="flex gap-3 pr-3" aria-hidden={copy === 1}>
+            {items.map((q) => (
+              <span
+                key={q.text}
+                className="flex items-center gap-2 whitespace-nowrap bg-white border border-black/10 rounded-full px-4 py-2 text-[13px] text-black/70 shadow-sm"
+              >
+                {q.icon && <img src={q.icon} alt="" className="w-3.5 h-3.5 opacity-60" loading="lazy" />}
+                {q.text}
+              </span>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function AiSearch() {
+  const [open, setOpen] = useState(false)
+  const { ref, inView } = useReveal<HTMLDivElement>()
+  return (
+    <div ref={ref} className={`mt-28 md:mt-36 ${inView ? 'rv-in' : ''}`}>
+      <h3 className="rv text-center text-[24px] md:text-[34px] font-semibold tracking-tight max-w-[860px] mx-auto leading-[1.25]">
+        The AI Search Strategy: I optimize your digital presence for the new search engine era.
+      </h3>
+
+      {/* Query marquees: top drifts left, middle right, bottom left */}
+      <div className="rv q-fade mt-12 space-y-4" style={{ animationDelay: '0.15s' }}>
+        <QueryRow items={AI_QUERY_ROWS[0]} />
+        <QueryRow items={AI_QUERY_ROWS[1]} reverse />
+        <QueryRow items={AI_QUERY_ROWS[2]} />
+      </div>
+
+      {/* Expandable methodology */}
+      <div className="rv flex flex-col items-center mt-12" style={{ animationDelay: '0.3s' }}>
+        <button
+          onClick={() => setOpen((o) => !o)}
+          className="cursor-pointer inline-flex items-center gap-2 border border-black/15 bg-white rounded-full px-6 py-2.5 text-[14px] font-medium hover:border-black/30 transition-colors"
+        >
+          How?
+          <ChevronDown
+            size={14}
+            className={`transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
+          />
+        </button>
+        <div className="w-full max-w-[880px]">
+          <AnimatedHeight>
+            {open && (
+              <div className="mt-8 bg-white border border-black/10 rounded-[24px] p-7 md:p-9 text-left space-y-6 shadow-lg">
+                {HOW_ITEMS.map((item) => (
+                  <div key={item.title}>
+                    <p className="font-semibold text-[16px]">{item.title}</p>
+                    <p className="text-[14px] text-black/70 mt-1.5 leading-relaxed">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </AnimatedHeight>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* Animates the container to its content's height on page/tab switches. A
    ResizeObserver tracks the inner content; the outer div transitions the
    measured pixel height, so view changes glide instead of snapping. */
@@ -713,37 +866,45 @@ function Insights() {
       className={`w-full px-6 lg:px-12 pt-32 pb-16 bg-[#f4f4f5] text-black ${visible ? 'rv-in wt-in' : ''}`}
       style={{ '--wt-base': booted ? '0s' : '0.9s' } as React.CSSProperties}
     >
-      {/* Section intro */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        <p className="rv lg:col-span-3 flex items-center gap-4 text-[13px] text-black/50 font-medium">
-          (Insights)
-          <span className="w-12 h-[1px] bg-black/20" />
-        </p>
-        <div className="lg:col-span-9">
-          <h2
-            className="rv text-[44px] md:text-[56px] lg:text-[72px] font-medium leading-[1.1] tracking-tight max-w-[900px]"
-            style={{ animationDelay: '0.1s' }}
-          >
-            Real Growth backed by data.
+      {/* 30/70 split: title column left, vertical separator, chart right */}
+      <div className="grid grid-cols-1 lg:grid-cols-10 gap-10 items-start">
+        {/* Title column (~30%) */}
+        <div className="lg:col-span-3">
+          <p className="rv flex items-center gap-4 text-[13px] text-black/50 font-medium">
+            (Insights)
+            <span className="w-12 h-[1px] bg-black/20" />
+          </p>
+          <h2 className="rv text-black leading-[0.98] mt-8" style={{ animationDelay: '0.1s' }}>
+            <span
+              className="block font-playfair italic font-normal text-[40px] md:text-[48px]"
+              style={{ letterSpacing: '-0.05em' }}
+            >
+              Real Growth
+            </span>
+            <span
+              className="block font-normal text-[40px] md:text-[48px]"
+              style={{ letterSpacing: '-0.08em' }}
+            >
+              backed by data.
+            </span>
           </h2>
           <p
-            className="rv text-[18px] text-black/60 mt-6 max-w-[600px]"
+            className="rv text-[16px] text-black/60 mt-6 leading-relaxed"
             style={{ animationDelay: '0.2s' }}
           >
-            Track Visibility, Position and Sentiment for your brand across AI search — in one
-            live dashboard.
+            Built the architecture and experimentation that has delivered millions in measurable
+            revenue uplift for global enterprises.
           </p>
         </div>
-      </div>
 
-      {/* Dashboard showcase — the live interactive dashboard in a dark
-          presentation card. The 1px green bezel runs along the top and
-          sides only, simulating a glowing screen edge. */}
-      <div className="flex flex-col items-center justify-center w-full mt-16">
-        <div
-          className="rv w-full max-w-[1200px] bg-[#111] rounded-[40px] relative overflow-hidden shadow-2xl p-4 md:p-8 border-t border-x border-b-0 border-[#00f09633]"
-          style={{ animationDelay: '0.25s' }}
-        >
+        {/* Chart column (~70%) behind a vertical separator, over a soft
+            animated dotted texture */}
+        <div className="lg:col-span-7 relative lg:border-l lg:border-black/10 lg:pl-10">
+          <div className="dots-light absolute -inset-y-8 -right-6 left-0 lg:left-6" aria-hidden="true" />
+          <div
+            className="rv relative w-full bg-[#111] rounded-[40px] overflow-hidden shadow-2xl p-4 md:p-8 border-t border-x border-b-0 border-[#00f09633]"
+            style={{ animationDelay: '0.25s' }}
+          >
 
         {/* Dashboard shell */}
         <div
@@ -1076,14 +1237,18 @@ function Insights() {
           </div>
         </div>
         </div>
+        </div>
       </div>
+
+      {/* AI search strategy — query marquees + expandable "How?" panel */}
+      <AiSearch />
     </section>
   )
 }
 
 /* One-shot IntersectionObserver reveal: adds .rv-in to the section so its
    .rv children play the fadeUpSmooth entrance with their inline delays */
-function useReveal<T extends HTMLElement>() {
+function useReveal<T extends HTMLElement>(threshold = 0.12, rootMargin = '0px') {
   const ref = useRef<T>(null)
   const [inView, setInView] = useState(false)
 
@@ -1097,13 +1262,87 @@ function useReveal<T extends HTMLElement>() {
           io.disconnect()
         }
       },
-      { threshold: 0.12 },
+      { threshold, rootMargin },
     )
     io.observe(el)
     return () => io.disconnect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return { ref, inView }
+}
+
+/* Fixed site navigation. Stays with the user while scrolling; after about
+   half a viewport of downward travel it animates away, and the slightest
+   upward scroll animates it back. Flips to a dark-on-light scheme while
+   floating over the light middle sections. */
+function SiteNav() {
+  const [hidden, setHidden] = useState(false)
+  const [onLight, setOnLight] = useState(false)
+
+  useEffect(() => {
+    let lastY = window.scrollY
+    const onScroll = () => {
+      const y = window.scrollY
+      const vh = window.innerHeight
+      if (y <= vh * 0.5) setHidden(false)
+      else if (y > lastY + 2) setHidden(true)
+      else if (y < lastY - 2) setHidden(false)
+      lastY = y
+
+      // Dark scheme over the hero and contact cards, light scheme between
+      const hero = document.getElementById('home')
+      const contact = document.getElementById('contact')
+      const overHero = hero ? hero.getBoundingClientRect().bottom > 120 : true
+      const overContact = contact ? contact.getBoundingClientRect().top < 90 : false
+      setOnLight(!overHero && !overContact)
+    }
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  return (
+    <nav
+      className={`fixed top-0 inset-x-0 z-[100] flex justify-between items-center px-10 md:px-12 lg:px-20 pt-10 md:pt-12 lg:pt-14 pb-4 transition-[opacity,transform] duration-700 ${
+        hidden ? 'opacity-0 -translate-y-3 pointer-events-none' : 'opacity-100 translate-y-0'
+      }`}
+    >
+      <a href="#home" className="flex items-center gap-2.5">
+        <LogoMark size={20} className={onLight ? 'text-black' : 'text-white'} />
+        <span
+          className={`font-playfair italic text-xl tracking-wide transition-colors duration-300 ${
+            onLight ? 'text-black' : 'text-white'
+          }`}
+        >
+          Jabed Ahmed
+        </span>
+      </a>
+      <div
+        className={`hidden md:flex absolute left-1/2 -translate-x-1/2 backdrop-blur-md border rounded-full px-6 py-2 gap-6 text-[13px] font-medium transition-colors duration-300 ${
+          onLight ? 'bg-black/5 border-black/10' : 'bg-white/10 border-white/20'
+        }`}
+      >
+        {NAV_LINKS.map((link) => (
+          <a
+            key={link.label}
+            href={link.href}
+            className={`transition-colors ${
+              onLight ? 'text-black/65 hover:text-black' : 'text-white/75 hover:text-white'
+            }`}
+          >
+            {link.label}
+          </a>
+        ))}
+      </div>
+      <button
+        className={`md:hidden p-2 transition-colors ${onLight ? 'text-black' : 'text-white'}`}
+        aria-label="Open menu"
+      >
+        <Menu size={22} />
+      </button>
+    </nav>
+  )
 }
 
 /* Magnetic CTAs: the button stays exactly in place and keeps its shape — it
@@ -1273,13 +1512,11 @@ function HeroGraph() {
 }
 
 function Hero() {
-  const navMagnet = useMagnetic()
   const ctaMagnet = useMagnetic()
   return (
     <section
       id="home"
-      className="relative w-full h-[calc(100vh-2rem)] md:h-[calc(100vh-3rem)] lg:h-[calc(100vh-4rem)] bg-[#0A0D10] text-white rounded-[32px] md:rounded-[48px] overflow-hidden shadow-2xl px-6 lg:px-12 py-6 md:py-8 flex flex-col"
-      style={{ height: 'calc(100dvh - 2rem)' }}
+      className="relative w-full h-[calc(100dvh-2rem)] md:h-[calc(100dvh-3rem)] lg:h-[calc(100dvh-4rem)] bg-[#0A0D10] text-white rounded-[32px] md:rounded-[48px] overflow-hidden shadow-2xl px-6 lg:px-12 py-6 md:py-8 flex flex-col"
     >
       {/* Animated backdrop: ambient radial base, emerald mesh, teal wash,
           dot grid and film grain */}
@@ -1294,50 +1531,17 @@ function Hero() {
         <div className="hero-grain" />
       </div>
 
-      {/* Top navigation */}
-      <nav className="flex justify-between items-center w-full relative z-50">
-        <a href="#home" className="flex items-center gap-2.5">
-          <LogoMark size={20} className="text-white" />
-          <span className="font-playfair italic text-xl tracking-wide">Jabed Ahmed</span>
-        </a>
-        <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-6 py-2 gap-6 text-[13px] font-medium">
-          {NAV_LINKS.map((link) => (
-            <a
-              key={link}
-              href={`#${link.toLowerCase()}`}
-              className="text-white/75 hover:text-white transition-colors"
-            >
-              {link}
-            </a>
-          ))}
-        </div>
-        <div className="flex items-center gap-2">
-          <a
-            ref={navMagnet.ref}
-            href={CALENDLY_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="btn-streak hidden sm:inline-block bg-[#00df8e] text-black px-6 py-2.5 rounded-full text-[13px] font-semibold hover:bg-[#00c27a] transition-[background-color,scale] duration-300 active:scale-95"
-          >
-            <span className="relative z-10 inline-block">Schedule a Call</span>
-          </a>
-          <button className="md:hidden text-white p-2" aria-label="Open menu">
-            <Menu size={22} />
-          </button>
-        </div>
-      </nav>
-
       {/* Centered typography + CTA, held above the docked dashboard */}
       <div className="flex-grow flex flex-col items-center justify-center text-center relative z-20 pb-[24vh]">
-        <h1 className="text-white leading-[0.95]">
+        <h1 className="leading-[0.95]">
           <span
-            className="block font-playfair italic font-normal text-5xl sm:text-7xl md:text-8xl hero-anim hero-reveal"
+            className="block font-playfair italic font-normal text-5xl sm:text-7xl md:text-8xl hero-anim hero-reveal bg-gradient-to-b from-white via-[#e9edec] to-[#98a29e] bg-clip-text text-transparent"
             style={{ letterSpacing: '-0.05em', animationDelay: '0.25s' }}
           >
             Data Collection
           </span>
           <span
-            className="block font-normal text-5xl sm:text-7xl md:text-8xl -mt-1 hero-anim hero-reveal"
+            className="block font-normal text-5xl sm:text-7xl md:text-8xl -mt-1 hero-anim hero-reveal bg-gradient-to-b from-white via-[#e9edec] to-[#98a29e] bg-clip-text text-transparent"
             style={{ letterSpacing: '-0.08em', animationDelay: '0.42s' }}
           >
             done right.
@@ -1364,9 +1568,10 @@ function Hero() {
         </div>
       </div>
 
-      {/* Dashboard UI docked to the card's bottom edge */}
+      {/* Dashboard UI docked to the card's bottom edge, with the orbiting
+          emerald light trace around its border */}
       <div
-        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[90%] max-w-[1200px] h-[35vh] bg-[#111518] border-t border-x border-b-0 border-white/10 rounded-t-[24px] shadow-2xl overflow-hidden z-30 flex hero-anim hero-fade"
+        className="glow-border absolute bottom-0 left-1/2 -translate-x-1/2 w-[90%] max-w-[1200px] h-[35vh] bg-[#111518] border-t border-x border-b-0 border-white/10 rounded-t-[24px] shadow-2xl z-30 flex hero-anim hero-fade"
         style={{ animationDelay: '0.9s' }}
         aria-hidden="true"
       >
@@ -1381,11 +1586,103 @@ function Hero() {
           ))}
         </div>
         {/* Main chart area */}
-        <div className="flex-grow relative flex items-end justify-center p-8 min-w-0">
+        <div className="flex-grow relative flex items-end justify-center p-8 min-w-0 overflow-hidden rounded-t-[24px]">
           <span className="w-32 h-4 bg-white/5 rounded-full absolute top-6 left-8" />
           <span className="w-24 h-4 bg-white/5 rounded-full absolute top-6 right-8 hidden sm:block" />
           <div className="hero-graph-window absolute inset-x-6 top-16 bottom-0">
             <HeroGraph />
+          </div>
+        </div>
+      </div>
+
+      {/* Scroll indicator */}
+      <a
+        href="#who"
+        className="absolute bottom-7 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 text-white/70 hover:text-white transition-colors hero-anim hero-fade rounded-md px-3 py-1.5 bg-black/20 backdrop-blur-sm border border-white/10 hover:border-white/20"
+        style={{ animationDelay: '1.1s' }}
+      >
+        <span className="text-[10px] font-medium tracking-[0.25em] uppercase">Scroll</span>
+        <ChevronDown size={13} className="animate-bounce" />
+      </a>
+    </section>
+  )
+}
+
+const WHO_HEADLINE =
+  "I'm a Analytics Specialist with 8+ Years of Experience in Designing Scalable Data Collection Environments and High growth Digital Products."
+
+const WHO_STATS = [
+  { value: '8+', label: 'Years of Experience', tag: '/01' },
+  { value: '€2M+', label: 'Annual Revenue Uplift', tag: '/02' },
+  { value: '16', label: 'Global Market Apps Managed', tag: '/03' },
+]
+
+function WhoAmI() {
+  // Headline unmask fires at 20% visibility; stat cards get their own
+  // observer so the cascade starts as the grid itself scrolls into view
+  const headline = useReveal<HTMLElement>(0.2, '0px 0px -50px 0px')
+  const stats = useReveal<HTMLDivElement>(0.1)
+
+  return (
+    <section
+      ref={headline.ref}
+      id="who"
+      className={`w-full px-6 lg:px-12 pt-32 pb-24 bg-[#f4f4f5] text-black ${
+        headline.inView ? 'rv-in is-revealed' : ''
+      }`}
+    >
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <p className="rv lg:col-span-3 flex items-center gap-4 text-[13px] text-black/50 font-medium">
+          (Who Am I)
+          <span className="w-12 h-[1px] bg-black/20" />
+        </p>
+        <div className="lg:col-span-9">
+          {/* Word-by-word unmask: each word slides up out of its own
+              overflow-hidden mask with an incrementing delay */}
+          <h2 className="text-[32px] sm:text-[42px] md:text-[50px] lg:text-[56px] font-medium leading-[1.15] tracking-tight max-w-[1000px]">
+            {WHO_HEADLINE.split(' ').map((word, i) => (
+              <span key={i} className="reveal-mask">
+                <span className="reveal-word" style={{ transitionDelay: `${i * 0.03}s` }}>
+                  {word}&nbsp;
+                </span>
+              </span>
+            ))}
+          </h2>
+
+          <div className="mt-10">
+            <a
+              href={LINKEDIN_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="rv btn-streak inline-flex items-center gap-2.5 bg-black text-white px-7 py-3 rounded-full text-[14px] font-medium hover:bg-black/80 transition-colors"
+              style={{ animationDelay: '0.6s' }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-[#00df8e]" />
+              <span className="relative z-10">LinkedIn</span>
+            </a>
+          </div>
+
+          {/* Statistic cards: delayed cascading rise */}
+          <div
+            ref={stats.ref}
+            className={`stat-grid-wrapper grid grid-cols-1 md:grid-cols-3 gap-6 mt-24 w-full max-w-[1200px] ${
+              stats.inView ? 'is-visible' : ''
+            }`}
+          >
+            {WHO_STATS.map((stat) => (
+              <div
+                key={stat.tag}
+                className="stat-card opacity-0 bg-[#eaeaea] rounded-[32px] p-8 flex flex-col justify-between relative h-[240px] translate-y-[60px]"
+              >
+                <p className="text-[64px] lg:text-[80px] font-medium leading-none text-black">
+                  {stat.value}
+                </p>
+                <p className="text-[14px] text-black/60 mt-auto">{stat.label}</p>
+                <span className="absolute bottom-8 right-8 text-[13px] text-black/30">
+                  {stat.tag}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -1400,22 +1697,28 @@ function ServiceCard({ service, index }: { service: (typeof SERVICES)[number]; i
   return (
     <article
       ref={ref}
-      className={`rv-solo ${inView ? 'rv-solo-in' : ''} bg-white border border-black/5 rounded-[32px] p-8 flex flex-col relative min-h-[320px] hover:shadow-xl transition-shadow duration-300`}
+      className={`rv-solo ${inView ? 'rv-solo-in' : ''} group bg-white border border-black/10 rounded-[32px] p-8 flex flex-col relative min-h-[320px] shadow-md transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-2 hover:shadow-2xl hover:border-[#00df8e]`}
       style={{ animationDelay: `${(index % 3) * 0.1}s` }}
     >
       <div className="flex items-start justify-between">
-        <span className="text-[14px] text-[#00df8e] font-mono">{service.number}</span>
-        <span className="text-black/35 text-[11px] font-medium tracking-[0.2em] uppercase pt-0.5">
+        {/* Bold numeric anchor in a solid brand-green tile */}
+        <span className="w-10 h-10 rounded-xl bg-[#00df8e] text-black text-[15px] font-mono font-semibold flex items-center justify-center">
+          {service.number}
+        </span>
+        <span className="text-black/35 text-[11px] font-medium tracking-[0.2em] uppercase pt-1">
           {service.overline}
         </span>
       </div>
-      <h3 className="text-[24px] font-medium mt-4 leading-tight">{service.headline}</h3>
-      <p className="text-[14px] text-black/60 mt-4 flex-grow">{service.blurb}</p>
+      <div className="flex items-center gap-3 mt-6">
+        <service.icon size={22} className="text-black/70 shrink-0" strokeWidth={1.8} />
+        <h3 className="text-[26px] font-semibold leading-tight">{service.headline}</h3>
+      </div>
+      <p className="text-[14px] text-black/80 mt-4 flex-grow leading-relaxed">{service.blurb}</p>
       <div className="flex flex-wrap gap-2 mt-6">
         {service.stack.map((tech) => (
           <span
             key={tech}
-            className="border border-black/10 rounded-full px-3 py-1 text-[11px] text-black/70"
+            className="bg-[#00df8e]/10 text-[#00996a] rounded-full px-3 py-1 text-[11px] font-medium"
           >
             {tech}
           </span>
@@ -1440,11 +1743,19 @@ function Service() {
             (Service)
             <span className="w-12 h-[1px] bg-black/20" />
           </p>
-          <h2
-            className="rv text-[44px] md:text-[64px] font-semibold tracking-tighter max-w-[800px] leading-[1.05] mt-6"
-            style={{ animationDelay: '0.1s' }}
-          >
-            Six disciplines, one robust data infrastructure.
+          <h2 className="rv text-black leading-[0.98] mt-6" style={{ animationDelay: '0.1s' }}>
+            <span
+              className="block font-playfair italic font-normal text-[44px] md:text-[60px]"
+              style={{ letterSpacing: '-0.05em' }}
+            >
+              The Complete
+            </span>
+            <span
+              className="block font-normal text-[44px] md:text-[60px]"
+              style={{ letterSpacing: '-0.08em' }}
+            >
+              data pipeline.
+            </span>
           </h2>
         </div>
       </div>
@@ -1470,8 +1781,13 @@ function Contact() {
       id="contact"
       className={`w-full px-6 lg:px-12 py-24 md:py-32 bg-[#050505] text-white rounded-[32px] md:rounded-[48px] shadow-2xl mt-16 ${inView ? 'rv-in' : ''}`}
     >
-      <div className="flex flex-col items-center text-center max-w-[800px] mx-auto">
-        <p className="rv text-[#00df8e] text-[12px] tracking-widest font-mono mb-8">(CONTACT)</p>
+      {/* Marker top-left, matching the other sections */}
+      <p className="rv flex items-center gap-4 text-[13px] text-[#00df8e] font-medium">
+        (Contact)
+        <span className="w-12 h-[1px] bg-white/20" />
+      </p>
+
+      <div className="max-w-[900px] mt-14 md:mt-20">
         <h2
           className="rv text-white leading-[1.05] text-[40px] sm:text-[56px] md:text-[68px]"
           style={{ animationDelay: '0.1s' }}
@@ -1482,7 +1798,7 @@ function Contact() {
           </span>
         </h2>
         <div
-          className="rv flex flex-col md:flex-row items-center gap-8 md:gap-12 mt-12"
+          className="rv flex flex-col sm:flex-row sm:items-center gap-8 sm:gap-12 mt-12"
           style={{ animationDelay: '0.2s' }}
         >
           <a
@@ -1490,11 +1806,11 @@ function Contact() {
             href={CALENDLY_URL}
             target="_blank"
             rel="noreferrer"
-            className="btn-streak inline-block bg-[#00df8e] text-black px-8 py-4 rounded-full text-[15px] font-semibold hover:bg-[#00c27a] transition-[background-color,scale] active:scale-95"
+            className="btn-streak inline-block self-start bg-[#00df8e] text-black px-8 py-4 rounded-full text-[15px] font-semibold hover:bg-[#00c27a] transition-[background-color,scale] active:scale-95"
           >
             <span className="relative z-10 inline-block">Schedule a Call</span>
           </a>
-          <div className="text-center md:text-left">
+          <div>
             <p className="text-white/40 text-xs font-medium tracking-[0.2em] uppercase mb-1.5">
               Or drop me a line
             </p>
@@ -1508,8 +1824,8 @@ function Contact() {
         </div>
       </div>
 
-      {/* Footer strip */}
-      <div className="w-full flex flex-col sm:flex-row justify-between items-center gap-2 text-[12px] text-white/40 mt-32 border-t border-white/10 pt-8">
+      {/* Footer strip — sits low on the card with generous breathing room */}
+      <div className="w-full flex flex-col sm:flex-row justify-between items-center gap-2 text-[12px] text-white/40 mt-40 md:mt-56 border-t border-white/10 pt-8 pb-2">
         <p>© {new Date().getFullYear()} Jabed Ahmed — Data & Analytics Consulting</p>
         <p>30-minute intro call, no obligation.</p>
       </div>
@@ -1524,7 +1840,9 @@ export default function App() {
       style={{ fontFamily: "'Inter', sans-serif" }}
     >
       <CursorGlow />
+      <SiteNav />
       <Hero />
+      <WhoAmI />
       <Insights />
       <Service />
       <Contact />

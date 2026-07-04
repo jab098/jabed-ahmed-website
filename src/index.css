@@ -238,9 +238,9 @@ body {
   mix-blend-mode: screen;
   background: radial-gradient(
     55% 55% at 35% 70%,
-    rgba(13, 148, 136, 0.15) 0%,
-    rgba(13, 148, 136, 0.06) 45%,
-    rgba(13, 148, 136, 0.018) 72%,
+    rgba(13, 148, 136, 0.2) 0%,
+    rgba(13, 148, 136, 0.08) 45%,
+    rgba(13, 148, 136, 0.025) 72%,
     transparent 100%
   );
   filter: blur(60px);
@@ -261,7 +261,7 @@ body {
   position: absolute;
   inset: -32px;
   pointer-events: none;
-  opacity: 0.04;
+  opacity: 0.05;
   background-image: radial-gradient(rgba(255, 255, 255, 0.9) 1px, transparent 1.5px);
   background-size: 28px 28px;
   animation: gridPan 24s linear infinite;
@@ -273,6 +273,48 @@ body {
   }
   to {
     transform: translate3d(-28px, -28px, 0);
+  }
+}
+
+/* Emerald light trace slowly orbiting the docked dashboard's border */
+@property --gb-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+.glow-border {
+  position: relative;
+}
+.glow-border::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(
+    from var(--gb-angle),
+    rgba(16, 185, 129, 0.28),
+    rgba(190, 242, 225, 1) 8%,
+    rgba(52, 211, 153, 0.6) 18%,
+    rgba(16, 185, 129, 0.28) 30%,
+    rgba(16, 185, 129, 0.28)
+  );
+  filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.7));
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  animation: gbSpin 9s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+@keyframes gbSpin {
+  to {
+    --gb-angle: 360deg;
   }
 }
 
@@ -299,15 +341,23 @@ body {
 
 /* Section entrances: fadeUpSmooth plays on .rv children (with inline
    delays) once the section gains .rv-in from its IntersectionObserver.
-   .rv-solo is the per-element variant: the element observes itself, so it
-   floats up when IT scrolls into view rather than when its section does. */
+   .rv-solo is the per-element variant: the element observes itself and
+   rises with the same snake-fade mask the Insights dashboard uses. */
 .rv,
 .rv-solo {
   opacity: 0;
 }
-.rv-in .rv,
-.rv-solo-in {
+.rv-in .rv {
   animation: fadeUpSmooth 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.rv-solo-in {
+  -webkit-mask-image: linear-gradient(to top, #000 40%, transparent 75%);
+  mask-image: linear-gradient(to top, #000 40%, transparent 75%);
+  -webkit-mask-size: 100% 300%;
+  mask-size: 100% 300%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  animation: wtRise 1.15s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 @keyframes fadeUpSmooth {
   from {
@@ -318,6 +368,90 @@ body {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Word-by-word unmask for the Who Am I headline: each word sits inside an
+   overflow-hidden mask and slides up with a per-word transition delay */
+.reveal-mask {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+}
+.reveal-word {
+  display: inline-block;
+  transform: translateY(120%);
+  opacity: 0;
+  transition:
+    transform 0.9s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.6s ease;
+  will-change: transform, opacity;
+}
+.is-revealed .reveal-word {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* Who Am I statistic cards: delayed cascading rise after the headline */
+.stat-card {
+  transition:
+    opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+}
+.stat-grid-wrapper.is-visible .stat-card {
+  opacity: 1;
+  transform: translateY(0);
+}
+.stat-card:nth-child(1) {
+  transition-delay: 600ms;
+}
+.stat-card:nth-child(2) {
+  transition-delay: 750ms;
+}
+.stat-card:nth-child(3) {
+  transition-delay: 900ms;
+}
+
+/* Soft animated dotted texture behind the Insights chart */
+.dots-light {
+  pointer-events: none;
+  opacity: 0.35;
+  background-image: radial-gradient(rgba(0, 0, 0, 0.35) 1px, transparent 1.4px);
+  background-size: 22px 22px;
+  -webkit-mask-image: radial-gradient(70% 70% at 50% 50%, #000 55%, transparent 100%);
+  mask-image: radial-gradient(70% 70% at 50% 50%, #000 55%, transparent 100%);
+  animation: dotsPan 30s linear infinite;
+}
+@keyframes dotsPan {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 22px 22px;
+  }
+}
+
+/* AI query marquee rows: two identical copies, -50% translate = seamless.
+   Reverse rows just play the same animation backwards. */
+.q-marquee,
+.q-marquee-r {
+  animation: qLeft 70s linear infinite;
+  will-change: transform;
+}
+.q-marquee-r {
+  animation-direction: reverse;
+}
+@keyframes qLeft {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.q-fade {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
 }
 
 /* Infinitely crawling diagonal graph. The path repeats every 400 SVG units
@@ -378,6 +512,22 @@ body {
   .rv-solo,
   .rv-solo-in {
     animation: none;
+    opacity: 1;
+  }
+  .rv-solo-in {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .glow-border::before,
+  .dots-light,
+  .q-marquee,
+  .q-marquee-r {
+    animation: none;
+  }
+  .reveal-word,
+  .stat-card {
+    transition: none;
+    transform: none;
     opacity: 1;
   }
 }
@@ -540,7 +690,7 @@ body {
 .logo-marquee-track {
   display: flex;
   width: max-content;
-  animation: logoMarquee 38s linear infinite;
+  animation: logoMarquee 70s linear infinite;
   will-change: transform;
 }
 .logo-marquee:hover .logo-marquee-track {
@@ -571,8 +721,8 @@ body {
     transform: translateX(0);
   }
   to {
-    /* one copy of the five — an identical frame, so the reset is invisible */
-    transform: translateX(-20%);
+    /* one copy of the three — an identical frame, so the reset is invisible */
+    transform: translateX(-33.3333%);
   }
 }
 
