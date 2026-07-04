@@ -1,11 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  ArrowUpRight,
   Calendar,
   Check,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   Cpu,
   Download,
   Globe,
@@ -662,7 +659,7 @@ function AnimatedHeight({ children }: { children: React.ReactNode }) {
   )
 }
 
-function Insights({ fade }: { fade: number }) {
+function Insights() {
   const [visible, setVisible] = useState(false)
   const [booted, setBooted] = useState(false)
   const [page, setPage] = useState('Overview')
@@ -713,44 +710,40 @@ function Insights({ fade }: { fade: number }) {
     <section
       ref={sectionRef}
       id="insights"
-      className={`relative overflow-hidden bg-black py-24 md:py-32 ${visible ? 'wt-in' : ''}`}
+      className={`w-full px-6 lg:px-12 pt-32 pb-16 bg-[#f4f4f5] text-black ${visible ? 'rv-in wt-in' : ''}`}
       style={{ '--wt-base': booted ? '0s' : '0.9s' } as React.CSSProperties}
     >
-      {/* Background video — anchored to this section only */}
-      <video
-        className="absolute inset-0 w-full h-full object-cover"
-        src="/assets/insights-bg.mp4"
-        autoPlay
-        muted
-        loop
-        playsInline
-      />
-      {/* Constant legibility dimmer */}
-      <div className="absolute inset-0 bg-black/60 pointer-events-none" />
-      {/* Soft blends into the sections above and below */}
-      <div className="absolute top-0 left-0 right-0 h-[30vh] bg-gradient-to-b from-black via-black/70 to-transparent pointer-events-none" />
-      <div className="absolute bottom-0 left-0 right-0 h-[30vh] bg-gradient-to-t from-black via-black/70 to-transparent pointer-events-none" />
-      {/* Scroll-linked fade to black */}
-      <div className="absolute inset-0 bg-black pointer-events-none" style={{ opacity: fade }} />
-
-      <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-10 md:px-14">
-        {/* Section hero */}
-        <div className="wt-anim text-center mb-14 md:mb-20" style={{ animationDelay: '0.1s' }}>
-          <h2 className="text-white leading-[0.98] text-4xl sm:text-6xl md:text-7xl">
-            <span className="block font-playfair italic font-normal" style={{ letterSpacing: '-0.05em' }}>
-              Real Growth
-            </span>
-            <span className="block font-normal" style={{ letterSpacing: '-0.08em' }}>
-              backed by data.
-            </span>
+      {/* Section intro */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <p className="rv lg:col-span-3 flex items-center gap-4 text-[13px] text-black/50 font-medium">
+          (Insights)
+          <span className="w-12 h-[1px] bg-black/20" />
+        </p>
+        <div className="lg:col-span-9">
+          <h2
+            className="rv text-[44px] md:text-[56px] lg:text-[72px] font-medium leading-[1.1] tracking-tight max-w-[900px]"
+            style={{ animationDelay: '0.1s' }}
+          >
+            Real Growth backed by data.
           </h2>
-          <p className="text-white/60 text-base sm:text-lg mt-6 max-w-2xl mx-auto">
-            Track <span className="text-cyan-300 font-medium">Visibility</span>,{' '}
-            <span className="text-blue-300 font-medium">Position</span> and{' '}
-            <span className="text-pink-300 font-medium">Sentiment</span> for your brand across AI
-            search — in one live dashboard.
+          <p
+            className="rv text-[18px] text-black/60 mt-6 max-w-[600px]"
+            style={{ animationDelay: '0.2s' }}
+          >
+            Track Visibility, Position and Sentiment for your brand across AI search — in one
+            live dashboard.
           </p>
         </div>
+      </div>
+
+      {/* Dashboard showcase — the live interactive dashboard in a dark
+          presentation card. The 1px green bezel runs along the top and
+          sides only, simulating a glowing screen edge. */}
+      <div className="flex flex-col items-center justify-center w-full mt-16">
+        <div
+          className="rv w-full max-w-[1200px] bg-[#111] rounded-[40px] relative overflow-hidden shadow-2xl p-4 md:p-8 border-t border-x border-b-0 border-[#00f09633]"
+          style={{ animationDelay: '0.25s' }}
+        >
 
         {/* Dashboard shell */}
         <div
@@ -1082,60 +1075,35 @@ function Insights({ fade }: { fade: number }) {
             </AnimatedHeight>
           </div>
         </div>
+        </div>
       </div>
     </section>
   )
 }
 
-function Navbar({
-  active,
-  scrolled,
-  opacity,
-}: {
-  active: string
-  scrolled: boolean
-  opacity: number
-}) {
-  return (
-    <nav
-      className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between px-4 sm:px-5 pt-6 sm:pt-8 pb-4 transition-opacity duration-500"
-      style={{ opacity, pointerEvents: opacity < 0.15 ? 'none' : 'auto' }}
-    >
-      {/* Logo + wordmark — fades out once the hero scrolls away so it never
-          overlaps section headings */}
-      <a
-        href="#home"
-        className={`flex items-center gap-2.5 transition-opacity duration-300 ${
-          scrolled ? 'opacity-0 pointer-events-none' : ''
-        }`}
-      >
-        <LogoMark size={26} className="text-white" />
-        <span className="text-white text-2xl font-playfair italic">Jabed Ahmed</span>
-      </a>
+/* One-shot IntersectionObserver reveal: adds .rv-in to the section so its
+   .rv children play the fadeUpSmooth entrance with their inline delays */
+function useReveal<T extends HTMLElement>() {
+  const ref = useRef<T>(null)
+  const [inView, setInView] = useState(false)
 
-      {/* Center pill nav */}
-      <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 bg-white/20 backdrop-blur-md border border-white/30 rounded-full px-2 py-2 items-center gap-1">
-        {NAV_LINKS.map((link) => (
-          <a
-            key={link}
-            href={`#${link.toLowerCase()}`}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              link === active
-                ? 'text-white bg-white/20'
-                : 'text-white/80 hover:bg-white/20 hover:text-white'
-            }`}
-          >
-            {link}
-          </a>
-        ))}
-      </div>
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setInView(true)
+          io.disconnect()
+        }
+      },
+      { threshold: 0.12 },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
 
-      {/* Mobile hamburger */}
-      <button className="md:hidden text-white p-2" aria-label="Open menu">
-        <Menu size={24} />
-      </button>
-    </nav>
-  )
+  return { ref, inView }
 }
 
 /* Magnetic CTAs: the button stays exactly in place and keeps its shape — it
@@ -1304,23 +1272,63 @@ function HeroGraph() {
   )
 }
 
-function Hero({ fade }: { fade: number }) {
-  const magnet = useMagnetic()
+function Hero() {
+  const navMagnet = useMagnetic()
+  const ctaMagnet = useMagnetic()
   return (
     <section
       id="home"
-      className="relative w-full overflow-hidden h-screen bg-[#07090e]"
-      style={{ height: '100dvh' }}
+      className="relative w-full h-[calc(100vh-2rem)] md:h-[calc(100vh-3rem)] lg:h-[calc(100vh-4rem)] bg-[#0A0D10] text-white rounded-[32px] md:rounded-[48px] overflow-hidden shadow-2xl px-6 lg:px-12 py-6 md:py-8 flex flex-col"
+      style={{ height: 'calc(100dvh - 2rem)' }}
     >
-      {/* Animated emerald backdrop layers */}
-      <div className="hero-mesh" />
-      <div className="hero-mesh2" />
-      <div className="hero-bloom hero-bloom-a" />
-      <div className="hero-bloom hero-bloom-b" />
-      <div className="hero-grain" />
+      {/* Animated backdrop: ambient radial base, emerald mesh, teal wash,
+          dot grid and film grain */}
+      <div className="absolute inset-0 z-0 overflow-hidden" aria-hidden="true">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#112218] via-[#0A0D10] to-[#050505] opacity-80" />
+        <div className="hero-mesh" />
+        <div className="hero-mesh2" />
+        <div className="hero-teal" />
+        <div className="hero-bloom hero-bloom-a" />
+        <div className="hero-bloom hero-bloom-b" />
+        <div className="hero-grid" />
+        <div className="hero-grain" />
+      </div>
 
-      {/* Title + CTA */}
-      <div className="relative z-30 flex flex-col items-center text-center px-5 pt-[13vh] sm:pt-[15vh]">
+      {/* Top navigation */}
+      <nav className="flex justify-between items-center w-full relative z-50">
+        <a href="#home" className="flex items-center gap-2.5">
+          <LogoMark size={20} className="text-white" />
+          <span className="font-playfair italic text-xl tracking-wide">Jabed Ahmed</span>
+        </a>
+        <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-6 py-2 gap-6 text-[13px] font-medium">
+          {NAV_LINKS.map((link) => (
+            <a
+              key={link}
+              href={`#${link.toLowerCase()}`}
+              className="text-white/75 hover:text-white transition-colors"
+            >
+              {link}
+            </a>
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <a
+            ref={navMagnet.ref}
+            href={CALENDLY_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="btn-streak hidden sm:inline-block bg-[#00df8e] text-black px-6 py-2.5 rounded-full text-[13px] font-semibold hover:bg-[#00c27a] transition-[background-color,scale] duration-300 active:scale-95"
+          >
+            <span className="relative z-10 inline-block">Schedule a Call</span>
+          </a>
+          <button className="md:hidden text-white p-2" aria-label="Open menu">
+            <Menu size={22} />
+          </button>
+        </div>
+      </nav>
+
+      {/* Centered typography + CTA, held above the docked dashboard */}
+      <div className="flex-grow flex flex-col items-center justify-center text-center relative z-20 pb-[24vh]">
         <h1 className="text-white leading-[0.95]">
           <span
             className="block font-playfair italic font-normal text-5xl sm:text-7xl md:text-8xl hero-anim hero-reveal"
@@ -1336,7 +1344,7 @@ function Hero({ fade }: { fade: number }) {
           </span>
         </h1>
         <p
-          className="mt-5 text-white text-2xl font-playfair italic hero-anim hero-fade"
+          className="text-[16px] text-white/70 mt-4 hero-anim hero-fade"
           style={{ animationDelay: '0.58s' }}
         >
           by Jabed Ahmed
@@ -1345,381 +1353,180 @@ function Hero({ fade }: { fade: number }) {
             transform that would otherwise override the magnetic offset */}
         <div className="mt-8 hero-anim hero-fade" style={{ animationDelay: '0.72s' }}>
           <a
-            ref={magnet.ref}
+            ref={ctaMagnet.ref}
             href={CALENDLY_URL}
             target="_blank"
             rel="noreferrer"
-            className="inline-block bg-emerald-400 hover:bg-emerald-300 text-emerald-950 text-sm font-semibold px-7 py-3 rounded-full transition-[background-color,scale,box-shadow] active:scale-95 shadow-[0_0_28px_rgba(16,185,129,0.45)] hover:shadow-[0_0_44px_rgba(16,185,129,0.65)]"
+            className="btn-streak inline-block bg-[#00df8e] text-black px-8 py-3.5 rounded-full text-[15px] font-semibold hover:bg-[#00c27a] shadow-[0_0_30px_rgba(0,223,142,0.2)] transition-[background-color,scale,box-shadow] active:scale-95"
           >
-            <span className="inline-block">Schedule a Call</span>
+            <span className="relative z-10 inline-block">Schedule a Call</span>
           </a>
         </div>
       </div>
 
-      {/* Glassmorphism dashboard mock — decorative, cut by the fold */}
+      {/* Dashboard UI docked to the card's bottom edge */}
       <div
-        className="absolute left-1/2 -translate-x-1/2 bottom-[-4vh] sm:bottom-[-7vh] w-[92vw] max-w-5xl xl:max-w-6xl 2xl:max-w-[1400px] z-20 hero-anim hero-fade"
+        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[90%] max-w-[1200px] h-[35vh] bg-[#111518] border-t border-x border-b-0 border-white/10 rounded-t-[24px] shadow-2xl overflow-hidden z-30 flex hero-anim hero-fade"
         style={{ animationDelay: '0.9s' }}
         aria-hidden="true"
       >
-        <div className="glow-border rounded-2xl bg-[#101318]/55 backdrop-blur-[16px] p-3 sm:p-4 shadow-[0_0_90px_rgba(16,185,129,0.13)]">
-          <div className="flex gap-3">
-            {/* Sidebar skeleton */}
-            <div className="hidden sm:flex w-40 shrink-0 flex-col gap-3.5 rounded-xl bg-[#14161b] p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <LogoMark size={13} className="text-emerald-400" />
-                <span className="h-2 w-16 rounded bg-white/10" />
-              </div>
-              {[20, 14, 17, 12, 18].map((w, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded bg-white/10" />
-                  <span className="h-1.5 rounded bg-white/[0.07]" style={{ width: w * 4 }} />
-                </div>
-              ))}
-            </div>
-            {/* Chart card */}
-            <div className="flex-1 min-w-0 rounded-xl bg-[#14161b] p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="h-2 w-24 rounded bg-white/10" />
-                <span className="ml-auto h-4 w-24 rounded-full bg-white/[0.06]" />
-              </div>
-              {/* Viewport-relative height on large displays, so tall screens
-                  see more graph instead of more empty gap */}
-              <div className="hero-graph-window h-40 sm:h-52 xl:h-[30vh] 2xl:h-[34vh]">
-                <HeroGraph />
-              </div>
-            </div>
-            {/* Quick panel skeleton */}
-            <div className="hidden lg:flex w-52 shrink-0 flex-col gap-3 rounded-xl bg-[#14161b] p-4">
-              <span className="h-2 w-20 rounded bg-white/10" />
-              <span className="h-9 rounded-lg bg-white/[0.05] border border-white/[0.06]" />
-              <span className="h-9 rounded-lg bg-white/[0.05] border border-white/[0.06]" />
-              <span className="mt-auto h-8 rounded-full bg-emerald-400/20 border border-emerald-400/25" />
-            </div>
+        {/* Sidebar skeleton */}
+        <div className="hidden md:flex w-48 lg:w-64 shrink-0 border-r border-white/5 p-6 flex-col gap-4">
+          <div className="flex items-center gap-2 mb-1">
+            <LogoMark size={13} className="text-emerald-400" />
+            <span className="h-2.5 w-16 rounded-full bg-white/10" />
+          </div>
+          {[92, 78, 84, 68, 74].map((w, i) => (
+            <span key={i} className="h-3 bg-white/5 rounded-full" style={{ width: `${w}%` }} />
+          ))}
+        </div>
+        {/* Main chart area */}
+        <div className="flex-grow relative flex items-end justify-center p-8 min-w-0">
+          <span className="w-32 h-4 bg-white/5 rounded-full absolute top-6 left-8" />
+          <span className="w-24 h-4 bg-white/5 rounded-full absolute top-6 right-8 hidden sm:block" />
+          <div className="hero-graph-window absolute inset-x-6 top-16 bottom-0">
+            <HeroGraph />
           </div>
         </div>
       </div>
-
-      {/* Smoky fade into the next section */}
-      <div className="hero-smoke" />
-      <div className="absolute bottom-0 left-0 right-0 h-[16vh] z-40 bg-gradient-to-t from-black via-black/55 to-transparent pointer-events-none" />
-
-      {/* Scroll-linked fade to black */}
-      <div
-        className="absolute inset-0 z-40 bg-black pointer-events-none"
-        style={{ opacity: fade }}
-      />
-
-      {/* Scroll indicator */}
-      <a
-        href="#insights"
-        className="absolute bottom-7 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 text-white/70 hover:text-white transition-colors hero-anim hero-fade rounded-md px-3 py-1.5 bg-black/20 backdrop-blur-sm border border-white/10 hover:border-white/20"
-        style={{ animationDelay: '1.1s' }}
-      >
-        <span className="text-[10px] font-medium tracking-[0.25em] uppercase">Scroll</span>
-        <ChevronDown size={13} className="animate-bounce" />
-      </a>
     </section>
   )
 }
 
-function CarouselArrows({ onPrev, onNext }: { onPrev: () => void; onNext: () => void }) {
+/* Each card observes itself, so it floats up when it scrolls into view —
+   not when the section header does */
+function ServiceCard({ service, index }: { service: (typeof SERVICES)[number]; index: number }) {
+  const { ref, inView } = useReveal<HTMLElement>()
   return (
-    <div className="flex items-center gap-4 shrink-0">
-      <button
-        onClick={onPrev}
-        aria-label="Previous services"
-        className="w-16 h-16 rounded-full border border-white/25 bg-black/40 backdrop-blur-sm text-white flex items-center justify-center transition-all hover:bg-white/10 hover:border-white/50 active:scale-95"
-      >
-        <ChevronLeft size={30} />
-      </button>
-      <button
-        onClick={onNext}
-        aria-label="Next services"
-        className="w-16 h-16 rounded-full border border-white/25 bg-black/40 backdrop-blur-sm text-white flex items-center justify-center transition-all hover:bg-white/10 hover:border-white/50 active:scale-95"
-      >
-        <ChevronRight size={30} />
-      </button>
-    </div>
+    <article
+      ref={ref}
+      className={`rv-solo ${inView ? 'rv-solo-in' : ''} bg-white border border-black/5 rounded-[32px] p-8 flex flex-col relative min-h-[320px] hover:shadow-xl transition-shadow duration-300`}
+      style={{ animationDelay: `${(index % 3) * 0.1}s` }}
+    >
+      <div className="flex items-start justify-between">
+        <span className="text-[14px] text-[#00df8e] font-mono">{service.number}</span>
+        <span className="text-black/35 text-[11px] font-medium tracking-[0.2em] uppercase pt-0.5">
+          {service.overline}
+        </span>
+      </div>
+      <h3 className="text-[24px] font-medium mt-4 leading-tight">{service.headline}</h3>
+      <p className="text-[14px] text-black/60 mt-4 flex-grow">{service.blurb}</p>
+      <div className="flex flex-wrap gap-2 mt-6">
+        {service.stack.map((tech) => (
+          <span
+            key={tech}
+            className="border border-black/10 rounded-full px-3 py-1 text-[11px] text-black/70"
+          >
+            {tech}
+          </span>
+        ))}
+      </div>
+    </article>
   )
 }
 
-function Service({ fade }: { fade: number }) {
-  const trackRef = useRef<HTMLDivElement>(null)
-  const [scrollable, setScrollable] = useState(false)
-
-  const scrollByCard = (direction: number) => {
-    const track = trackRef.current
-    if (!track) return
-    const card = track.querySelector('article')
-    const gap = 20
-    const step = card ? card.clientWidth + gap : 400
-    track.scrollBy({ left: direction * step, behavior: 'smooth' })
-  }
-
-  // When every card fits in the window, show them all and hide the controls.
-  // When the track overflows, the cards that fully fit from the current snap
-  // position are "selected"; the rest recede: transparent + scaled down.
-  useEffect(() => {
-    const track = trackRef.current
-    if (!track) return
-    let raf = 0
-
-    const updateCards = () => {
-      const cards = track.querySelectorAll('article')
-      const first = cards[0]
-      if (!first) return
-
-      const hasOverflow = track.scrollWidth > track.clientWidth + 4
-      setScrollable(hasOverflow)
-
-      const gap = 20
-      const step = first.clientWidth + gap
-      const padLeft = parseFloat(getComputedStyle(track).paddingLeft) || 0
-      const visibleCount = Math.max(
-        1,
-        Math.floor((track.clientWidth - 2 * padLeft + gap) / step),
-      )
-      let start = Math.round(track.scrollLeft / step)
-      // At the end of the track there's less than a full step left to scroll,
-      // so anchor the selection to the last fully visible cards instead
-      const maxScroll = track.scrollWidth - track.clientWidth
-      if (track.scrollLeft >= maxScroll - 4) {
-        start = cards.length - visibleCount
-      }
-      cards.forEach((card, i) => {
-        const selected = !hasOverflow || (i >= start && i < start + visibleCount)
-        card.style.opacity = selected ? '1' : '0.22'
-        card.style.transform = selected ? 'scale(1)' : 'scale(0.94)'
-      })
-    }
-    const onScroll = () => {
-      cancelAnimationFrame(raf)
-      raf = requestAnimationFrame(updateCards)
-    }
-
-    updateCards()
-    track.addEventListener('scroll', onScroll, { passive: true })
-    window.addEventListener('resize', onScroll)
-    return () => {
-      cancelAnimationFrame(raf)
-      track.removeEventListener('scroll', onScroll)
-      window.removeEventListener('resize', onScroll)
-    }
-  }, [])
-
+function Service() {
+  const { ref, inView } = useReveal<HTMLElement>()
   return (
-    <section id="service" className="relative overflow-hidden bg-black py-24 md:py-32">
-      {/* Background video — anchored to this section only */}
-      <video
-        className="absolute inset-0 w-full h-full object-cover"
-        src="/assets/service-bg.mp4"
-        autoPlay
-        muted
-        loop
-        playsInline
-      />
-      {/* Constant legibility dimmer */}
-      <div className="absolute inset-0 bg-black/55 pointer-events-none" />
-      {/* Soft blends into the sections above and below */}
-      <div className="absolute top-0 left-0 right-0 h-[35vh] bg-gradient-to-b from-black via-black/70 to-transparent pointer-events-none" />
-      <div className="absolute bottom-0 left-0 right-0 h-[30vh] bg-gradient-to-t from-black via-black/70 to-transparent pointer-events-none" />
-      {/* Scroll-linked fade to black */}
-      <div className="absolute inset-0 bg-black pointer-events-none" style={{ opacity: fade }} />
-
-      <div className="relative z-10">
-        {/* Section header + carousel arrows */}
-        <div className="max-w-6xl mx-auto px-5 sm:px-10 md:px-14 flex flex-col md:flex-row md:items-end md:justify-between gap-8 mb-14 md:mb-20">
-          <div>
-            <p className="text-emerald-400 text-xs font-semibold tracking-[0.25em] uppercase mb-5">
-              Service
-            </p>
-            <h2 className="text-white leading-[1.05] text-4xl sm:text-5xl md:text-6xl max-w-3xl">
-              Six disciplines,{' '}
-              <span className="font-playfair italic" style={{ letterSpacing: '-0.04em' }}>
-                one robust
-              </span>
-              <span className="block font-playfair italic" style={{ letterSpacing: '-0.04em' }}>
-                data infrastructure.
-              </span>
-            </h2>
-          </div>
-          {scrollable && (
-            <CarouselArrows onPrev={() => scrollByCard(-1)} onNext={() => scrollByCard(1)} />
-          )}
+    <section
+      ref={ref}
+      id="service"
+      className={`w-full px-6 lg:px-12 py-32 bg-[#f4f4f5] text-black ${inView ? 'rv-in' : ''}`}
+    >
+      {/* Header row */}
+      <div className="flex justify-between items-end border-b border-black/10 pb-8">
+        <div>
+          <p className="rv flex items-center gap-4 text-[13px] text-black/50 font-medium">
+            (Service)
+            <span className="w-12 h-[1px] bg-black/20" />
+          </p>
+          <h2
+            className="rv text-[44px] md:text-[64px] font-semibold tracking-tighter max-w-[800px] leading-[1.05] mt-6"
+            style={{ animationDelay: '0.1s' }}
+          >
+            Six disciplines, one robust data infrastructure.
+          </h2>
         </div>
-
-        {/* Carousel — full-bleed so neighbouring cards peek at the edges */}
-        <div
-          ref={trackRef}
-          className="flex gap-5 overflow-x-auto snap-x snap-mandatory scrollbar-hide px-[8vw]"
-          style={{ scrollPaddingLeft: '8vw' }}
-        >
-          {SERVICES.map((service) => (
-            <article
-              key={service.number}
-              className="group relative snap-start shrink-0 w-[72vw] sm:w-[40vw] md:w-[340px] min-h-[540px] md:min-h-[620px] border border-white/10 rounded-3xl p-8 flex flex-col bg-black/35 backdrop-blur-sm transition-all duration-300 hover:border-emerald-400/40 hover:bg-black/50 hover:shadow-[0_0_35px_rgba(16,185,129,0.14)]"
-            >
-              <div className="flex items-start justify-between mb-10">
-                <span className="font-playfair italic text-4xl text-emerald-400">
-                  {service.number}
-                </span>
-                <span className="text-white/40 text-xs font-medium tracking-[0.2em] uppercase pt-2.5">
-                  {service.overline}
-                </span>
-              </div>
-
-              <h3 className="text-white text-2xl lg:text-3xl font-bold uppercase leading-tight mb-4">
-                {service.headline}
-              </h3>
-              <p className="text-white/60 text-sm leading-relaxed">{service.blurb}</p>
-
-              <div className="flex flex-wrap gap-2 mt-auto pt-8">
-                {service.stack.map((tech) => (
-                  <span
-                    key={tech}
-                    className="border border-white/15 bg-white/[0.06] text-white/75 text-xs font-medium px-3 py-1.5 rounded-full transition-colors group-hover:border-white/25 group-hover:text-white/90"
-                  >
-                    {tech}
-                  </span>
-                ))}
-              </div>
-            </article>
-          ))}
-        </div>
-
-        <LogoMarquee />
       </div>
+
+      {/* Service cards — each floats up on its own scroll trigger */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-16">
+        {SERVICES.map((service, i) => (
+          <ServiceCard key={service.number} service={service} index={i} />
+        ))}
+      </div>
+
+      <LogoMarquee />
     </section>
   )
 }
 
 function Contact() {
   const magnet = useMagnetic()
+  const { ref, inView } = useReveal<HTMLElement>()
   return (
     <section
+      ref={ref}
       id="contact"
-      className="relative bg-black px-5 sm:px-10 md:px-14 pt-24 md:pt-32 pb-12 md:pb-16"
+      className={`w-full px-6 lg:px-12 py-24 md:py-32 bg-[#050505] text-white rounded-[32px] md:rounded-[48px] shadow-2xl mt-16 ${inView ? 'rv-in' : ''}`}
     >
-      <div className="max-w-6xl mx-auto w-full">
-        <p className="text-emerald-400 text-xs font-semibold tracking-[0.25em] uppercase mb-5">
-          Contact
-        </p>
-        <h2 className="text-white leading-[1.02] text-4xl sm:text-6xl md:text-7xl max-w-4xl mb-12">
+      <div className="flex flex-col items-center text-center max-w-[800px] mx-auto">
+        <p className="rv text-[#00df8e] text-[12px] tracking-widest font-mono mb-8">(CONTACT)</p>
+        <h2
+          className="rv text-white leading-[1.05] text-[40px] sm:text-[56px] md:text-[68px]"
+          style={{ animationDelay: '0.1s' }}
+        >
           Let's get your data{' '}
           <span className="font-playfair italic" style={{ letterSpacing: '-0.04em' }}>
             working for you.
           </span>
         </h2>
-
-        <div className="flex flex-col sm:flex-row sm:items-center gap-8 sm:gap-12">
+        <div
+          className="rv flex flex-col md:flex-row items-center gap-8 md:gap-12 mt-12"
+          style={{ animationDelay: '0.2s' }}
+        >
           <a
             ref={magnet.ref}
             href={CALENDLY_URL}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center justify-center self-start bg-emerald-400 hover:bg-emerald-300 text-emerald-950 text-sm font-semibold px-7 py-3 rounded-full transition-[background-color,scale,box-shadow] active:scale-95 shadow-[0_0_28px_rgba(16,185,129,0.35)] hover:shadow-[0_0_44px_rgba(16,185,129,0.55)]"
+            className="btn-streak inline-block bg-[#00df8e] text-black px-8 py-4 rounded-full text-[15px] font-semibold hover:bg-[#00c27a] transition-[background-color,scale] active:scale-95"
           >
-            <span className="inline-flex items-center gap-2">
-              Schedule a Call
-              <ArrowUpRight size={16} />
-            </span>
+            <span className="relative z-10 inline-block">Schedule a Call</span>
           </a>
-          <div>
+          <div className="text-center md:text-left">
             <p className="text-white/40 text-xs font-medium tracking-[0.2em] uppercase mb-1.5">
               Or drop me a line
             </p>
             <a
               href={`mailto:${EMAIL}`}
-              className="font-playfair italic text-2xl sm:text-3xl text-white hover:text-emerald-400 transition-colors"
+              className="font-playfair italic text-2xl sm:text-3xl text-white hover:text-[#00df8e] transition-colors"
             >
               {EMAIL}
             </a>
           </div>
         </div>
+      </div>
 
-        {/* Footer line */}
-        <div className="border-t border-white/10 mt-16 pt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <p className="text-white/40 text-xs">
-            © {new Date().getFullYear()} Jabed Ahmed — Data & Analytics Consulting
-          </p>
-          <p className="text-white/40 text-xs">30-minute intro call, no obligation.</p>
-        </div>
+      {/* Footer strip */}
+      <div className="w-full flex flex-col sm:flex-row justify-between items-center gap-2 text-[12px] text-white/40 mt-32 border-t border-white/10 pt-8">
+        <p>© {new Date().getFullYear()} Jabed Ahmed — Data & Analytics Consulting</p>
+        <p>30-minute intro call, no obligation.</p>
       </div>
     </section>
   )
 }
 
 export default function App() {
-  const [heroFade, setHeroFade] = useState(0)
-  const [serviceFade, setServiceFade] = useState(0)
-  const [active, setActive] = useState('Home')
-  const [scrolled, setScrolled] = useState(false)
-  const [navOpacity, setNavOpacity] = useState(1)
-  const [insightsFade, setInsightsFade] = useState(0)
-
-  useEffect(() => {
-    let lastY = window.scrollY
-    let downAnchor: number | null = null
-    const onScroll = () => {
-      const y = window.scrollY
-      const vh = window.innerHeight
-
-      // Hero background fades fully to black before the hero leaves the viewport
-      setHeroFade(Math.min(y / (vh * 0.75), 1))
-
-      // Past the hero, section headings reach the top of the viewport
-      setScrolled(y > vh * 0.5)
-
-      // The nav fades out progressively the further you scroll down (fully
-      // invisible after ~0.7 viewport heights), and any upward scroll brings
-      // it straight back. The deadband stops flicker on tiny scroll jitters.
-      if (y <= 100) {
-        downAnchor = null
-        setNavOpacity(1)
-      } else if (y > lastY + 2) {
-        if (downAnchor === null) downAnchor = Math.max(lastY, 100)
-        setNavOpacity(Math.max(0, 1 - (y - downAnchor) / (vh * 0.7)))
-      } else if (y < lastY - 2) {
-        downAnchor = null
-        setNavOpacity(1)
-      }
-      lastY = y
-
-      // Insights background fades to black as the section scrolls out of view
-      const insights = document.getElementById('insights')
-      if (insights) {
-        const rect = insights.getBoundingClientRect()
-        setInsightsFade(Math.min(Math.max((vh - rect.bottom) / (vh * 0.85), 0), 1))
-      }
-
-      // Service background fades to black as the section scrolls out of view
-      const service = document.getElementById('service')
-      if (service) {
-        const rect = service.getBoundingClientRect()
-        setServiceFade(Math.min(Math.max((vh - rect.bottom) / (vh * 0.85), 0), 1))
-      }
-
-      // Scrollspy for the nav pill
-      const mid = y + vh / 2
-      const contact = document.getElementById('contact')
-      if (contact && mid >= contact.offsetTop) setActive('Contact')
-      else if (service && mid >= service.offsetTop) setActive('Service')
-      else if (insights && mid >= insights.offsetTop) setActive('Insights')
-      else setActive('Home')
-    }
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
-
   return (
-    <div className="min-h-screen bg-black tracking-[-0.02em]" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div
+      className="w-full min-h-screen font-sans antialiased bg-[#f4f4f5] text-black overflow-x-hidden tracking-[-0.02em] p-4 md:p-6 lg:p-8 flex flex-col"
+      style={{ fontFamily: "'Inter', sans-serif" }}
+    >
       <CursorGlow />
-      <Navbar active={active} scrolled={scrolled} opacity={navOpacity} />
-      <Hero fade={heroFade} />
-      <Insights fade={insightsFade} />
-      <Service fade={serviceFade} />
+      <Hero />
+      <Insights />
+      <Service />
       <Contact />
     </div>
   )

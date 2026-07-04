@@ -8,7 +8,7 @@ html {
    never reveals white above or below the content */
 html,
 body {
-  background-color: #000;
+  background-color: #050505;
 }
 * {
   font-family: 'Inter', sans-serif;
@@ -227,44 +227,96 @@ body {
   }
 }
 
-/* Emerald light trace slowly orbiting the dashboard's border */
-@property --gb-angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
+/* Teal ambient wash sitting behind the hero typography */
+.hero-teal {
+  position: absolute;
+  left: -18%;
+  bottom: -22%;
+  width: 85vw;
+  height: 80vh;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background: radial-gradient(
+    55% 55% at 35% 70%,
+    rgba(13, 148, 136, 0.15) 0%,
+    rgba(13, 148, 136, 0.06) 45%,
+    rgba(13, 148, 136, 0.018) 72%,
+    transparent 100%
+  );
+  filter: blur(60px);
+  animation: tealDrift 38s ease-in-out infinite alternate;
+  will-change: transform;
 }
-.glow-border {
+@keyframes tealDrift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(5vw, -4vh, 0) scale(1.08);
+  }
+}
+
+/* Faint dot-matrix texture, slowly panning (28px period = seamless loop) */
+.hero-grid {
+  position: absolute;
+  inset: -32px;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.9) 1px, transparent 1.5px);
+  background-size: 28px 28px;
+  animation: gridPan 24s linear infinite;
+  will-change: transform;
+}
+@keyframes gridPan {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-28px, -28px, 0);
+  }
+}
+
+/* CTA hover: a bright light streak sweeps across the button face */
+.btn-streak {
   position: relative;
+  overflow: hidden;
 }
-.glow-border::before {
+.btn-streak::after {
   content: '';
   position: absolute;
-  inset: -2px;
-  border-radius: inherit;
-  padding: 2px;
-  background: conic-gradient(
-    from var(--gb-angle),
-    rgba(16, 185, 129, 0.28),
-    rgba(190, 242, 225, 1) 8%,
-    rgba(52, 211, 153, 0.6) 18%,
-    rgba(16, 185, 129, 0.28) 30%,
-    rgba(16, 185, 129, 0.28)
-  );
-  filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.7));
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-  animation: gbSpin 9s linear infinite;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 36%;
+  background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+  transform: translateX(-180%) skewX(-20deg);
+  transition: transform 0.65s ease;
   pointer-events: none;
 }
-@keyframes gbSpin {
+.btn-streak:hover::after {
+  transform: translateX(320%) skewX(-20deg);
+}
+
+/* Section entrances: fadeUpSmooth plays on .rv children (with inline
+   delays) once the section gains .rv-in from its IntersectionObserver.
+   .rv-solo is the per-element variant: the element observes itself, so it
+   floats up when IT scrolls into view rather than when its section does. */
+.rv,
+.rv-solo {
+  opacity: 0;
+}
+.rv-in .rv,
+.rv-solo-in {
+  animation: fadeUpSmooth 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes fadeUpSmooth {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
   to {
-    --gb-angle: 360deg;
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -306,264 +358,27 @@ body {
    top and sweep wide across the dashboard's top edge. This class only
    positions the SVG: anchored to the dashboard wrapper so the flare always
    rests exactly on the panel, stretching one viewport height upward. */
-/* ——— CTA → dashboard energy filament (plasma arc) ———
-   A vertical plasma filament connecting the CTA's bottom edge to the
-   dashboard below, replicating the Neon "10ms" beam: an organic bright
-   core that flickers between path variants like a live electric arc, with
-   energy packets streaming down the line. The whole layer is additive
-   (plus-lighter) so it burns against the dark canvas. Positioned by a
-   one-shot measurement effect, never per-frame JS. */
-.hero-arc {
-  position: absolute;
-  left: 50%;
-  width: 240px;
-  transform: translateX(-50%);
-  pointer-events: none;
-  mix-blend-mode: plus-lighter;
-  z-index: 25;
-  opacity: 0;
-  animation: arcIn 0.9s ease-out 1.15s forwards;
-}
-@keyframes arcIn {
-  to {
-    opacity: 1;
-  }
-}
-.arc-base {
-  animation: arcBreath 3.2s ease-in-out infinite;
-}
-@keyframes arcBreath {
-  0%,
-  100% {
-    opacity: 0.85;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-/* Alternate filament shapes strobing in and out — the arc appears to dance */
-.arc-f2 {
-  opacity: 0;
-  animation: arcFlick2 2.1s linear infinite;
-}
-@keyframes arcFlick2 {
-  0%,
-  54% {
-    opacity: 0;
-  }
-  55%,
-  71% {
-    opacity: 0.85;
-  }
-  72%,
-  79% {
-    opacity: 0;
-  }
-  80%,
-  85% {
-    opacity: 0.5;
-  }
-  86%,
-  100% {
-    opacity: 0;
-  }
-}
-.arc-f3 {
-  opacity: 0;
-  animation: arcFlick3 3.4s linear infinite;
-}
-@keyframes arcFlick3 {
-  0%,
-  29% {
-    opacity: 0;
-  }
-  30%,
-  40% {
-    opacity: 0.75;
-  }
-  41%,
-  63% {
-    opacity: 0;
-  }
-  64%,
-  69% {
-    opacity: 0.45;
-  }
-  70%,
-  100% {
-    opacity: 0;
-  }
-}
-/* Bright packets of energy travelling down the filament */
-.arc-pulse {
-  animation: arcPulse 2.4s linear infinite;
-}
-.arc-pulse2 {
-  animation: arcPulse 3.3s linear 1.1s infinite;
-}
-@keyframes arcPulse {
-  from {
-    stroke-dashoffset: 1010;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-.arc-bloom {
-  animation: arcBreath 2.4s ease-in-out infinite;
-}
-.arc-bloom2 {
-  animation: arcBreath 2.4s ease-in-out 0.4s infinite;
-}
 
-/* The beam origin visually deforms the CTA: a white-hot melt bleeding out
-   of the button's bottom edge, plus a horizontal starburst glint slicing
-   across the connection point — the "0" from the reference */
-.cta-melt {
-  position: absolute;
-  left: 50%;
-  bottom: -7px;
-  width: 46px;
-  height: 18px;
-  transform: translateX(-50%);
-  border-radius: 9999px;
-  background: radial-gradient(
-    50% 60% at 50% 42%,
-    rgba(255, 255, 255, 0.95),
-    rgba(0, 255, 157, 0.65) 45%,
-    transparent 75%
-  );
-  filter: blur(4px);
-  mix-blend-mode: plus-lighter;
-  animation: meltPulse 2.4s ease-in-out infinite;
-  pointer-events: none;
-}
-.cta-flare {
-  position: absolute;
-  left: 50%;
-  bottom: -9px;
-  width: 210px;
-  height: 3px;
-  transform: translateX(-50%);
-  border-radius: 999px;
-  background: linear-gradient(
-    to right,
-    transparent,
-    rgba(0, 255, 157, 0.9) 35%,
-    #ffffff 50%,
-    rgba(0, 255, 157, 0.9) 65%,
-    transparent
-  );
-  filter: blur(2px);
-  mix-blend-mode: plus-lighter;
-  animation: meltPulse 2.4s ease-in-out 0.2s infinite;
-  pointer-events: none;
-}
-@keyframes meltPulse {
-  0%,
-  100% {
-    opacity: 0.75;
-    transform: translateX(-50%) scale(1);
-  }
-  50% {
-    opacity: 1;
-    transform: translateX(-50%) scale(1.12);
-  }
-}
-/* Concentrated light pooling across the dashboard's top lip */
-.hero-beam-pool,
-.hero-beam-pool-glow {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  pointer-events: none;
-  mix-blend-mode: plus-lighter;
-  animation: beamBreathe 5.5s ease-in-out infinite;
-}
-.hero-beam-pool {
-  top: -2px;
-  width: min(72vw, 700px);
-  height: 3px;
-  border-radius: 999px;
-  background: linear-gradient(
-    to right,
-    transparent,
-    rgba(0, 255, 157, 0.85) 32%,
-    rgba(255, 255, 255, 0.95) 50%,
-    rgba(0, 255, 157, 0.85) 68%,
-    transparent
-  );
-  filter: blur(1.5px);
-}
-.hero-beam-pool-glow {
-  top: -12px;
-  width: min(86vw, 900px);
-  height: 34px;
-  background: linear-gradient(to right, transparent, rgba(16, 185, 129, 0.55) 50%, transparent);
-  filter: blur(18px);
-}
-@keyframes beamBreathe {
-  0%,
-  100% {
-    opacity: 0.6;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-/* Smoky drifting fade at the foot of the hero */
-.hero-smoke {
-  position: absolute;
-  bottom: -6vh;
-  left: -10%;
-  right: -10%;
-  height: 26vh;
-  z-index: 40;
-  pointer-events: none;
-  filter: blur(28px);
-  background:
-    radial-gradient(45% 70% at 30% 100%, rgba(2, 4, 6, 0.95), transparent 70%),
-    radial-gradient(50% 80% at 75% 100%, rgba(2, 4, 6, 0.9), transparent 72%);
-  animation: smokeDrift 36s ease-in-out infinite alternate;
-  will-change: transform;
-}
-@keyframes smokeDrift {
-  from {
-    transform: translate3d(-3%, 0, 0);
-  }
-  to {
-    transform: translate3d(3%, -2%, 0);
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .hero-mesh,
   .hero-mesh2,
   .hero-bloom,
+  .hero-teal,
+  .hero-grid,
   .hero-grain,
-  .hero-smoke,
   .hero-graph-crawl,
-  .glow-border::before,
   .hero-node,
-  .hero-beam-pool,
-  .hero-beam-pool-glow,
-  .arc-base,
-  .arc-f2,
-  .arc-f3,
-  .arc-bloom,
-  .arc-bloom2,
-  .cta-melt,
-  .cta-flare {
+  .btn-streak::after {
     animation: none;
+    transition: none;
   }
-  .hero-arc {
+  .rv,
+  .rv-in .rv,
+  .rv-solo,
+  .rv-solo-in {
     animation: none;
     opacity: 1;
-  }
-  .arc-pulse,
-  .arc-pulse2 {
-    display: none;
   }
 }
 
@@ -711,9 +526,9 @@ body {
 /* Infinite logo marquee — motion is a single linear CSS keyframe animation
    on the track (no JS involved), so it runs entirely on the compositor */
 .logo-marquee {
-  background: #0a0a0a;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: transparent;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   padding: 20px 0;
 }
 .logo-marquee-fade {
@@ -742,9 +557,9 @@ body {
   width: auto;
   max-width: 120px;
   object-fit: contain;
-  /* Flatten every logo to clean white regardless of its source colours */
-  filter: brightness(0) invert(1);
-  opacity: 0.4;
+  /* Flatten every logo to clean black regardless of its source colours */
+  filter: brightness(0);
+  opacity: 0.35;
   transition: opacity 0.3s ease;
   user-select: none;
 }
