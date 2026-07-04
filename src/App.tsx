@@ -770,13 +770,17 @@ function AiSearch() {
         <div className="w-full max-w-[880px]">
           <AnimatedHeight>
             {open && (
-              <div className="mt-8 bg-white border border-black/10 rounded-[24px] p-7 md:p-9 text-left space-y-6 shadow-lg">
-                {HOW_ITEMS.map((item) => (
-                  <div key={item.title}>
-                    <p className="font-semibold text-[16px]">{item.title}</p>
-                    <p className="text-[14px] text-black/70 mt-1.5 leading-relaxed">{item.desc}</p>
-                  </div>
-                ))}
+              /* padding (not margin) so the measured height includes the gap
+                 and the panel's bottom edge is never clipped */
+              <div className="pt-8 pb-1">
+                <div className="bg-white border border-black/10 rounded-[24px] p-7 md:p-9 text-left space-y-6 shadow-lg">
+                  {HOW_ITEMS.map((item) => (
+                    <div key={item.title}>
+                      <p className="font-semibold text-[16px]">{item.title}</p>
+                      <p className="text-[14px] text-black/70 mt-1.5 leading-relaxed">{item.desc}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </AnimatedHeight>
@@ -866,8 +870,10 @@ function Insights() {
       className={`w-full px-6 lg:px-12 pt-32 pb-16 bg-[#f4f4f5] text-black ${visible ? 'rv-in wt-in' : ''}`}
       style={{ '--wt-base': booted ? '0s' : '0.9s' } as React.CSSProperties}
     >
-      {/* 30/70 split: title column left, vertical separator, chart right */}
-      <div className="grid grid-cols-1 lg:grid-cols-10 gap-10 items-start">
+      {/* ~25/75 split: title column left, vertical separator, chart right —
+          the separator lines up with the Who Am I section's for a continuous
+          vertical rhythm while scrolling */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
         {/* Title column (~30%) */}
         <div className="lg:col-span-3">
           <p className="rv flex items-center gap-4 text-[13px] text-black/50 font-medium">
@@ -897,9 +903,9 @@ function Insights() {
           </p>
         </div>
 
-        {/* Chart column (~70%) behind a vertical separator, over a soft
+        {/* Chart column (~75%) behind the vertical separator, over a soft
             animated dotted texture */}
-        <div className="lg:col-span-7 relative lg:border-l lg:border-black/10 lg:pl-10">
+        <div className="lg:col-span-9 relative lg:border-l lg:border-black/10 lg:pl-10">
           <div className="dots-light absolute -inset-y-8 -right-6 left-0 lg:left-6" aria-hidden="true" />
           <div
             className="rv relative w-full bg-[#111] rounded-[40px] overflow-hidden shadow-2xl p-4 md:p-8 border-t border-x border-b-0 border-[#00f09633]"
@@ -1531,17 +1537,20 @@ function Hero() {
         <div className="hero-grain" />
       </div>
 
-      {/* Centered typography + CTA, held above the docked dashboard */}
-      <div className="flex-grow flex flex-col items-center justify-center text-center relative z-20 pb-[24vh]">
+      {/* Centered typography + CTA. pt clears the fixed nav; pb equals the
+          docked dashboard's height, so the block centres in the visible gap
+          between nav and dock on any display size */}
+      <div className="flex-grow flex flex-col items-center justify-center text-center relative z-20 pt-20 md:pt-24 pb-[35vh] min-h-0">
         <h1 className="leading-[0.95]">
+          {/* pb keeps descenders inside the clip-text paint box */}
           <span
-            className="block font-playfair italic font-normal text-5xl sm:text-7xl md:text-8xl hero-anim hero-reveal bg-gradient-to-b from-white via-[#e9edec] to-[#98a29e] bg-clip-text text-transparent"
+            className="block font-playfair italic font-normal text-5xl sm:text-7xl md:text-8xl pb-[0.12em] hero-anim hero-reveal bg-gradient-to-b from-white via-[#e9edec] to-[#98a29e] bg-clip-text text-transparent"
             style={{ letterSpacing: '-0.05em', animationDelay: '0.25s' }}
           >
             Data Collection
           </span>
           <span
-            className="block font-normal text-5xl sm:text-7xl md:text-8xl -mt-1 hero-anim hero-reveal bg-gradient-to-b from-white via-[#e9edec] to-[#98a29e] bg-clip-text text-transparent"
+            className="block font-normal text-5xl sm:text-7xl md:text-8xl -mt-[0.18em] pb-[0.14em] hero-anim hero-reveal bg-gradient-to-b from-white via-[#e9edec] to-[#98a29e] bg-clip-text text-transparent"
             style={{ letterSpacing: '-0.08em', animationDelay: '0.42s' }}
           >
             done right.
@@ -1609,7 +1618,7 @@ function Hero() {
 }
 
 const WHO_HEADLINE =
-  "I'm a Analytics Specialist with 8+ Years of Experience in Designing Scalable Data Collection Environments and High growth Digital Products."
+  "I'm an Analytics Specialist with 8+ Years of Experience in Designing Scalable Data Collection Environments and High growth Digital Products."
 
 const WHO_STATS = [
   { value: '8+', label: 'Years of Experience', tag: '/01' },
@@ -1631,15 +1640,41 @@ function WhoAmI() {
         headline.inView ? 'rv-in is-revealed' : ''
       }`}
     >
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        <p className="rv lg:col-span-3 flex items-center gap-4 text-[13px] text-black/50 font-medium">
-          (Who Am I)
-          <span className="w-12 h-[1px] bg-black/20" />
-        </p>
-        <div className="lg:col-span-9">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+        {/* Title column (~25%) — mirrors the Insights column so the vertical
+            separators sit parallel while scrolling */}
+        <div className="lg:col-span-3">
+          <p className="rv flex items-center gap-4 text-[13px] text-black/50 font-medium">
+            (Who Am I)
+            <span className="w-12 h-[1px] bg-black/20" />
+          </p>
+          <h2 className="rv text-black leading-[0.98] mt-8" style={{ animationDelay: '0.1s' }}>
+            <span
+              className="block font-playfair italic font-normal text-[34px] md:text-[42px]"
+              style={{ letterSpacing: '-0.05em' }}
+            >
+              Analytics Professional
+            </span>
+            <span
+              className="block font-normal text-[34px] md:text-[42px]"
+              style={{ letterSpacing: '-0.08em' }}
+            >
+              technical expert.
+            </span>
+          </h2>
+          <p
+            className="rv text-[16px] text-black/60 mt-6 leading-relaxed"
+            style={{ animationDelay: '0.2s' }}
+          >
+            Building the tracking environments and data pipelines that unlock millions in
+            actionable revenue for digital products.
+          </p>
+        </div>
+
+        <div className="lg:col-span-9 lg:border-l lg:border-black/10 lg:pl-10">
           {/* Word-by-word unmask: each word slides up out of its own
               overflow-hidden mask with an incrementing delay */}
-          <h2 className="text-[32px] sm:text-[42px] md:text-[50px] lg:text-[56px] font-medium leading-[1.15] tracking-tight max-w-[1000px]">
+          <h3 className="text-[32px] sm:text-[42px] md:text-[48px] font-medium leading-[1.15] tracking-tight max-w-[1000px]">
             {WHO_HEADLINE.split(' ').map((word, i) => (
               <span key={i} className="reveal-mask">
                 <span className="reveal-word" style={{ transitionDelay: `${i * 0.03}s` }}>
@@ -1647,7 +1682,7 @@ function WhoAmI() {
                 </span>
               </span>
             ))}
-          </h2>
+          </h3>
 
           <div className="mt-10">
             <a
@@ -1697,7 +1732,7 @@ function ServiceCard({ service, index }: { service: (typeof SERVICES)[number]; i
   return (
     <article
       ref={ref}
-      className={`rv-solo ${inView ? 'rv-solo-in' : ''} group bg-white border border-black/10 rounded-[32px] p-8 flex flex-col relative min-h-[320px] shadow-md transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-2 hover:shadow-2xl hover:border-[#00df8e]`}
+      className={`rv-solo ${inView ? 'rv-solo-in' : ''} group bg-white border border-black/10 rounded-[32px] p-8 flex flex-col relative min-h-[320px] shadow-md transition-[transform,box-shadow,border-color] duration-700 ease-out hover:-translate-y-2 hover:shadow-2xl hover:border-[#00df8e]`}
       style={{ animationDelay: `${(index % 3) * 0.1}s` }}
     >
       <div className="flex items-start justify-between">
@@ -1779,7 +1814,7 @@ function Contact() {
     <section
       ref={ref}
       id="contact"
-      className={`w-full px-6 lg:px-12 py-24 md:py-32 bg-[#050505] text-white rounded-[32px] md:rounded-[48px] shadow-2xl mt-16 ${inView ? 'rv-in' : ''}`}
+      className={`w-full px-6 lg:px-12 py-14 md:py-20 bg-[#050505] text-white rounded-[32px] md:rounded-[48px] shadow-2xl mt-16 ${inView ? 'rv-in' : ''}`}
     >
       {/* Marker top-left, matching the other sections */}
       <p className="rv flex items-center gap-4 text-[13px] text-[#00df8e] font-medium">
@@ -1787,7 +1822,7 @@ function Contact() {
         <span className="w-12 h-[1px] bg-white/20" />
       </p>
 
-      <div className="max-w-[900px] mt-14 md:mt-20">
+      <div className="max-w-[900px] mt-10 md:mt-14">
         <h2
           className="rv text-white leading-[1.05] text-[40px] sm:text-[56px] md:text-[68px]"
           style={{ animationDelay: '0.1s' }}
@@ -1824,8 +1859,8 @@ function Contact() {
         </div>
       </div>
 
-      {/* Footer strip — sits low on the card with generous breathing room */}
-      <div className="w-full flex flex-col sm:flex-row justify-between items-center gap-2 text-[12px] text-white/40 mt-40 md:mt-56 border-t border-white/10 pt-8 pb-2">
+      {/* Footer strip */}
+      <div className="w-full flex flex-col sm:flex-row justify-between items-center gap-2 text-[12px] text-white/40 mt-16 md:mt-20 border-t border-white/10 pt-8">
         <p>© {new Date().getFullYear()} Jabed Ahmed — Data & Analytics Consulting</p>
         <p>30-minute intro call, no obligation.</p>
       </div>

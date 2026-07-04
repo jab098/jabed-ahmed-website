@@ -282,9 +282,8 @@ body {
   initial-value: 0deg;
   inherits: false;
 }
-.glow-border {
-  position: relative;
-}
+/* The host element must be positioned (the docked panel uses `absolute`);
+   deliberately no `position` here so Tailwind utilities keep control */
 .glow-border::before {
   content: '';
   position: absolute;
@@ -412,15 +411,16 @@ body {
   transition-delay: 900ms;
 }
 
-/* Soft animated dotted texture behind the Insights chart */
+/* Soft animated dotted texture behind the Insights chart — solid black dots
+   drifting slowly on a seamless 22px loop */
 .dots-light {
   pointer-events: none;
-  opacity: 0.35;
-  background-image: radial-gradient(rgba(0, 0, 0, 0.35) 1px, transparent 1.4px);
+  opacity: 0.55;
+  background-image: radial-gradient(rgba(0, 0, 0, 0.55) 1.3px, transparent 1.8px);
   background-size: 22px 22px;
   -webkit-mask-image: radial-gradient(70% 70% at 50% 50%, #000 55%, transparent 100%);
   mask-image: radial-gradient(70% 70% at 50% 50%, #000 55%, transparent 100%);
-  animation: dotsPan 30s linear infinite;
+  animation: dotsPan 16s linear infinite;
 }
 @keyframes dotsPan {
   from {
