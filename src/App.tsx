@@ -1624,12 +1624,18 @@ function HeroGraph() {
    elsewhere. The two instances run the same cycle length with different
    start offsets and label rotations, so clicks never coincide and the two
    visible chips never match. */
-const CLICK_LABELS = ['Tracked', 'Conversion', 'Accepted']
+const CLICK_LABELS = ['Tracked', 'Conversion']
+/* Shared registry of what each cursor is currently claiming, so two visible
+   chips can never read the same text */
+const activeChip: Record<'left' | 'right', string> = { left: '', right: '' }
 
 function FakeCursor({ side, offsetMs }: { side: 'left' | 'right'; offsetMs: number }) {
-  const [phase, setPhase] = useState<'hidden' | 'idle' | 'click' | 'label' | 'leave'>('hidden')
-  const [pos, setPos] = useState({ x: side === 'left' ? 20 : 75, y: 40 })
-  const [labelIdx, setLabelIdx] = useState(side === 'left' ? 0 : 1)
+  // 'off' (not 'hidden'): Tailwind's .hidden utility means display:none,
+  // which would kill the fade-in transition when the cursor reappears
+  const [phase, setPhase] = useState<'off' | 'idle' | 'click' | 'label' | 'leave'>('off')
+  const [pos, setPos] = useState({ x: side === 'left' ? 12 : 84, y: 40 })
+  const [label, setLabel] = useState(CLICK_LABELS[side === 'left' ? 0 : 1])
+  const lastLabel = useRef('')
 
   useEffect(() => {
     let alive = true
@@ -1641,27 +1647,37 @@ function FakeCursor({ side, offsetMs }: { side: 'left' | 'right'; offsetMs: numb
     const run = async () => {
       await wait(offsetMs)
       while (alive) {
+        // side bands of the hero backdrop — clear of the centred title
+        // column and above the docked chart
         setPos({
-          x: side === 'left' ? 8 + Math.random() * 30 : 60 + Math.random() * 30,
-          y: 18 + Math.random() * 58,
+          x: side === 'left' ? 5 + Math.random() * 15 : 78 + Math.random() * 15,
+          y: 12 + Math.random() * 46,
         })
+        // claim a label the other cursor isn't showing; alternate our own
+        const other = side === 'left' ? activeChip.right : activeChip.left
+        const candidates = CLICK_LABELS.filter((l) => l !== other)
+        const next = candidates.find((l) => l !== lastLabel.current) ?? candidates[0]
+        lastLabel.current = next
+        activeChip[side] = next
+        setLabel(next)
         if (!alive) break
         setPhase('idle') // drift in
-        await wait(1000)
+        await wait(1100)
         setPhase('click') // press pulse + ripple
         await wait(350)
         setPhase('label') // event chip pops
         await wait(1100)
         setPhase('leave') // fade out
-        await wait(500)
-        setPhase('hidden')
-        setLabelIdx((i) => (i + 1) % CLICK_LABELS.length)
+        await wait(850)
+        setPhase('off')
+        activeChip[side] = ''
         await wait(900)
       }
     }
     run()
     return () => {
       alive = false
+      activeChip[side] = ''
       timers.forEach(clearTimeout)
     }
   }, [side, offsetMs])
@@ -1672,7 +1688,7 @@ function FakeCursor({ side, offsetMs }: { side: 'left' | 'right'; offsetMs: numb
       style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
       aria-hidden="true"
     >
-      <span className="fc-chip">{CLICK_LABELS[labelIdx]}</span>
+      <span className="fc-chip">{label}</span>
       <span className="fc-ripple" />
       <svg className="fc-arrow" width="22" height="22" viewBox="0 0 24 24">
         <path
@@ -1692,7 +1708,7 @@ function Hero() {
   return (
     <section
       id="home"
-      className="relative w-full h-[calc(100dvh-2rem)] md:h-[calc(100dvh-3rem)] lg:h-[calc(100dvh-4rem)] bg-[#0A0D10] text-white rounded-[32px] md:rounded-[48px] overflow-hidden shadow-2xl px-6 lg:px-12 py-6 md:py-8 flex flex-col"
+      className="relative w-full h-[calc(100dvh-1rem)] md:h-[calc(100dvh-3rem)] lg:h-[calc(100dvh-4rem)] bg-[#0A0D10] text-white rounded-[32px] md:rounded-[48px] overflow-hidden shadow-2xl px-6 lg:px-12 py-6 md:py-8 flex flex-col"
     >
       {/* Animated backdrop: ambient radial base, emerald mesh, teal wash,
           dot grid and film grain */}
@@ -1774,12 +1790,13 @@ function Hero() {
             <HeroGraph />
           </div>
         </div>
+      </div>
 
-        {/* Roaming click-tracking cursors, one per half, offset in time */}
-        <div className="absolute inset-0 z-40 pointer-events-none">
-          <FakeCursor side="left" offsetMs={900} />
-          <FakeCursor side="right" offsetMs={3100} />
-        </div>
+      {/* Roaming click-tracking cursors in the backdrop's side bands —
+          clear of the title column and outside the docked chart */}
+      <div className="absolute inset-0 z-10 pointer-events-none" aria-hidden="true">
+        <FakeCursor side="left" offsetMs={900} />
+        <FakeCursor side="right" offsetMs={3400} />
       </div>
 
       {/* Scroll indicator */}
@@ -1887,10 +1904,10 @@ function WhoAmI() {
                  its slow hover free of the animation's transform */
               <div key={stat.tag} className="stat-rise" style={{ animationDelay: `${i * 0.15}s` }}>
                 <div className="bg-[#eaeaea] rounded-[32px] p-8 flex flex-col justify-between relative h-[240px] transition-[transform,box-shadow] duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2 hover:shadow-xl">
-                  <p className="text-[64px] lg:text-[80px] font-medium leading-none text-black">
+                  <p className="text-[44px] sm:text-[52px] xl:text-[64px] 2xl:text-[76px] font-medium leading-none text-black">
                     {stat.value}
                   </p>
-                  <p className="text-[14px] text-black/60 mt-auto">{stat.label}</p>
+                  <p className="text-[14px] text-black/60 mt-auto pr-10">{stat.label}</p>
                   <span className="absolute bottom-8 right-8 text-[13px] text-black/30">
                     {stat.tag}
                   </span>
@@ -2052,7 +2069,7 @@ function Contact() {
 export default function App() {
   return (
     <div
-      className="w-full min-h-screen font-sans antialiased bg-[#f4f4f5] text-black overflow-x-hidden tracking-[-0.02em] p-4 md:p-6 lg:p-8 flex flex-col"
+      className="w-full min-h-screen font-sans antialiased bg-[#f4f4f5] text-black overflow-x-hidden tracking-[-0.02em] p-2 md:p-6 lg:p-8 flex flex-col"
       style={{ fontFamily: "'Inter', sans-serif" }}
     >
       <CursorGlow />
