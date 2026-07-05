@@ -20,19 +20,25 @@ import {
   X,
 } from 'lucide-react'
 
-/* The site's brand glyph — same path as the top-left logo, reused across
-   the dashboard mockup assets */
+/* The site's brand glyph — a chunky extruded "J": a ghosted depth layer
+   offset up-left behind the solid front face gives the 3D block look.
+   Drawn in currentColor so each context sets the tone; the favicon mirrors
+   this shape in brand green on the dark tile. */
+const J_PATH =
+  'M208 40 V152 A56 56 0 0 1 152 208 H116 A56 56 0 0 1 60 152 V120 H112 V152 A4 4 0 0 0 116 156 H152 A4 4 0 0 0 156 152 V40 Z'
+
 function LogoMark({ size = 16, className = '' }: { size?: number; className?: string }) {
   return (
     <svg
       width={size}
       height={size}
       viewBox="0 0 256 256"
-      fill="currentColor"
+      fill="none"
       className={className}
       aria-hidden="true"
     >
-      <path d="M 256 256 L 128 256 L 0 128 L 128 128 Z M 256 128 L 128 128 L 0 0 L 128 0 Z" />
+      <path d={J_PATH} transform="translate(-16 -16)" fill="currentColor" opacity="0.35" />
+      <path d={J_PATH} fill="currentColor" />
     </svg>
   )
 }
@@ -621,7 +627,7 @@ function SettingsView() {
       <p className="text-[#f4f4f5] text-sm font-semibold mb-4">Workspace settings</p>
       <div className="flex items-center gap-3 border border-[#27272a] rounded-xl p-4 mb-5">
         <span className="p-2.5 rounded-lg bg-white/[0.06]">
-          <LogoMark size={15} className="text-[#f4f4f5]" />
+          <LogoMark size={15} className="text-[#00df8e]" />
         </span>
         <span>
           <span className="block text-[#f4f4f5] text-sm font-medium">Jabed's Workspace</span>
@@ -670,28 +676,28 @@ interface AiQuery {
 
 const AI_QUERY_ROWS: AiQuery[][] = [
   [
-    { icon: AI_ICON('meta'), text: 'How does HubSpot usability differ on desktop versus mobile?' },
-    { icon: AI_ICON('openai'), text: 'How easy is it to set up a CRM for the first time?' },
-    { icon: AI_ICON('githubcopilot'), text: 'What onboarding do analytics platforms include?' },
-    { icon: AI_ICON('googlegemini'), text: 'Which analytics platform is best for a startup?' },
-    { icon: AI_ICON('claude'), text: 'What are the best server-side tagging solutions?' },
-    { icon: AI_ICON('x'), text: 'Do CRMs integrate with Google Analytics 4?' },
+    { icon: AI_ICON('meta'), text: 'How do I migrate GTM containers to server-side tagging?' },
+    { icon: AI_ICON('openai'), text: 'Can AI assistants read my dataLayer events?' },
+    { icon: AI_ICON('githubcopilot'), text: 'What should a dataLayer spec include for GA4?' },
+    { icon: AI_ICON('googlegemini'), text: 'How do I QA custom event tracking before a release?' },
+    { icon: AI_ICON('claude'), text: 'Do AI crawlers execute JavaScript tags?' },
+    { icon: AI_ICON('x'), text: 'Which ecommerce events are worth tracking in 2026?' },
   ],
   [
-    { icon: AI_ICON('openai'), text: 'What core features should a CRM include?' },
-    { icon: AI_ICON('claude'), text: 'How do CRMs handle customer service or support workflows?' },
-    { icon: AI_ICON('huggingface'), text: 'How does a CRM compare to spreadsheets or manual tracking?' },
-    { icon: AI_ICON('perplexity'), text: 'Which consent platforms are GDPR compliant?' },
-    { icon: AI_ICON('googlegemini'), text: 'What is the most accurate attribution model in 2026?' },
-    { icon: AI_ICON('githubcopilot'), text: 'How do brands appear in AI-generated answers?' },
+    { icon: AI_ICON('openai'), text: 'How do I A/B test responses from an AI chatbot?' },
+    { icon: AI_ICON('claude'), text: 'Does Consent Mode v2 change conversion modelling?' },
+    { icon: AI_ICON('huggingface'), text: 'Can an LLM analyse my experiment results reliably?' },
+    { icon: AI_ICON('perplexity'), text: 'Is personalisation legal under GDPR without consent?' },
+    { icon: AI_ICON('googlegemini'), text: 'What sample size makes an A/B test trustworthy?' },
+    { icon: AI_ICON('githubcopilot'), text: 'How does ATT affect SKAdNetwork attribution?' },
   ],
   [
-    { icon: AI_ICON('x'), text: 'How easy is CRM data migration from another system?' },
-    { icon: AI_ICON('openai'), text: 'What security certifications do CRMs typically have?' },
-    { icon: AI_ICON('perplexity'), text: 'How do CRMs handle GDPR or HIPAA compliance?' },
-    { icon: AI_ICON('meta'), text: 'Which data warehouse should an enterprise choose?' },
-    { icon: AI_ICON('claude'), text: 'What is the best tool for A/B testing at scale?' },
-    { icon: AI_ICON('huggingface'), text: 'How reliable is AI search for product recommendations?' },
+    { icon: AI_ICON('x'), text: 'Is server-side tracking more accurate than browser tags?' },
+    { icon: AI_ICON('openai'), text: 'How do I validate Snowplow payloads before the warehouse?' },
+    { icon: AI_ICON('perplexity'), text: 'Which KPIs belong on an executive analytics dashboard?' },
+    { icon: AI_ICON('meta'), text: 'Can BigQuery power real-time personalisation?' },
+    { icon: AI_ICON('claude'), text: 'How do I attribute revenue to AI search referrals?' },
+    { icon: AI_ICON('huggingface'), text: 'Does clean event data improve AI model training?' },
   ],
 ]
 
@@ -962,7 +968,7 @@ function Insights() {
             interactive shell is desktop-only */}
         <div className="md:hidden text-left wt-anim" aria-hidden="true">
           <div className="flex items-center gap-2 px-2 pb-4">
-            <LogoMark size={12} className="text-[#f4f4f5]" />
+            <LogoMark size={12} className="text-[#00df8e]" />
             <span className="text-[#f4f4f5] text-sm font-medium">Jabed's Dashboard</span>
             <span className="text-[#52525b]">/</span>
             <span className="text-[#a1a1aa] text-sm">Overview</span>
@@ -1002,7 +1008,7 @@ function Insights() {
           {/* Left sidebar */}
           <aside className="hidden lg:flex flex-col w-52 shrink-0 border-r border-[#27272a] bg-[#121214]/80 p-4">
             <div className="flex items-center gap-2.5 px-2 mb-7">
-              <LogoMark size={15} className="text-[#f4f4f5]" />
+              <LogoMark size={15} className="text-[#00df8e]" />
               <span className="text-[#f4f4f5] text-sm font-semibold">Jabed Ahmed</span>
             </div>
             <nav className="flex flex-col gap-1">
@@ -1028,7 +1034,7 @@ function Insights() {
             {/* Top header bar */}
             <div className="flex items-center gap-2.5 flex-wrap border-b border-[#27272a] px-4 sm:px-6 py-3.5">
               <span className="flex items-center gap-2 text-sm min-w-0">
-                <LogoMark size={12} className="text-[#f4f4f5] shrink-0" />
+                <LogoMark size={12} className="text-[#00df8e] shrink-0" />
                 <span className="text-[#f4f4f5] font-medium truncate">Jabed's Dashboard</span>
                 <span className="text-[#52525b]">/</span>
                 <span className="text-[#a1a1aa]">{page}</span>
@@ -1398,7 +1404,7 @@ function SiteNav() {
       }`}
     >
       <a href="#home" className="flex items-center gap-2.5">
-        <LogoMark size={20} className={onLight ? 'text-black' : 'text-white'} />
+        <LogoMark size={20} className="text-[#00df8e]" />
         <span
           className={`font-playfair italic text-xl tracking-wide transition-colors duration-300 ${
             onLight ? 'text-black' : 'text-white'
@@ -1775,7 +1781,7 @@ function Hero() {
         {/* Sidebar skeleton */}
         <div className="hidden md:flex w-48 lg:w-64 shrink-0 border-r border-white/5 p-6 flex-col gap-4">
           <div className="flex items-center gap-2 mb-1">
-            <LogoMark size={13} className="text-emerald-400" />
+            <LogoMark size={13} className="text-[#00df8e]" />
             <span className="h-2.5 w-16 rounded-full bg-white/10" />
           </div>
           {[92, 78, 84, 68, 74].map((w, i) => (
@@ -2069,7 +2075,7 @@ function Contact() {
 export default function App() {
   return (
     <div
-      className="w-full min-h-screen font-sans antialiased bg-[#f4f4f5] text-black overflow-x-hidden tracking-[-0.02em] p-2 md:p-6 lg:p-8 flex flex-col"
+      className="w-full min-h-screen font-sans antialiased bg-[#f4f4f5] text-black overflow-x-clip tracking-[-0.02em] p-2 md:p-6 lg:p-8 flex flex-col"
       style={{ fontFamily: "'Inter', sans-serif" }}
     >
       <CursorGlow />
