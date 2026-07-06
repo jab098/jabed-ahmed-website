@@ -5,4 +5,9 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // Honour a host-assigned port (Vite ignores PORT on its own); falls back
+  // to Vite's default 5173 when unset
+  server: {
+    port: Number(process.env.PORT) || 5173,
+  },
 })

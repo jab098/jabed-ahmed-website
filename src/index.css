@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@1,400;1,500;1,600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+/* Fonts are loaded from index.html with preconnect hints — an @import here
+   would only be discovered after the CSS bundle downloads, delaying text */
 @import 'tailwindcss';
 
 html {
@@ -58,15 +59,6 @@ body {
   animation-name: heroFadeUp;
   animation-duration: 1s;
 }
-/* Hide horizontal scrollbar on the service carousel */
-.scrollbar-hide {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
-
 /* Cursor-tracking glow — position is driven by rAF in JS; only opacity
    transitions in CSS so movement stays on the compositor at 60fps */
 .cursor-glow {
@@ -838,13 +830,6 @@ body {
   }
 }
 
-/* Volumetric funnel beam (Huly-style inverted light fountain). The geometry
-   lives in an SVG — three flared <path> layers that start pin-narrow at the
-   top and sweep wide across the dashboard's top edge. This class only
-   positions the SVG: anchored to the dashboard wrapper so the flare always
-   rests exactly on the panel, stretching one viewport height upward. */
-
-
 @media (prefers-reduced-motion: reduce) {
   .hero-mesh,
   .hero-mesh2,
@@ -926,8 +911,7 @@ body {
   opacity: 0;
 }
 .wt-in .wt-anim,
-.wt-swap,
-.wt-swap-pop {
+.wt-swap {
   -webkit-mask-image: linear-gradient(to top, #000 40%, transparent 75%);
   mask-image: linear-gradient(to top, #000 40%, transparent 75%);
   -webkit-mask-size: 100% 300%;
@@ -981,9 +965,6 @@ body {
 .wt-swap {
   animation: wtSwap 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-.wt-swap-pop {
-  animation: wtSwapPop 0.85s cubic-bezier(0.3, 1.2, 0.4, 1) both;
-}
 @keyframes wtSwap {
   0% {
     opacity: 0;
@@ -1001,36 +982,17 @@ body {
     mask-position: 0% 100%;
   }
 }
-@keyframes wtSwapPop {
-  0% {
-    opacity: 0;
-    transform: translateY(24px) scale(0.95);
-    -webkit-mask-position: 0% 0%;
-    mask-position: 0% 0%;
-  }
-  35% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    -webkit-mask-position: 0% 100%;
-    mask-position: 0% 100%;
-  }
-}
 @media (prefers-reduced-motion: reduce) {
   .wt-anim,
   .wt-in .wt-anim {
     animation: none;
     opacity: 1;
   }
-  .wt-swap,
-  .wt-swap-pop {
+  .wt-swap {
     animation: none;
   }
   .wt-in .wt-anim,
-  .wt-swap,
-  .wt-swap-pop {
+  .wt-swap {
     -webkit-mask-image: none;
     mask-image: none;
   }
