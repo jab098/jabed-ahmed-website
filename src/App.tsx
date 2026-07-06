@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   BarChart3,
   Calendar,
@@ -305,14 +305,15 @@ function LogoMarquee() {
           {[0, 1, 2].map((copy) => (
             <div className="logo-marquee-group" key={copy} aria-hidden={copy > 0}>
               {LOGOS.map((logo) => (
-                <img
-                  key={logo.name}
-                  src={logo.src}
-                  alt={copy === 0 ? logo.name : ''}
-                  title={logo.name}
-                  loading="lazy"
-                  draggable={false}
-                />
+                <span key={logo.name} className="pill-streak inline-block leading-none">
+                  <img
+                    src={logo.src}
+                    alt={copy === 0 ? logo.name : ''}
+                    title={logo.name}
+                    loading="lazy"
+                    draggable={false}
+                  />
+                </span>
               ))}
             </div>
           ))}
@@ -323,6 +324,32 @@ function LogoMarquee() {
 }
 
 const deltaTone = (d: string) => (d.startsWith('+') ? 'text-emerald-400' : 'text-rose-400')
+
+/* Section marker: a mono index + growing underline instead of the
+   "(Section Name)" + static hairline pattern — that motif is the most
+   copied one in current portfolio templates, so this swaps in a more
+   distinctive, data-tool-flavoured mark built from pieces already in use
+   elsewhere on the site (font-data, .marker-line). */
+function SectionMarker({
+  index,
+  label,
+  dark,
+}: {
+  index: number
+  label: string
+  dark?: boolean
+}) {
+  const numeralColor = dark ? '#00df8e' : '#00a86b'
+  return (
+    <p className={`rv flex items-center gap-3 text-[13px] font-medium ${dark ? 'text-white/50' : 'text-black/50'}`}>
+      <span className="font-data text-[11px] tracking-[0.08em]" style={{ color: numeralColor }}>
+        N&deg;{String(index).padStart(2, '0')}
+      </span>
+      <span className="marker-line w-10" />
+      <span className="uppercase tracking-[0.22em] text-[11px]">{label}</span>
+    </p>
+  )
+}
 
 /* Multi-line chart with a cursor-tracked tooltip. The tooltip position is
    written imperatively inside requestAnimationFrame (never through React
@@ -455,7 +482,7 @@ function DashChart({ tab }: { tab: MetricTab }) {
               <div key={s.name} className="flex items-center gap-2 text-xs">
                 <span className="w-2 h-2 rounded-full shrink-0" style={{ background: s.color }} />
                 <span className="text-[#f4f4f5]">{s.name}</span>
-                <span className="ml-auto font-semibold text-[#f4f4f5]">
+                <span className="font-data ml-auto font-semibold text-[#f4f4f5]">
                   {hover !== null && formatMetric[tab](s.values[hover])}
                 </span>
               </div>
@@ -498,8 +525,8 @@ function SentimentViz() {
               style={{ width: `${r.score}%`, background: `linear-gradient(to right, ${r.color}55, ${r.color})` }}
             />
           </div>
-          <span className="w-8 text-right text-sm font-semibold text-[#f4f4f5]">{r.score}</span>
-          <span className={`w-8 text-right text-[11px] ${r.delta >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+          <span className="font-data w-8 text-right text-sm font-semibold text-[#f4f4f5]">{r.score}</span>
+          <span className={`font-data w-8 text-right text-[11px] ${r.delta >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
             {r.delta >= 0 ? `+${r.delta}` : r.delta}
           </span>
         </div>
@@ -533,11 +560,11 @@ function PositionViz() {
             <line x1={x1} y1={yFor(a)} x2={x2} y2={yFor(b)} stroke={s.color} strokeWidth="2" opacity="0.8" />
             <circle cx={x1} cy={yFor(a)} r="3" fill={s.color} />
             <circle cx={x2} cy={yFor(b)} r="3" fill={s.color} />
-            <text x={x1 - 12} y={yFor(a) + 4} textAnchor="end" fill="#a1a1aa" fontSize="11">
+            <text x={x1 - 12} y={yFor(a) + 4} textAnchor="end" fill="#a1a1aa" fontSize="11" fontFamily="'JetBrains Mono', monospace">
               {a.toFixed(1)}
             </text>
             <text x={x2 + 12} y={yFor(b) + 4} fill="#f4f4f5" fontSize="11">
-              {b.toFixed(1)} · {s.name}
+              <tspan fontFamily="'JetBrains Mono', monospace">{b.toFixed(1)}</tspan> · {s.name}
             </text>
           </g>
         )
@@ -557,16 +584,19 @@ function PromptsView() {
             <span className="text-[#f4f4f5] text-sm truncate">{p.prompt}</span>
             <span className="hidden md:flex gap-1.5 ml-1 shrink-0">
               {p.models.map((m) => (
-                <span key={m} className="border border-[#27272a] rounded-full px-2 py-0.5 text-[10px] text-[#a1a1aa]">
-                  {m}
+                <span
+                  key={m}
+                  className="pill-streak border border-[#27272a] rounded-full px-2 py-0.5 text-[10px] text-[#a1a1aa]"
+                >
+                  <span className="relative z-10">{m}</span>
                 </span>
               ))}
             </span>
-            <span className="ml-auto shrink-0 text-sm text-[#f4f4f5]">
+            <span className="font-data ml-auto shrink-0 text-sm text-[#f4f4f5]">
               {p.mentions}
-              <span className="text-[11px] text-[#71717a] ml-1">mentions</span>
+              <span className="font-sans text-[11px] text-[#71717a] ml-1">mentions</span>
             </span>
-            <span className={`w-12 shrink-0 text-right text-[11px] ${deltaTone(p.trend)}`}>{p.trend}</span>
+            <span className={`font-data w-12 shrink-0 text-right text-[11px] ${deltaTone(p.trend)}`}>{p.trend}</span>
           </div>
         ))}
       </div>
@@ -589,7 +619,7 @@ function SourcesView() {
             <div className="flex-1 h-1.5 rounded-full bg-white/[0.05]">
               <div className="h-full rounded-full bg-emerald-400/80" style={{ width: `${parseInt(d.share) * 4}%` }} />
             </div>
-            <span className="w-10 text-right text-xs text-[#a1a1aa] shrink-0">{d.share}</span>
+            <span className="font-data w-10 text-right text-xs text-[#a1a1aa] shrink-0">{d.share}</span>
           </div>
         ))}
       </div>
@@ -607,7 +637,7 @@ function ModelsView() {
             <div className="flex items-center gap-2">
               <Cpu size={14} className="text-[#71717a]" />
               <span className="text-[#f4f4f5] text-sm font-medium">{m.name}</span>
-              <span className="ml-auto text-[#f4f4f5] text-xl font-semibold">{m.share}%</span>
+              <span className="font-data ml-auto text-[#f4f4f5] text-xl font-semibold">{m.share}%</span>
             </div>
             <div className="h-1.5 rounded-full bg-white/[0.05] mt-4">
               <div className="h-full rounded-full" style={{ width: `${m.share}%`, background: m.color }} />
@@ -928,10 +958,7 @@ function Insights() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
         {/* Title column (~30%) */}
         <div className="lg:col-span-3">
-          <p className="rv flex items-center gap-4 text-[13px] text-black/50 font-medium">
-            (Insights)
-            <span className="w-12 h-[1px] bg-black/20" />
-          </p>
+          <SectionMarker index={2} label="Insights" />
           <h2 className="rv text-black leading-[0.98] mt-8" style={{ animationDelay: '0.1s' }}>
             <span
               className="block font-playfair italic font-normal text-[40px] md:text-[48px]"
@@ -993,8 +1020,8 @@ function Insights() {
                   {c.brand[0]}
                 </span>
                 <span className="text-[#f4f4f5] text-xs">{c.brand}</span>
-                <span className="ml-auto text-[#f4f4f5] text-xs">{c.visibility}</span>
-                <span className={`text-[10px] ${deltaTone(c.visDelta)}`}>{c.visDelta}</span>
+                <span className="font-data ml-auto text-[#f4f4f5] text-xs">{c.visibility}</span>
+                <span className={`font-data text-[10px] ${deltaTone(c.visDelta)}`}>{c.visDelta}</span>
               </div>
             ))}
           </div>
@@ -1200,30 +1227,30 @@ function Insights() {
                   <tbody className="divide-y divide-[#1f1f23]">
                     {COMPETITORS.map((c) => (
                       <tr key={c.brand} className="hover:bg-white/[0.03] transition-colors">
-                        <td className="py-3 text-[#71717a]">{c.rank}</td>
+                        <td className="font-data py-3 text-[#71717a]">{c.rank}</td>
                         <td className="py-3">
                           <span className="flex items-center gap-2.5">
                             <span
-                              className={`w-6 h-6 rounded-md ${c.tone} text-[10px] font-bold text-white flex items-center justify-center shrink-0`}
+                              className={`font-data w-6 h-6 rounded-md ${c.tone} text-[10px] font-bold text-white flex items-center justify-center shrink-0`}
                             >
                               {c.brand[0]}
                             </span>
                             <span className="text-[#f4f4f5] font-medium">{c.brand}</span>
                           </span>
                         </td>
-                        <td className="py-3 text-[#f4f4f5]">
+                        <td className="font-data py-3 text-[#f4f4f5]">
                           {c.visibility}
                           <span className={`text-[11px] ml-2 ${deltaTone(c.visDelta)}`}>
                             {c.visDelta}
                           </span>
                         </td>
-                        <td className="py-3 text-[#f4f4f5]">
+                        <td className="font-data py-3 text-[#f4f4f5]">
                           {c.sentiment}
                           <span className={`text-[11px] ml-2 ${deltaTone(c.sentDelta)}`}>
                             {c.sentDelta}
                           </span>
                         </td>
-                        <td className="py-3 text-[#f4f4f5] text-right">
+                        <td className="font-data py-3 text-[#f4f4f5] text-right">
                           {c.position}
                           <span className={`text-[11px] ml-2 ${deltaTone(c.posDelta)}`}>
                             {c.posDelta}
@@ -1252,7 +1279,7 @@ function Insights() {
                         >
                           {d.category}
                         </span>
-                        <span className="ml-auto text-[#a1a1aa] text-xs">{d.share}</span>
+                        <span className="font-data ml-auto text-[#a1a1aa] text-xs">{d.share}</span>
                       </div>
                     ))}
                   </div>
@@ -1262,7 +1289,7 @@ function Insights() {
                   <p className="text-[#f4f4f5] text-sm font-semibold mb-4">Source mix</p>
                   <div className="flex items-center gap-5">
                     <div className="relative w-28 h-28 shrink-0">
-                      <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
+                      <svg viewBox="0 0 120 120" className="relative w-full h-full -rotate-90">
                         {DONUT_SLICES.map((s, i) => {
                           const offset = DONUT_SLICES.slice(0, i).reduce(
                             (sum, x) => sum + x.value,
@@ -1286,7 +1313,7 @@ function Insights() {
                         })}
                       </svg>
                       <span className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-[#f4f4f5] text-lg font-semibold leading-none">
+                        <span className="font-data text-[#f4f4f5] text-lg font-semibold leading-none">
                           {DONUT_SLICES[slice].value}%
                         </span>
                         <span className="text-[#71717a] text-[10px] mt-1">
@@ -1309,7 +1336,7 @@ function Insights() {
                             style={{ background: s.color }}
                           />
                           {s.label}
-                          <span className="ml-auto text-[#71717a]">{s.value}%</span>
+                          <span className="font-data ml-auto text-[#71717a]">{s.value}%</span>
                         </button>
                       ))}
                     </div>
@@ -1419,15 +1446,15 @@ function SiteNav() {
         }`}
       >
         {NAV_LINKS.map((link) => (
-          <a
+          <MagneticLink
             key={link.label}
             href={link.href}
-            className={`transition-colors ${
+            className={`inline-block transition-colors ${
               onLight ? 'text-black/65 hover:text-black' : 'text-white/75 hover:text-white'
             }`}
           >
             {link.label}
-          </a>
+          </MagneticLink>
         ))}
       </div>
       <button
@@ -1510,6 +1537,21 @@ function useMagnetic() {
   }, [])
 
   return { ref }
+}
+
+/* Thin wrapper so any anchor can opt into the magnetic pull without each
+   call site re-wiring useMagnetic by hand */
+function MagneticLink({
+  className,
+  children,
+  ...rest
+}: React.AnchorHTMLAttributes<HTMLAnchorElement> & { children: React.ReactNode }) {
+  const { ref } = useMagnetic()
+  return (
+    <a ref={ref} className={className} {...rest}>
+      {children}
+    </a>
+  )
 }
 
 function CursorGlow() {
@@ -1650,9 +1692,13 @@ function FakeCursor({ side, offsetMs }: { side: 'left' | 'right'; offsetMs: numb
       new Promise<void>((resolve) => {
         timers.push(window.setTimeout(resolve, ms))
       })
+    // Restraint over simulated interactivity: each cursor performs a
+    // handful of clicks once, then stays off for good — a brief flourish
+    // rather than a looping animation a repeat visitor tires of
+    const MAX_CYCLES = 2
     const run = async () => {
       await wait(offsetMs)
-      while (alive) {
+      for (let cycle = 0; alive && cycle < MAX_CYCLES; cycle++) {
         // side bands of the hero backdrop — clear of the centred title
         // column and above the docked chart
         setPos({
@@ -1818,12 +1864,76 @@ function Hero() {
   )
 }
 
+/* Counts the numeric portion of a stat string ("€2M+" → "€" + 2 + "M+") up
+   from `from` once its card scrolls into view, via requestAnimationFrame like
+   the rest of the site's motion rather than a state-per-tick timer. Easing is
+   ease-out cubic, so motion is quick early and visibly slows as it nears the
+   target; `decimals` forces finer-grained steps (e.g. 0.1) so that
+   deceleration reads as discrete increments rather than jumping 0→1→2. */
+function CountUp({
+  value,
+  inView,
+  duration = 1.6,
+  from = 0,
+  decimals: decimalsProp,
+}: {
+  value: string
+  inView: boolean
+  duration?: number
+  from?: number
+  decimals?: number
+}) {
+  // Memoised: value.match() returns a new array every render, and putting
+  // that in a dependency array would re-fire (and cancel) the effect below
+  // on every render instead of once when it comes into view
+  const match = useMemo(() => value.match(/^([^\d]*)([\d.]+)(.*)$/), [value])
+  const decimals = decimalsProp ?? (match && match[2].includes('.') ? match[2].split('.')[1].length : 0)
+  const [display, setDisplay] = useState(match ? `${match[1]}${from.toFixed(decimals)}${match[3]}` : value)
+  const done = useRef(false)
+
+  useEffect(() => {
+    if (!inView || !match || done.current) return
+    done.current = true
+    const [, prefix, numStr, suffix] = match
+    const target = parseFloat(numStr)
+    const start = performance.now()
+    let raf = 0
+    const tick = (now: number) => {
+      const t = Math.min((now - start) / (duration * 1000), 1)
+      const eased = 1 - Math.pow(1 - t, 3)
+      const current = from + (target - from) * eased
+      // Snap to the exact original label ("€2M+") the instant the rounded
+      // value already reads as the target, instead of waiting for t to hit
+      // 1 — otherwise a rounded frame like "€2.0M+" briefly holds before an
+      // abrupt swap to "€2M+", which reads as a glitch rather than an arrival
+      if (t >= 1 || parseFloat(current.toFixed(decimals)) === target) {
+        setDisplay(value)
+        return
+      }
+      setDisplay(`${prefix}${current.toFixed(decimals)}${suffix}`)
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [inView, match, duration, from, decimals, value])
+
+  return <>{display}</>
+}
+
 const WHO_HEADLINE =
   "I'm an Analytics Specialist with 8+ Years of Experience in Designing Scalable Data Collection Environments and High growth Digital Products."
 
 const WHO_STATS = [
   { value: '8+', label: 'Years of Experience', tag: '/01' },
-  { value: '€2M+', label: 'Annual Revenue Uplift', tag: '/02' },
+  {
+    value: '€2M+',
+    label: 'Annual Revenue Uplift',
+    tag: '/02',
+    // finer-grained count (0.5 → 2.0 in 0.1 steps) so the ease-out
+    // deceleration is visible instead of just snapping 0 → 1 → 2
+    from: 0.5,
+    decimals: 1,
+  },
   { value: '16', label: 'Global Market Apps Managed', tag: '/03' },
 ]
 
@@ -1845,10 +1955,7 @@ function WhoAmI() {
         {/* Title column (~25%) — mirrors the Insights column so the vertical
             separators sit parallel while scrolling */}
         <div className="lg:col-span-3">
-          <p className="rv flex items-center gap-4 text-[13px] text-black/50 font-medium">
-            (Who Am I)
-            <span className="w-12 h-[1px] bg-black/20" />
-          </p>
+          <SectionMarker index={1} label="Who Am I" />
           <h2 className="rv text-black leading-[0.98] mt-8" style={{ animationDelay: '0.1s' }}>
             <span
               className="block font-playfair italic font-normal text-[34px] md:text-[42px]"
@@ -1885,17 +1992,19 @@ function WhoAmI() {
             ))}
           </h3>
 
-          <div className="mt-10">
-            <a
+          {/* rv sits on the wrapper, not the magnetic anchor itself — the
+              entrance animation's forwards fill would otherwise permanently
+              pin transform: translateY(0) and swallow the magnetic scale */}
+          <div className="rv mt-10" style={{ animationDelay: '0.6s' }}>
+            <MagneticLink
               href={LINKEDIN_URL}
               target="_blank"
               rel="noreferrer"
-              className="rv btn-streak inline-flex items-center gap-2.5 bg-black text-white px-7 py-3 rounded-full text-[14px] font-medium hover:bg-black/80 transition-colors"
-              style={{ animationDelay: '0.6s' }}
+              className="btn-streak inline-flex items-center gap-2.5 bg-black text-white px-7 py-3 rounded-full text-[14px] font-medium hover:bg-black/80 transition-colors"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-[#00df8e]" />
               <span className="relative z-10">LinkedIn</span>
-            </a>
+            </MagneticLink>
           </div>
 
           {/* Statistic cards: delayed cascading rise */}
@@ -1909,12 +2018,18 @@ function WhoAmI() {
               /* entrance keyframes live on the wrapper; the inner card keeps
                  its slow hover free of the animation's transform */
               <div key={stat.tag} className="stat-rise" style={{ animationDelay: `${i * 0.15}s` }}>
-                <div className="bg-[#eaeaea] rounded-[32px] p-8 flex flex-col justify-between relative h-[240px] transition-[transform,box-shadow] duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2 hover:shadow-xl">
-                  <p className="text-[44px] sm:text-[52px] xl:text-[64px] 2xl:text-[76px] font-medium leading-none text-black">
-                    {stat.value}
+                <div className="glow-border-soft bg-[#eaeaea] rounded-[32px] p-8 flex flex-col justify-between relative h-[240px] transition-[transform,box-shadow] duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2 hover:shadow-xl">
+                  <p className="font-data text-[44px] sm:text-[52px] xl:text-[64px] 2xl:text-[76px] font-medium leading-none text-black">
+                    <CountUp
+                      value={stat.value}
+                      inView={stats.inView}
+                      duration={4}
+                      from={'from' in stat ? stat.from : undefined}
+                      decimals={'decimals' in stat ? stat.decimals : undefined}
+                    />
                   </p>
                   <p className="text-[14px] text-black/60 mt-auto pr-10">{stat.label}</p>
-                  <span className="absolute bottom-8 right-8 text-[13px] text-black/30">
+                  <span className="font-data absolute bottom-8 right-8 text-[13px] text-black/30">
                     {stat.tag}
                   </span>
                 </div>
@@ -1932,15 +2047,25 @@ function WhoAmI() {
 function ServiceCard({ service, index }: { service: (typeof SERVICES)[number]; index: number }) {
   // Deep threshold: the card only rises once most of it is actually in view
   const { ref, inView } = useReveal<HTMLElement>(0.5)
+
+  // Pointer-tracked spotlight: position written straight to CSS vars, no
+  // React state, so the glow follows the cursor at full frame rate
+  const onMove = (e: React.MouseEvent<HTMLElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    e.currentTarget.style.setProperty('--sx', `${((e.clientX - rect.left) / rect.width) * 100}%`)
+    e.currentTarget.style.setProperty('--sy', `${((e.clientY - rect.top) / rect.height) * 100}%`)
+  }
+
   return (
     <article
       ref={ref}
-      className={`rv-solo ${inView ? 'rv-solo-in' : ''} group bg-white border border-black/10 rounded-[32px] p-8 flex flex-col relative min-h-[320px] shadow-md transition-[transform,box-shadow,border-color] duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2 hover:shadow-2xl hover:border-[#00df8e]`}
+      onMouseMove={onMove}
+      className={`rv-solo ${inView ? 'rv-solo-in' : ''} group card-spotlight glow-border-soft bg-white border border-black/10 rounded-[32px] p-8 flex flex-col relative min-h-[320px] shadow-md transition-[transform,box-shadow,border-color] duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2 hover:shadow-2xl hover:border-[#00df8e]`}
       style={{ animationDelay: `${(index % 3) * 0.1}s` }}
     >
       <div className="flex items-start justify-between">
         {/* Bold numeric anchor in a solid brand-green tile */}
-        <span className="w-10 h-10 rounded-xl bg-[#00df8e] text-black text-[15px] font-mono font-semibold flex items-center justify-center">
+        <span className="w-10 h-10 rounded-xl bg-[#00df8e] text-black text-[15px] font-data font-semibold flex items-center justify-center">
           {service.number}
         </span>
         <span className="bg-black/[0.05] text-black/60 text-[10px] font-semibold tracking-[0.16em] uppercase px-2.5 py-1 rounded-full">
@@ -1978,10 +2103,7 @@ function Service() {
       {/* Header row */}
       <div className="flex justify-between items-end border-b border-black/10 pb-8">
         <div>
-          <p className="rv flex items-center gap-4 text-[13px] text-black/50 font-medium">
-            (Service)
-            <span className="w-12 h-[1px] bg-black/20" />
-          </p>
+          <SectionMarker index={3} label="Service" />
           <h2 className="rv text-black leading-[0.98] mt-6" style={{ animationDelay: '0.1s' }}>
             <span
               className="block font-playfair italic font-normal text-[44px] md:text-[60px]"
@@ -2021,10 +2143,7 @@ function Contact() {
       className={`w-full px-6 lg:px-12 py-14 md:py-20 bg-[#050505] text-white rounded-[32px] md:rounded-[48px] shadow-2xl mt-16 ${inView ? 'rv-in' : ''}`}
     >
       {/* Marker top-left, matching the other sections */}
-      <p className="rv flex items-center gap-4 text-[13px] text-[#00df8e] font-medium">
-        (Contact)
-        <span className="w-12 h-[1px] bg-white/20" />
-      </p>
+      <SectionMarker index={4} label="Contact" dark />
 
       <div className="max-w-[900px] mt-10 md:mt-14">
         <h2
