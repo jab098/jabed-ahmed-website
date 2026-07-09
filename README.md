@@ -1,1 +1,1 @@
-![Web Analytics Services](src/assets/webimg.png)
+![Web Analytics Services](dist/assets/website.png)
