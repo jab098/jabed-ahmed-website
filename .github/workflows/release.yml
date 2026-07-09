@@ -1,0 +1,29 @@
+name: Trigger Deploy and Release
+
+on:
+  push:
+    tags:
+      - 'v*' # Triggers whenever you push a tag like v1.0.0, v1.1.2, etc.
+
+permissions:
+  contents: write # Allows GitHub to automatically create the Release UI
+
+jobs:
+  release-and-trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # This triggers your Cloudflare Pages build using your secret hook
+      - name: Trigger Cloudflare Pages Deployment
+        run: |
+          curl -X POST "${{ secrets.CLOUDFLARE_DEPLOY_HOOK }}"
+
+      # This generates the automated release and changelog notes on GitHub
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
