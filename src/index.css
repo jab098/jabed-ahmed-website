@@ -11,11 +11,11 @@ html {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
 }
-/* Paint the canvas behind the page black so iOS rubber-band overscroll
-   never reveals white above or below the content */
+/* Match the page's own background so iOS rubber-band overscroll blends in
+   above/below the content instead of flashing black or white */
 html,
 body {
-  background-color: #050505;
+  background-color: #f4f4f5;
 }
 * {
   font-family: 'Inter', sans-serif;
