@@ -1,1 +1,1 @@
-![Web Analytics Services](dist/assets/website.png)
+![Web Analytics Services](./public/website.png)
