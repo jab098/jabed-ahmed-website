@@ -6,11 +6,13 @@ import { MagneticLink } from './MagneticLink'
 
 /* Fixed site navigation. Stays with the user while scrolling; after about
    half a viewport of downward travel it animates away, and the slightest
-   upward scroll animates it back. Flips to a dark-on-light scheme while
-   floating over the light middle sections. */
+   upward scroll animates it back. The hero and middle sections are light;
+   only the contact card needs the white-on-dark treatment. */
 export function SiteNav() {
   const [hidden, setHidden] = useState(false)
-  const [onLight, setOnLight] = useState(false)
+  // The first paint is the light hero; initialise to its final theme so the
+  // wordmark never flashes white before the scroll observer runs.
+  const [onLight, setOnLight] = useState(true)
   const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
@@ -18,7 +20,6 @@ export function SiteNav() {
     let raf = 0
     // The section anchors never remount, so resolve them once instead of
     // querying the DOM on every scroll event
-    const hero = document.getElementById('home')
     const contact = document.getElementById('contact')
 
     const update = () => {
@@ -30,13 +31,13 @@ export function SiteNav() {
       else if (y < lastY - 2) setHidden(false)
       lastY = y
 
-      // Dark scheme over the hero and contact cards, light scheme between
-      const overHero = hero ? hero.getBoundingClientRect().bottom > 120 : true
+      // The redesigned hero is a light canvas, so the navigation only flips
+      // to white while it overlaps the final dark contact surface.
       const overContact = contact ? contact.getBoundingClientRect().top < 90 : false
-      setOnLight(!overHero && !overContact)
+      setOnLight(!overContact)
     }
     // Coalesce scroll bursts to one layout read per frame — scroll can fire
-    // several times a frame, and each update forces two rect measurements
+    // several times per frame and the contact measurement forces layout.
     const onScroll = () => {
       if (!raf) raf = requestAnimationFrame(update)
     }
@@ -65,7 +66,7 @@ export function SiteNav() {
         </span>
       </a>
       <div
-        className={`hidden md:flex absolute left-1/2 -translate-x-1/2 backdrop-blur-md border rounded-full px-6 py-2 gap-6 text-[13px] font-medium transition-colors duration-300 ${
+        className={`hidden lg:flex absolute left-1/2 -translate-x-1/2 backdrop-blur-md border rounded-full px-6 py-2 gap-6 text-[13px] font-medium transition-colors duration-300 ${
           onLight ? 'bg-black/5 border-black/10' : 'bg-white/10 border-white/20'
         }`}
       >
@@ -83,7 +84,7 @@ export function SiteNav() {
       </div>
       <button
         onClick={() => setMenuOpen((o) => !o)}
-        className={`md:hidden p-2 transition-colors ${onLight ? 'text-black' : 'text-white'}`}
+        className={`lg:hidden p-2 transition-colors ${onLight ? 'text-black' : 'text-white'}`}
         aria-label={menuOpen ? 'Close menu' : 'Open menu'}
         aria-expanded={menuOpen}
       >
@@ -92,7 +93,7 @@ export function SiteNav() {
 
       {/* Mobile menu panel — self-coloured, so it works over any section */}
       {menuOpen && (
-        <div className="menu-pop md:hidden absolute top-full right-6 left-6 mt-1 rounded-2xl bg-[#0A0D10]/95 backdrop-blur-md border border-white/10 p-3 flex flex-col shadow-2xl">
+        <div className="menu-pop lg:hidden absolute top-full right-6 left-6 mt-1 rounded-2xl bg-[#0A0D10]/95 backdrop-blur-md border border-white/10 p-3 flex flex-col shadow-2xl">
           {NAV_LINKS.map((link) => (
             <a
               key={link.label}
