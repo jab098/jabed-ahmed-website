@@ -9,7 +9,7 @@ import { Contact } from './components/Contact'
 export default function App() {
   return (
     <div
-      className="w-full min-h-screen font-sans antialiased bg-[#f4f4f5] text-black overflow-x-clip tracking-[-0.02em] p-2 md:p-6 lg:p-8 flex flex-col"
+      className="site-shell w-full min-h-screen font-sans antialiased text-black overflow-x-clip tracking-[-0.02em] p-2 md:p-6 lg:p-8 flex flex-col"
       style={{ fontFamily: "'Inter', sans-serif" }}
     >
       <CursorGlow />

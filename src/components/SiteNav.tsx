@@ -6,22 +6,14 @@ import { MagneticLink } from './MagneticLink'
 
 /* Fixed site navigation. Stays with the user while scrolling; after about
    half a viewport of downward travel it animates away, and the slightest
-   upward scroll animates it back. The hero and middle sections are light;
-   only the contact card needs the white-on-dark treatment. */
+   upward scroll animates it back. Every page-level surface is now light. */
 export function SiteNav() {
   const [hidden, setHidden] = useState(false)
-  // The first paint is the light hero; initialise to its final theme so the
-  // wordmark never flashes white before the scroll observer runs.
-  const [onLight, setOnLight] = useState(true)
   const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     let lastY = window.scrollY
     let raf = 0
-    // The section anchors never remount, so resolve them once instead of
-    // querying the DOM on every scroll event
-    const contact = document.getElementById('contact')
-
     const update = () => {
       raf = 0
       const y = window.scrollY
@@ -30,14 +22,8 @@ export function SiteNav() {
       else if (y > lastY + 2) setHidden(true)
       else if (y < lastY - 2) setHidden(false)
       lastY = y
-
-      // The redesigned hero is a light canvas, so the navigation only flips
-      // to white while it overlaps the final dark contact surface.
-      const overContact = contact ? contact.getBoundingClientRect().top < 90 : false
-      setOnLight(!overContact)
     }
-    // Coalesce scroll bursts to one layout read per frame — scroll can fire
-    // several times per frame and the contact measurement forces layout.
+    // Coalesce scroll bursts so state updates happen at most once per frame.
     const onScroll = () => {
       if (!raf) raf = requestAnimationFrame(update)
     }
@@ -57,26 +43,16 @@ export function SiteNav() {
     >
       <a href="#home" className="flex items-center gap-2.5">
         <LogoMark size={20} className="text-[#00df8e]" />
-        <span
-          className={`font-playfair italic text-xl tracking-wide transition-colors duration-300 ${
-            onLight ? 'text-black' : 'text-white'
-          }`}
-        >
+        <span className="font-playfair italic text-xl tracking-wide text-black">
           Jabed Ahmed
         </span>
       </a>
-      <div
-        className={`hidden lg:flex absolute left-1/2 -translate-x-1/2 backdrop-blur-md border rounded-full px-6 py-2 gap-6 text-[13px] font-medium transition-colors duration-300 ${
-          onLight ? 'bg-black/5 border-black/10' : 'bg-white/10 border-white/20'
-        }`}
-      >
+      <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 backdrop-blur-md border rounded-full px-6 py-2 gap-6 text-[13px] font-medium bg-black/5 border-black/10">
         {NAV_LINKS.map((link) => (
           <MagneticLink
             key={link.label}
             href={link.href}
-            className={`inline-block transition-colors ${
-              onLight ? 'text-black/65 hover:text-black' : 'text-white/75 hover:text-white'
-            }`}
+            className="inline-block text-black/65 hover:text-black transition-colors"
           >
             {link.label}
           </MagneticLink>
@@ -84,7 +60,7 @@ export function SiteNav() {
       </div>
       <button
         onClick={() => setMenuOpen((o) => !o)}
-        className={`lg:hidden p-2 transition-colors ${onLight ? 'text-black' : 'text-white'}`}
+        className="lg:hidden p-2 text-black transition-colors"
         aria-label={menuOpen ? 'Close menu' : 'Open menu'}
         aria-expanded={menuOpen}
       >

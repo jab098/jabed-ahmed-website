@@ -70,7 +70,7 @@ export function WhoAmI() {
     <section
       ref={headline.ref}
       id="who"
-      className={`w-full px-6 lg:px-12 pt-32 pb-24 bg-[#f4f4f5] text-black ${
+      className={`paper-section w-full px-6 lg:px-12 pt-32 pb-24 text-black ${
         headline.inView ? 'rv-in is-revealed' : ''
       }`}
     >
@@ -141,7 +141,7 @@ export function WhoAmI() {
               /* entrance keyframes live on the wrapper; the inner card keeps
                  its slow hover free of the animation's transform */
               <div key={stat.tag} className="stat-rise" style={{ animationDelay: `${i * 0.15}s` }}>
-                <div className="glow-border-soft bg-[#eaeaea] rounded-[32px] p-8 flex flex-col justify-between relative h-[240px] transition-[transform,box-shadow] duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2 hover:shadow-xl">
+                <div className="paper-card-muted glow-border-soft rounded-[32px] p-8 flex flex-col justify-between relative h-[240px] transition-[transform,box-shadow] duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2 hover:shadow-xl">
                   <p className="font-data text-[44px] sm:text-[52px] xl:text-[64px] 2xl:text-[76px] font-medium leading-none text-black">
                     <CountUp
                       value={stat.value}

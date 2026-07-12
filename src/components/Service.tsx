@@ -88,7 +88,7 @@ export function Service() {
     <section
       ref={ref}
       id="service"
-      className={`w-full px-6 lg:px-12 py-32 bg-[#f4f4f5] text-black ${inView ? 'rv-in' : ''}`}
+      className={`paper-section w-full px-6 lg:px-12 py-32 text-black ${inView ? 'rv-in' : ''}`}
     >
       {/* Header row */}
       <div className="flex justify-between items-end border-b border-black/10 pb-8">

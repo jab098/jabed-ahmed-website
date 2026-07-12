@@ -610,7 +610,7 @@ export function Insights() {
     <section
       ref={sectionRef}
       id="insights"
-      className={`w-full px-6 lg:px-12 pt-32 pb-16 bg-[#f4f4f5] text-black ${visible ? 'rv-in' : ''} ${chartIn ? 'wt-in' : ''}`}
+      className={`paper-section w-full px-6 lg:px-12 pt-32 pb-16 text-black ${visible ? 'rv-in' : ''} ${chartIn ? 'wt-in' : ''}`}
       style={{ '--wt-base': booted ? '0s' : '0.9s' } as React.CSSProperties}
     >
       {/* ~25/75 split: title column left, vertical separator, chart right —
