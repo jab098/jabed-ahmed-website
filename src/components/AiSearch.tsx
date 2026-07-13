@@ -3,7 +3,6 @@ import { ChevronDown } from 'lucide-react'
 import { SIMPLE_ICONS } from '../data'
 import { useReveal } from '../hooks'
 
-/* ——— AI search strategy section (bottom of Insights) ——— */
 const AI_ICON = (slug: string) => `${SIMPLE_ICONS}/${slug}.svg`
 
 interface AiQuery {
@@ -41,28 +40,26 @@ const AI_QUERY_ROWS: AiQuery[][] = [
 const HOW_ITEMS = [
   {
     title: 'Semantic Data Architecture',
-    desc: 'I implement rigorous JSON-LD structured data and schema markup, ensuring that LLMs can accurately parse, index, and surface your business information with absolute confidence (e.g., using Product and Organization schema to enhance AI-generated snippets).',
+    desc: 'Rigorous structured data and schema markup give language models a dependable picture of your products, organisation and expertise.',
   },
   {
     title: 'Prompt-Level Attribution',
-    desc: 'My infrastructure tracks the specific user-initiated prompts that lead to brand citations within AI summaries, providing visibility into traffic sources that traditional analytics ignore (e.g., mapping brand mentions to specific query inputs in GA4).',
+    desc: 'Measurement connects brand citations and AI referrals back to the questions and journeys that created commercial intent.',
   },
   {
     title: 'Validated Data Pipelines',
-    desc: "By leveraging strict payload validation—such as Snowplow's Iglu registries—I ensure that the data feeding into your models and analytics tools is consistently accurate, clean, and reliable (e.g., rejecting malformed event payloads before they reach the warehouse).",
+    desc: 'Payload contracts and quality gates stop malformed signals before they reach a warehouse, model or decision-maker.',
   },
   {
     title: 'AI Sentiment Quantification',
-    desc: 'I configure custom dashboards that ingest AI search results, allowing brands to measure their position, visibility, and sentiment within AI-generated responses (e.g., tracking the frequency of positive vs. neutral mentions in LLM summaries).',
+    desc: 'Purpose-built reporting makes position, visibility and sentiment across answer engines visible and comparable over time.',
   },
   {
     title: 'Contextual Intelligence',
-    desc: "Through advanced behavioural pipelines, I inject real-time user intent data back into your site's AI agents, delivering hyper-personalized, data-informed responses that drive engagement (e.g., tailoring AI chatbot responses based on a user's previous purchase history).",
+    desc: 'Real-time behavioural signals give AI experiences the context to respond usefully without abandoning governance or consent.',
   },
 ]
 
-/* Height collapse/expand with symmetric motion: content stays mounted, so
-   closing glides through the same animation as opening instead of snapping */
 function Collapse({ open, children }: { open: boolean; children: React.ReactNode }) {
   const innerRef = useRef<HTMLDivElement>(null)
   const [height, setHeight] = useState(0)
@@ -78,7 +75,7 @@ function Collapse({ open, children }: { open: boolean; children: React.ReactNode
 
   return (
     <div
-      className="overflow-hidden transition-[height,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+      className="ai-method-collapse"
       style={{ height: open ? height : 0, opacity: open ? 1 : 0 }}
       aria-hidden={!open}
     >
@@ -89,18 +86,15 @@ function Collapse({ open, children }: { open: boolean; children: React.ReactNode
 
 function QueryRow({ items, reverse }: { items: AiQuery[]; reverse?: boolean }) {
   return (
-    // py keeps pill borders and shadows inside the clip box
-    <div className="overflow-hidden py-1">
-      <div className={`flex w-max gap-3 ${reverse ? 'q-marquee-r' : 'q-marquee'}`}>
+    <div className="ai-query-lane">
+      <div className={reverse ? 'q-marquee-r' : 'q-marquee'}>
         {[0, 1].map((copy) => (
-          <div key={copy} className="flex gap-3 pr-3" aria-hidden={copy === 1}>
-            {items.map((q) => (
-              <span
-                key={q.text}
-                className="flex items-center gap-2 whitespace-nowrap bg-white border border-black/10 rounded-full px-4 py-2 text-[13px] text-black/70 shadow-sm"
-              >
-                {q.icon && <img src={q.icon} alt="" className="w-3.5 h-3.5 opacity-60" loading="lazy" />}
-                {q.text}
+          <div key={copy} className="ai-query-group" aria-hidden={copy === 1}>
+            {items.map((query) => (
+              <span key={query.text} className="ai-query-item">
+                {query.icon && <img src={query.icon} alt="" loading="lazy" />}
+                <span>{query.text}</span>
+                <i aria-hidden="true">✦</i>
               </span>
             ))}
           </div>
@@ -112,45 +106,52 @@ function QueryRow({ items, reverse }: { items: AiQuery[]; reverse?: boolean }) {
 
 export function AiSearch() {
   const [open, setOpen] = useState(false)
-  const { ref, inView } = useReveal<HTMLDivElement>()
-  return (
-    <div ref={ref} className={`mt-28 md:mt-36 ${inView ? 'rv-in' : ''}`}>
-      <h3 className="rv text-center text-[24px] md:text-[34px] font-semibold tracking-tight max-w-[860px] mx-auto leading-[1.25]">
-        The AI Search Strategy: I optimize your digital presence for the new search engine era.
-      </h3>
+  const { ref, inView } = useReveal<HTMLDivElement>(0.08)
 
-      {/* Query marquees: top drifts left, middle right, bottom left */}
-      <div className="rv q-fade mt-12 space-y-4" style={{ animationDelay: '0.15s' }}>
+  return (
+    <div ref={ref} className={`ai-field ${inView ? 'rv-in' : ''}`}>
+      <header className="ai-field-header">
+        <div>
+          <p className="ai-field-kicker rv">AI search / emerging channel</p>
+          <h3 className="rv" style={{ animationDelay: '0.1s' }}>
+            <span>Search is becoming </span>
+            <em>an answer.</em>
+          </h3>
+        </div>
+        <p className="ai-field-copy rv" style={{ animationDelay: '0.18s' }}>
+          I structure and measure the signals that help brands appear, get cited and understand
+          what happens next.
+        </p>
+      </header>
+
+      <div className="ai-query-field rv" style={{ animationDelay: '0.24s' }}>
         <QueryRow items={AI_QUERY_ROWS[0]} />
         <QueryRow items={AI_QUERY_ROWS[1]} reverse />
         <QueryRow items={AI_QUERY_ROWS[2]} />
       </div>
 
-      {/* Expandable methodology */}
-      <div className="rv flex flex-col items-center mt-12" style={{ animationDelay: '0.3s' }}>
+      <div className="ai-method rv" style={{ animationDelay: '0.3s' }}>
         <button
-          onClick={() => setOpen((o) => !o)}
-          className="cursor-pointer inline-flex items-center gap-2 border border-black/15 bg-white rounded-full px-6 py-2.5 text-[14px] font-medium hover:border-black/30 transition-colors"
+          type="button"
+          onClick={() => setOpen((current) => !current)}
+          className="ai-method-trigger"
+          aria-expanded={open}
+          aria-controls="ai-method-notes"
         >
-          How?
-          <ChevronDown
-            size={14}
-            className={`transition-transform duration-300 ${open ? 'rotate-180' : ''}`}
-          />
+          See the method
+          <ChevronDown size={15} className={open ? 'rotate-180' : ''} />
         </button>
-        <div className="w-full max-w-[900px]">
+
+        <div id="ai-method-notes">
           <Collapse open={open}>
-            {/* padding on all sides keeps the panel's shadow and rounded
-                corners clear of the clip box */}
-            <div className="pt-8 pb-6 px-3">
-              <div className="bg-white border border-black/10 rounded-[24px] p-7 md:p-9 text-left space-y-6 shadow-lg">
-                {HOW_ITEMS.map((item) => (
-                  <div key={item.title}>
-                    <p className="font-semibold text-[16px]">{item.title}</p>
-                    <p className="text-[14px] text-black/70 mt-1.5 leading-relaxed">{item.desc}</p>
-                  </div>
-                ))}
-              </div>
+            <div className="ai-method-grid">
+              {HOW_ITEMS.map((item, index) => (
+                <article key={item.title}>
+                  <span className="font-data">0{index + 1}</span>
+                  <h4>{item.title}</h4>
+                  <p>{item.desc}</p>
+                </article>
+              ))}
             </div>
           </Collapse>
         </div>
