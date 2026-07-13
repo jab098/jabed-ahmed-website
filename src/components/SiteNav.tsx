@@ -6,14 +6,20 @@ import { MagneticLink } from './MagneticLink'
 
 /* Fixed site navigation. Stays with the user while scrolling; after about
    half a viewport of downward travel it animates away, and the slightest
-   upward scroll animates it back. Every page-level surface is now light. */
+   upward scroll animates it back. It switches to its light treatment only
+   while crossing the dark Insights decision room. */
 export function SiteNav() {
   const [hidden, setHidden] = useState(false)
+  const [onDark, setOnDark] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     let lastY = window.scrollY
     let raf = 0
+    const decisionRoom = document.querySelector<HTMLElement>(
+      '[data-insights-stage="decision-room"]',
+    )
+
     const update = () => {
       raf = 0
       const y = window.scrollY
@@ -22,6 +28,9 @@ export function SiteNav() {
       else if (y > lastY + 2) setHidden(true)
       else if (y < lastY - 2) setHidden(false)
       lastY = y
+
+      const roomBounds = decisionRoom?.getBoundingClientRect()
+      setOnDark(Boolean(roomBounds && roomBounds.top < 90 && roomBounds.bottom > 90))
     }
     // Coalesce scroll bursts so state updates happen at most once per frame.
     const onScroll = () => {
@@ -29,9 +38,11 @@ export function SiteNav() {
     }
     update()
     window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
     return () => {
       cancelAnimationFrame(raf)
       window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
     }
   }, [])
 
@@ -43,16 +54,26 @@ export function SiteNav() {
     >
       <a href="#home" className="flex items-center gap-2.5">
         <LogoMark size={20} className="text-[#00df8e]" />
-        <span className="font-playfair italic text-xl tracking-wide text-black">
+        <span
+          className={`font-playfair italic text-xl tracking-wide transition-colors duration-300 ${
+            onDark ? 'text-white' : 'text-black'
+          }`}
+        >
           Jabed Ahmed
         </span>
       </a>
-      <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 backdrop-blur-md border rounded-full px-6 py-2 gap-6 text-[13px] font-medium bg-black/5 border-black/10">
+      <div
+        className={`hidden lg:flex absolute left-1/2 -translate-x-1/2 backdrop-blur-md border rounded-full px-6 py-2 gap-6 text-[13px] font-medium transition-colors duration-300 ${
+          onDark ? 'bg-white/10 border-white/20' : 'bg-black/5 border-black/10'
+        }`}
+      >
         {NAV_LINKS.map((link) => (
           <MagneticLink
             key={link.label}
             href={link.href}
-            className="inline-block text-black/65 hover:text-black transition-colors"
+            className={`inline-block transition-colors ${
+              onDark ? 'text-white/75 hover:text-white' : 'text-black/65 hover:text-black'
+            }`}
           >
             {link.label}
           </MagneticLink>
@@ -60,7 +81,7 @@ export function SiteNav() {
       </div>
       <button
         onClick={() => setMenuOpen((o) => !o)}
-        className="lg:hidden p-2 text-black transition-colors"
+        className={`lg:hidden p-2 transition-colors ${onDark ? 'text-white' : 'text-black'}`}
         aria-label={menuOpen ? 'Close menu' : 'Open menu'}
         aria-expanded={menuOpen}
       >

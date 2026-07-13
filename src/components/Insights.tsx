@@ -610,48 +610,45 @@ export function Insights() {
     <section
       ref={sectionRef}
       id="insights"
-      className={`paper-section w-full px-6 lg:px-12 pt-32 pb-16 text-black ${visible ? 'rv-in' : ''} ${chartIn ? 'wt-in' : ''}`}
+      className={`insights-section paper-section ${visible ? 'rv-in' : ''} ${chartIn ? 'wt-in' : ''}`}
       style={{ '--wt-base': booted ? '0s' : '0.9s' } as React.CSSProperties}
     >
-      {/* ~25/75 split: title column left, vertical separator, chart right —
-          the separator lines up with the Who Am I section's for a continuous
-          vertical rhythm while scrolling */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-        {/* Title column (~30%) */}
-        <div className="lg:col-span-3">
-          <SectionMarker index={2} label="Insights" />
-          <h2 className="rv text-black leading-[0.98] mt-8" style={{ animationDelay: '0.1s' }}>
-            <span
-              className="block font-playfair italic font-normal text-[40px] md:text-[48px]"
-              style={{ letterSpacing: '-0.05em' }}
-            >
-              Real Growth
-            </span>
-            <span
-              className="block font-normal text-[40px] md:text-[48px]"
-              style={{ letterSpacing: '-0.08em' }}
-            >
-              backed by data.
-            </span>
-          </h2>
-          <p
-            className="rv text-[16px] text-black/60 mt-6 leading-relaxed"
-            style={{ animationDelay: '0.2s' }}
-          >
-            Built the architecture and experimentation that has delivered millions in measurable
-            revenue uplift for global enterprises.
-          </p>
+      <div className="decision-room" data-insights-stage="decision-room">
+        <div className="decision-room-material" aria-hidden="true">
+          <span className="decision-room-bloom" />
+          <span className="decision-room-contours" />
         </div>
 
-        {/* Chart column (~75%) behind the vertical separator, over a soft
-            animated dotted texture */}
-        <div className="lg:col-span-9 relative lg:border-l lg:border-black/10 lg:pl-10">
-          <div className="dots-light absolute -inset-y-8 -right-6 left-0 lg:left-6" aria-hidden="true" />
-          <div
-            ref={chartRef}
-            className="rv relative w-full bg-[#111] rounded-[40px] overflow-hidden shadow-2xl p-4 md:p-8 border-t border-x border-b-0 border-[#00f09633]"
-            style={{ animationDelay: '0.25s' }}
-          >
+        <header className="decision-room-header">
+          <div className="decision-room-title">
+            <SectionMarker index={2} label="Insights" dark />
+            <h2 className="rv" style={{ animationDelay: '0.1s' }}>
+              <span>Evidence, </span>
+              <em>not instinct.</em>
+            </h2>
+          </div>
+          <div className="decision-room-copy rv" style={{ animationDelay: '0.2s' }}>
+            <p>
+              Measurement architecture and experimentation that turns uncertain product questions
+              into measurable commercial outcomes.
+            </p>
+            <div className="decision-room-proof" role="list" aria-label="Selected outcomes">
+              <span role="listitem">Governed measurement</span>
+              <span role="listitem">16-market scale</span>
+              <span role="listitem">€2M+ annual uplift</span>
+            </div>
+          </div>
+        </header>
+
+        <div
+          ref={chartRef}
+          className="decision-window rv"
+          style={{ animationDelay: '0.25s' }}
+        >
+          <div className="decision-window-label" aria-hidden="true">
+            <span>Live decision system</span>
+            <small>02 / working model</small>
+          </div>
         {/* Mobile: static, presentation-style dashboard (Attio-like) — the
             interactive shell is desktop-only */}
         <div className="md:hidden text-left wt-anim" aria-hidden="true">
@@ -1019,11 +1016,9 @@ export function Insights() {
           </div>
         </div>
         </div>
-        </div>
-      </div>
 
-      {/* AI search strategy — query marquees + expandable "How?" panel */}
-      <AiSearch />
+        <AiSearch />
+      </div>
     </section>
   )
 }
