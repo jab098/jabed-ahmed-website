@@ -10,25 +10,29 @@ export function Contact() {
     <section
       ref={ref}
       id="contact"
-      className={`contact-panel w-full px-6 lg:px-12 py-14 md:py-20 text-black rounded-[32px] md:rounded-[48px] mt-16 ${inView ? 'rv-in' : ''}`}
+      className={`contact-panel w-full text-black mt-16 ${inView ? 'rv-in' : ''}`}
     >
-      {/* Marker top-left, matching the other sections */}
-      <SectionMarker index={4} label="Contact" />
+      <header className="contact-topline">
+        <SectionMarker index={4} label="Contact" />
+        <p className="contact-consulting rv" style={{ animationDelay: '0.08s' }}>
+          <span />
+          Independent consulting · London / worldwide
+        </p>
+      </header>
 
-      <div className="max-w-[900px] mt-10 md:mt-14">
-        <h2
-          className="rv text-black leading-[1.05] text-[40px] sm:text-[56px] md:text-[68px]"
-          style={{ animationDelay: '0.1s' }}
-        >
-          Let's get your data{' '}
-          <span className="font-playfair italic" style={{ letterSpacing: '-0.04em' }}>
-            working for you.
-          </span>
-        </h2>
-        <div
-          className="rv flex flex-col sm:flex-row sm:items-center gap-8 sm:gap-12 mt-12"
-          style={{ animationDelay: '0.2s' }}
-        >
+      <div className="contact-layout">
+        <div className="contact-message">
+          <h2 className="rv" style={{ animationDelay: '0.1s' }}>
+            Let's get your data <span className="font-playfair italic">working for you.</span>
+          </h2>
+          <p className="rv contact-intro" style={{ animationDelay: '0.18s' }}>
+            Bring the measurement problem. We’ll use the first call to clarify the decision, the
+            evidence required and the most useful next step.
+          </p>
+        </div>
+
+        <div className="rv contact-actions" style={{ animationDelay: '0.24s' }}>
+          <p className="contact-action-label">Start with a 30-minute intro</p>
           <a
             ref={magnet.ref}
             href={CALENDLY_URL}
@@ -41,13 +45,12 @@ export function Contact() {
               <ArrowUpRight size={17} strokeWidth={2} />
             </span>
           </a>
-          <div>
-            <p className="text-black/40 text-xs font-medium tracking-[0.2em] uppercase mb-1.5">
-              Or drop me a line
-            </p>
+
+          <div className="contact-email">
+            <p>Prefer email?</p>
             <a
               href={`mailto:${EMAIL}`}
-              className="font-playfair italic text-2xl sm:text-3xl text-black hover:text-[#008f5b] transition-colors"
+              className="font-playfair italic"
             >
               {EMAIL}
             </a>
@@ -55,11 +58,10 @@ export function Contact() {
         </div>
       </div>
 
-      {/* Footer strip */}
-      <div className="w-full flex flex-col sm:flex-row justify-between items-center gap-2 text-[12px] text-black/40 mt-16 md:mt-20 border-t border-black/10 pt-8">
+      <footer className="contact-footer">
         <p>© {new Date().getFullYear()} Jabed Ahmed — Data & Analytics Consulting</p>
         <p>30-minute intro call, no obligation.</p>
-      </div>
+      </footer>
     </section>
   )
 }

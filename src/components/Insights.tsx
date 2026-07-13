@@ -539,6 +539,97 @@ function AnimatedHeight({ children }: { children: React.ReactNode }) {
   )
 }
 
+function MobileDecisionSnapshot() {
+  const visibility = CHART_DATA.Visibility[0]
+  const first = visibility.values[0]
+  const latest = visibility.values[visibility.values.length - 1]
+  const change = latest - first
+  const width = 300
+  const height = 116
+  const minimum = Math.min(...visibility.values) - 4
+  const maximum = Math.max(...visibility.values) + 4
+  const points = visibility.values
+    .map((value, index) => {
+      const x = (index / (visibility.values.length - 1)) * width
+      const y = height - ((value - minimum) / (maximum - minimum)) * height
+      return `${x},${y}`
+    })
+    .join(' ')
+
+  return (
+    <>
+      <div
+        className="mobile-decision-snapshot lg:hidden"
+        data-mobile-dashboard="executive-snapshot"
+        aria-hidden="true"
+      >
+        <header>
+          <span className="mobile-snapshot-brand">
+            <LogoMark size={13} />
+            Decision snapshot
+          </span>
+          <span className="font-data">Jan — Jun</span>
+        </header>
+
+        <div className="mobile-snapshot-metric">
+          <div>
+            <span className="font-data">AI visibility</span>
+            <strong>{latest}%</strong>
+          </div>
+          <p className="font-data">
+            +{change} pts
+            <span>since January</span>
+          </p>
+        </div>
+
+        <div className="mobile-snapshot-chart">
+          <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="mobile-visibility-fill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#00df8e" stopOpacity="0.28" />
+                <stop offset="100%" stopColor="#00df8e" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <path d={`M 0 ${height} L ${points} L ${width} ${height} Z`} fill="url(#mobile-visibility-fill)" />
+            <polyline
+              points={points}
+              fill="none"
+              stroke="#00df8e"
+              strokeWidth="3"
+              vectorEffect="non-scaling-stroke"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <div className="font-data">
+            <span>Jan</span>
+            <span>Jun</span>
+          </div>
+        </div>
+
+        <div className="mobile-snapshot-ranking">
+          <p>Platform visibility</p>
+          {COMPETITORS.slice(0, 3).map((competitor, index) => (
+            <div key={competitor.brand}>
+              <span className="font-data">0{index + 1}</span>
+              <strong>{competitor.brand}</strong>
+              <i>
+                <span style={{ width: competitor.visibility }} />
+              </i>
+              <b className="font-data">{competitor.visibility}</b>
+            </div>
+          ))}
+        </div>
+      </div>
+      <p className="sr-only">
+        Decision snapshot: Google Analytics AI visibility increased from {first}% in January to{' '}
+        {latest}% in June. The three leading platforms are Google Analytics, Salesforce and Meta
+        Ads.
+      </p>
+    </>
+  )
+}
+
 export function Insights() {
   const [visible, setVisible] = useState(false)
   const [chartIn, setChartIn] = useState(false)
@@ -576,8 +667,8 @@ export function Insights() {
     return () => io.disconnect()
   }, [])
 
-  // …but the dashboard holds its entrance until half the chart card is
-  // actually on screen, so quick scrollers see the animation, not its wake
+  // The dashboard begins as soon as its frame enters the composition. A low
+  // threshold avoids presenting an empty window on the first Insights view.
   useEffect(() => {
     const el = chartRef.current
     if (!el) return
@@ -588,21 +679,23 @@ export function Insights() {
           io.disconnect()
         }
       },
-      { threshold: 0.5 },
+      { threshold: 0.12 },
     )
     io.observe(el)
     return () => io.disconnect()
   }, [])
 
-  // While the entrance runs, panel content waits its turn (--wt-base); once
-  // booted, tab switches replay the same animations with no base delay
+  // Keep the initial dashboard entrance staged. Once it has landed, view
+  // changes stay immediate so the workspace never flashes empty.
   useEffect(() => {
     if (!chartIn) return
-    const t = setTimeout(() => setBooted(true), 2400)
+    const t = setTimeout(() => setBooted(true), 1200)
     return () => clearTimeout(t)
   }, [chartIn])
 
-  const delay = (s: number) => ({ animationDelay: `calc(var(--wt-base) + ${s}s)` })
+  const delay = (s: number) => ({
+    animationDelay: booted ? '0s' : `calc(var(--wt-base) + ${s}s)`,
+  })
 
   const donutCircumference = 2 * Math.PI * 48
 
@@ -640,54 +733,28 @@ export function Insights() {
           </div>
         </header>
 
-        <div
-          ref={chartRef}
-          className="decision-window rv"
-          style={{ animationDelay: '0.25s' }}
-        >
+        <div className="decision-stage">
+          <aside className="decision-stage-note decision-stage-note-left" aria-hidden="true">
+            <span className="font-data">01 / input</span>
+            <strong>Signal</strong>
+            <small>Capture · validate</small>
+          </aside>
+
+          <div
+            ref={chartRef}
+            className="decision-window rv"
+            style={{ animationDelay: '0.25s' }}
+          >
           <div className="decision-window-label" aria-hidden="true">
             <span>Live decision system</span>
             <small>02 / working model</small>
           </div>
-        {/* Mobile: static, presentation-style dashboard (Attio-like) — the
-            interactive shell is desktop-only */}
-        <div className="md:hidden text-left wt-anim" aria-hidden="true">
-          <div className="flex items-center gap-2 px-2 pb-4">
-            <LogoMark size={12} className="text-[#00df8e]" />
-            <span className="text-[#f4f4f5] text-sm font-medium">Jabed's Dashboard</span>
-            <span className="text-[#52525b]">/</span>
-            <span className="text-[#a1a1aa] text-sm">Overview</span>
-          </div>
-          <div className="rounded-xl border border-[#27272a] border-t-white/10 bg-[#0e0e11] p-4 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.8)]">
-            <p className="text-[#f4f4f5] text-sm font-semibold">Visibility</p>
-            <p className="text-[#71717a] text-xs mt-1 mb-3">
-              Share of AI answers mentioning each platform
-            </p>
-            <DashChart tab="Visibility" />
-          </div>
-          <div className="rounded-xl border border-[#27272a] bg-[#0e0e11] p-4 mt-4">
-            <p className="text-[#f4f4f5] text-sm font-semibold mb-2">Platforms</p>
-            {COMPETITORS.slice(0, 3).map((c) => (
-              <div
-                key={c.brand}
-                className="flex items-center gap-2.5 py-2.5 border-t border-[#1f1f23] first:border-t-0"
-              >
-                <span
-                  className={`w-5 h-5 rounded ${c.tone} text-[9px] font-bold text-white flex items-center justify-center shrink-0`}
-                >
-                  {c.brand[0]}
-                </span>
-                <span className="text-[#f4f4f5] text-xs">{c.brand}</span>
-                <span className="font-data ml-auto text-[#f4f4f5] text-xs">{c.visibility}</span>
-                <span className={`font-data text-[10px] ${deltaTone(c.visDelta)}`}>{c.visDelta}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* Mobile gets a concise decision story; the full workspace remains desktop-only. */}
+        <MobileDecisionSnapshot />
 
         {/* Dashboard shell */}
         <div
-          className="wt-anim wt-pop rounded-2xl border border-emerald-400/15 bg-[#0a0a0c]/90 backdrop-blur-sm shadow-[0_0_45px_rgba(16,185,129,0.13),0_0_130px_rgba(16,185,129,0.07),0_30px_80px_-20px_rgba(0,0,0,0.85)] overflow-hidden hidden md:flex text-left"
+          className="wt-anim wt-pop rounded-2xl border border-emerald-400/15 bg-[#0a0a0c]/90 backdrop-blur-sm shadow-[0_0_45px_rgba(16,185,129,0.13),0_0_130px_rgba(16,185,129,0.07),0_30px_80px_-20px_rgba(0,0,0,0.85)] overflow-hidden hidden lg:flex text-left"
           style={{ animationDelay: '0.4s' }}
         >
           {/* Left sidebar */}
@@ -1015,10 +1082,17 @@ export function Insights() {
             </AnimatedHeight>
           </div>
         </div>
-        </div>
+          </div>
 
-        <AiSearch />
+          <aside className="decision-stage-note decision-stage-note-right" aria-hidden="true">
+            <span className="font-data">03 / output</span>
+            <strong>Decision</strong>
+            <small>Compare · defend</small>
+          </aside>
+        </div>
       </div>
+
+      <AiSearch />
     </section>
   )
 }
