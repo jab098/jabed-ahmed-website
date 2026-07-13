@@ -1,35 +1,29 @@
 import { useState } from 'react'
 import { ArrowDownRight } from 'lucide-react'
-import { LOGOS, SERVICES } from '../data'
+import { SERVICES, TOOL_NAMES } from '../data'
 import { useReveal } from '../hooks'
 import { SectionMarker } from './SectionMarker'
 
-function LogoMarquee() {
+function ToolRibbon() {
   return (
     <div className="capability-tools" aria-label="Platforms and tools I work with">
       <div className="capability-tools-heading">
         <span>Selected tools</span>
-        <span>{LOGOS.length} platforms across the stack</span>
+        <span>{TOOL_NAMES.length} platforms across the stack</span>
       </div>
-      <div className="logo-marquee">
-        <div className="logo-marquee-fade">
-          <div className="logo-marquee-track">
-            {[0, 1, 2].map((copy) => (
-              <div className="logo-marquee-group" key={copy} aria-hidden={copy > 0}>
-                {LOGOS.map((logo) => (
-                  <span key={logo.name} className="inline-block leading-none">
-                    <img
-                      src={logo.src}
-                      alt={copy === 0 ? logo.name : ''}
-                      title={logo.name}
-                      loading="lazy"
-                      draggable={false}
-                    />
-                  </span>
-                ))}
-              </div>
-            ))}
-          </div>
+      <p className="sr-only">{TOOL_NAMES.join(', ')}</p>
+      <div className="tool-ribbon" aria-hidden="true">
+        <div className="tool-ribbon-track">
+          {[0, 1].map((copy) => (
+            <div className="tool-ribbon-group" key={copy}>
+              {TOOL_NAMES.map((tool) => (
+                <span key={tool}>
+                  {tool}
+                  <i>✦</i>
+                </span>
+              ))}
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -74,9 +68,11 @@ function CapabilityRow({
       <div
         id={detailId}
         className="capability-detail"
+        data-open={active}
         role="region"
         aria-labelledby={triggerId}
         aria-hidden={!active}
+        inert={!active}
       >
         <div>
           <div className="capability-detail-inner">
@@ -141,7 +137,7 @@ export function Service() {
         </div>
       </div>
 
-      <LogoMarquee />
+      <ToolRibbon />
     </section>
   )
 }

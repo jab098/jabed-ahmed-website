@@ -6,7 +6,11 @@ import { MagneticLink } from './MagneticLink'
 import { SectionMarker } from './SectionMarker'
 
 const PRACTICES = ['Collect', 'Govern', 'Experiment', 'Explain'] as const
-const PROFILE_STATS = [WHO_STATS[0], WHO_STATS[2], WHO_STATS[1]] as const
+const PROFILE_STATS = [
+  { ...WHO_STATS[0], context: 'Across product, growth & engineering' },
+  { ...WHO_STATS[2], context: 'One governed measurement standard' },
+  { ...WHO_STATS[1], context: 'Delivered through experimentation' },
+] as const
 
 function CountUp({
   value,
@@ -77,10 +81,11 @@ export function WhoAmI() {
       <header className="profile-topline">
         <SectionMarker index={1} label="Profile" />
         <p className="profile-identity rv" style={{ animationDelay: '0.08s' }}>
-          <span className="profile-identity-dot" />
-          Independent data &amp; analytics consultant
-          <span aria-hidden="true">/</span>
-          London · worldwide
+          <span className="profile-identity-item">
+            <span className="profile-identity-dot" />
+            Independent data &amp; analytics consultant
+          </span>
+          <span className="profile-identity-item">Based in London · working worldwide</span>
         </p>
       </header>
 
@@ -109,8 +114,8 @@ export function WhoAmI() {
       <div className="profile-practice-rail rv" style={{ animationDelay: '0.3s' }} role="list">
         {PRACTICES.map((practice, index) => (
           <span key={practice} role="listitem">
-            {practice}
-            {index < PRACTICES.length - 1 && <i aria-hidden="true">/</i>}
+            <small className="font-data">0{index + 1}</small>
+            <strong>{practice}</strong>
           </span>
         ))}
       </div>
@@ -133,7 +138,10 @@ export function WhoAmI() {
                 decimals={'decimals' in stat ? stat.decimals : undefined}
               />
             </p>
-            <p className="profile-proof-label">{stat.label}</p>
+            <p className="profile-proof-label">
+              <strong>{stat.label}</strong>
+              <span>{stat.context}</span>
+            </p>
           </article>
         ))}
       </div>

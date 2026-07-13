@@ -1,17 +1,16 @@
-import { useEffect, useState } from 'react'
-import { Menu, X } from 'lucide-react'
-import { NAV_LINKS } from '../data'
+import { useEffect, useRef, useState } from 'react'
+import { ArrowUpRight, Menu, X } from 'lucide-react'
+import { CALENDLY_URL, EMAIL, NAV_LINKS } from '../data'
 import { LogoMark } from './LogoMark'
 import { MagneticLink } from './MagneticLink'
 
-/* Fixed site navigation. Stays with the user while scrolling; after about
-   half a viewport of downward travel it animates away, and the slightest
-   upward scroll animates it back. It switches to its light treatment only
-   while crossing the dark Insights decision room. */
 export function SiteNav() {
   const [hidden, setHidden] = useState(false)
   const [onDark, setOnDark] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [activeSection, setActiveSection] = useState<(typeof NAV_LINKS)[number]['href']>('#home')
+  const progressRef = useRef<HTMLSpanElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     let lastY = window.scrollY
@@ -19,23 +18,42 @@ export function SiteNav() {
     const decisionRoom = document.querySelector<HTMLElement>(
       '[data-insights-stage="decision-room"]',
     )
+    const sections = NAV_LINKS.map((link) => ({
+      href: link.href,
+      element: document.querySelector<HTMLElement>(link.href),
+    }))
 
     const update = () => {
       raf = 0
       const y = window.scrollY
-      const vh = window.innerHeight
-      if (y <= vh * 0.5) setHidden(false)
-      else if (y > lastY + 2) setHidden(true)
-      else if (y < lastY - 2) setHidden(false)
+      const viewportHeight = window.innerHeight
+
+      if (y <= viewportHeight * 0.45) setHidden(false)
+      else if (y > lastY + 3) setHidden(true)
+      else if (y < lastY - 3) setHidden(false)
       lastY = y
 
+      const navigationAnchor = Math.min(150, viewportHeight * 0.24)
+      const currentSection = sections.find(({ element }) => {
+        const bounds = element?.getBoundingClientRect()
+        return Boolean(bounds && bounds.top <= navigationAnchor && bounds.bottom > navigationAnchor)
+      })
+      if (currentSection) setActiveSection(currentSection.href)
+
       const roomBounds = decisionRoom?.getBoundingClientRect()
-      setOnDark(Boolean(roomBounds && roomBounds.top < 90 && roomBounds.bottom > 90))
+      setOnDark(Boolean(roomBounds && roomBounds.top < 92 && roomBounds.bottom > 92))
+
+      const maxScroll = document.documentElement.scrollHeight - viewportHeight
+      const progress = maxScroll > 0 ? Math.min(Math.max(y / maxScroll, 0), 1) : 0
+      if (progressRef.current) {
+        progressRef.current.style.transform = `scaleX(${progress})`
+      }
     }
-    // Coalesce scroll bursts so state updates happen at most once per frame.
+
     const onScroll = () => {
       if (!raf) raf = requestAnimationFrame(update)
     }
+
     update()
     window.addEventListener('scroll', onScroll, { passive: true })
     window.addEventListener('resize', onScroll)
@@ -46,63 +64,147 @@ export function SiteNav() {
     }
   }, [])
 
+  useEffect(() => {
+    if (!menuOpen) return
+
+    const previousOverflow = document.body.style.overflow
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const menu = menuRef.current
+    const focusable = menu
+      ? Array.from(menu.querySelectorAll<HTMLElement>('a[href], button:not([disabled])'))
+      : []
+    const focusRaf = requestAnimationFrame(() => focusable[0]?.focus())
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMenuOpen(false)
+        return
+      }
+      if (event.key !== 'Tab' || focusable.length === 0) return
+
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      cancelAnimationFrame(focusRaf)
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', onKeyDown)
+      previouslyFocused?.focus()
+    }
+  }, [menuOpen])
+
+  const effectiveDark = onDark && !menuOpen
+  const effectiveHidden = hidden && !menuOpen
+
   return (
     <nav
-      className={`fixed top-0 inset-x-0 z-[100] flex justify-between items-center px-10 md:px-12 lg:px-20 pt-10 md:pt-12 lg:pt-14 pb-4 transition-[opacity,transform] duration-700 ${
-        hidden ? 'opacity-0 -translate-y-3 pointer-events-none' : 'opacity-100 translate-y-0'
-      }`}
+      className={`site-nav ${effectiveHidden ? 'is-hidden' : ''} ${effectiveDark ? 'is-dark' : ''} ${menuOpen ? 'is-menu-open' : ''}`}
+      aria-label="Primary navigation"
     >
-      <a href="#home" className="flex items-center gap-2.5">
-        <LogoMark size={20} className="text-[#00df8e]" />
-        <span
-          className={`font-playfair italic text-xl tracking-wide transition-colors duration-300 ${
-            onDark ? 'text-white' : 'text-black'
-          }`}
-        >
-          Jabed Ahmed
-        </span>
-      </a>
-      <div
-        className={`hidden lg:flex absolute left-1/2 -translate-x-1/2 backdrop-blur-md border rounded-full px-6 py-2 gap-6 text-[13px] font-medium transition-colors duration-300 ${
-          onDark ? 'bg-white/10 border-white/20' : 'bg-black/5 border-black/10'
-        }`}
-      >
-        {NAV_LINKS.map((link) => (
-          <MagneticLink
-            key={link.label}
-            href={link.href}
-            className={`inline-block transition-colors ${
-              onDark ? 'text-white/75 hover:text-white' : 'text-black/65 hover:text-black'
-            }`}
-          >
-            {link.label}
-          </MagneticLink>
-        ))}
-      </div>
-      <button
-        onClick={() => setMenuOpen((o) => !o)}
-        className={`lg:hidden p-2 transition-colors ${onDark ? 'text-white' : 'text-black'}`}
-        aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-        aria-expanded={menuOpen}
-      >
-        {menuOpen ? <X size={22} /> : <Menu size={22} />}
-      </button>
+      <div className="site-nav-frame">
+        <a href="#home" className="site-wordmark" onClick={() => setMenuOpen(false)}>
+          <LogoMark size={20} className="site-wordmark-mark" />
+          <span>Jabed Ahmed</span>
+        </a>
 
-      {/* Mobile menu panel — self-coloured, so it works over any section */}
-      {menuOpen && (
-        <div className="menu-pop lg:hidden absolute top-full right-6 left-6 mt-1 rounded-2xl bg-[#0A0D10]/95 backdrop-blur-md border border-white/10 p-3 flex flex-col shadow-2xl">
+        <div className="site-nav-links">
           {NAV_LINKS.map((link) => (
-            <a
+            <MagneticLink
               key={link.label}
               href={link.href}
-              onClick={() => setMenuOpen(false)}
-              className="px-4 py-3 rounded-xl text-[15px] text-white/80 hover:text-white hover:bg-white/5 transition-colors"
+              className={activeSection === link.href ? 'is-active' : ''}
+              aria-current={activeSection === link.href ? 'page' : undefined}
             >
               {link.label}
-            </a>
+            </MagneticLink>
           ))}
         </div>
-      )}
+
+        <div className="site-nav-consulting">
+          <span>
+            <i />
+            Independent consulting
+          </span>
+          <a href={CALENDLY_URL} target="_blank" rel="noreferrer">
+            Book an intro
+            <ArrowUpRight size={13} strokeWidth={1.9} />
+          </a>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setMenuOpen((open) => !open)}
+          className="site-menu-toggle"
+          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={menuOpen}
+          aria-controls="mobile-site-menu"
+        >
+          {menuOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
+      </div>
+
+      <div
+        ref={menuRef}
+        id="mobile-site-menu"
+        className={`mobile-menu-panel ${menuOpen ? 'is-open' : ''}`}
+        role="dialog"
+        aria-modal={menuOpen || undefined}
+        aria-label="Site menu"
+        aria-hidden={!menuOpen}
+        inert={!menuOpen}
+      >
+        <div className="mobile-menu-material" aria-hidden="true" />
+        <div className="mobile-menu-inner">
+          <p className="mobile-menu-kicker">Data &amp; analytics consulting</p>
+          <div className="mobile-menu-links">
+            {NAV_LINKS.map((link) => (
+              <a
+                key={link.label}
+                href={link.href}
+                className={activeSection === link.href ? 'is-active' : ''}
+                aria-current={activeSection === link.href ? 'page' : undefined}
+                onClick={() => setMenuOpen(false)}
+              >
+                <span className="font-data">{link.number}</span>
+                <strong>{link.label}</strong>
+                <ArrowUpRight size={19} strokeWidth={1.55} aria-hidden="true" />
+              </a>
+            ))}
+          </div>
+
+          <div className="mobile-menu-footer">
+            <p>
+              <span />
+              Independent consulting · London / worldwide
+            </p>
+            <a href={`mailto:${EMAIL}`} className="mobile-menu-email">
+              {EMAIL}
+            </a>
+            <a
+              href={CALENDLY_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="mobile-menu-call"
+            >
+              Book a 30-minute intro
+              <ArrowUpRight size={16} strokeWidth={1.8} />
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <span className="site-scroll-progress-track" aria-hidden="true">
+        <span ref={progressRef} className="site-scroll-progress" />
+      </span>
     </nav>
   )
 }

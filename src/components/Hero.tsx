@@ -49,7 +49,12 @@ export function Hero() {
             rel="noreferrer"
             className="site-primary-cta"
           >
-            <span>Schedule a call</span>
+            <span className="site-cta-label">
+              <span className="site-cta-label-full">Schedule a call</span>
+              <span className="site-cta-label-compact" aria-hidden="true">
+                Book a call
+              </span>
+            </span>
             <span className="site-cta-icon">
               <ArrowUpRight size={17} strokeWidth={2} />
             </span>

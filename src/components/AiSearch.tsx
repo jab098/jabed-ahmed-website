@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { SIMPLE_ICONS } from '../data'
 import { useReveal } from '../hooks'
@@ -60,26 +61,24 @@ const HOW_ITEMS = [
   },
 ]
 
-function Collapse({ open, children }: { open: boolean; children: React.ReactNode }) {
-  const innerRef = useRef<HTMLDivElement>(null)
-  const [height, setHeight] = useState(0)
-
-  useEffect(() => {
-    const el = innerRef.current
-    if (!el) return
-    const ro = new ResizeObserver(() => setHeight(el.offsetHeight))
-    ro.observe(el)
-    setHeight(el.offsetHeight)
-    return () => ro.disconnect()
-  }, [])
-
+function Collapse({
+  id,
+  open,
+  children,
+}: {
+  id: string
+  open: boolean
+  children: ReactNode
+}) {
   return (
     <div
+      id={id}
       className="ai-method-collapse"
-      style={{ height: open ? height : 0, opacity: open ? 1 : 0 }}
+      data-open={open}
       aria-hidden={!open}
+      inert={!open}
     >
-      <div ref={innerRef}>{children}</div>
+      <div className="ai-method-collapse-inner">{children}</div>
     </div>
   )
 }
@@ -106,14 +105,25 @@ function QueryRow({ items, reverse }: { items: AiQuery[]; reverse?: boolean }) {
 
 export function AiSearch() {
   const [open, setOpen] = useState(false)
-  const { ref, inView } = useReveal<HTMLDivElement>(0.08)
+  const { ref, inView } = useReveal<HTMLElement>(0.08)
 
   return (
-    <div ref={ref} className={`ai-field ${inView ? 'rv-in' : ''}`}>
+    <section
+      ref={ref}
+      id="ai-search"
+      className={`ai-field ${inView ? 'rv-in' : ''}`}
+      data-ai-stage="answer-field"
+      aria-labelledby="ai-field-title"
+    >
+      <div className="ai-field-material" aria-hidden="true">
+        <span className="ai-field-wash" />
+        <span className="ai-field-lines" />
+      </div>
+
       <header className="ai-field-header">
         <div>
           <p className="ai-field-kicker rv">AI search / emerging channel</p>
-          <h3 className="rv" style={{ animationDelay: '0.1s' }}>
+          <h3 id="ai-field-title" className="rv" style={{ animationDelay: '0.1s' }}>
             <span>Search is becoming </span>
             <em>an answer.</em>
           </h3>
@@ -124,7 +134,15 @@ export function AiSearch() {
         </p>
       </header>
 
-      <div className="ai-query-field rv" style={{ animationDelay: '0.24s' }}>
+      <p className="sr-only">
+        Example question themes include measurement architecture, experimentation, consent,
+        analytics quality and AI-search attribution.
+      </p>
+      <div
+        className="ai-query-field rv"
+        style={{ animationDelay: '0.24s' }}
+        aria-hidden="true"
+      >
         <QueryRow items={AI_QUERY_ROWS[0]} />
         <QueryRow items={AI_QUERY_ROWS[1]} reverse />
         <QueryRow items={AI_QUERY_ROWS[2]} />
@@ -142,20 +160,18 @@ export function AiSearch() {
           <ChevronDown size={15} className={open ? 'rotate-180' : ''} />
         </button>
 
-        <div id="ai-method-notes">
-          <Collapse open={open}>
-            <div className="ai-method-grid">
-              {HOW_ITEMS.map((item, index) => (
-                <article key={item.title}>
-                  <span className="font-data">0{index + 1}</span>
-                  <h4>{item.title}</h4>
-                  <p>{item.desc}</p>
-                </article>
-              ))}
-            </div>
-          </Collapse>
-        </div>
+        <Collapse id="ai-method-notes" open={open}>
+          <div className="ai-method-grid">
+            {HOW_ITEMS.map((item, index) => (
+              <article key={item.title}>
+                <span className="font-data">0{index + 1}</span>
+                <h4>{item.title}</h4>
+                <p>{item.desc}</p>
+              </article>
+            ))}
+          </div>
+        </Collapse>
       </div>
-    </div>
+    </section>
   )
 }
