@@ -1,0 +1,103 @@
+:root {
+  --signal: #ff5a1f;
+  --ink: #11100f;
+  --paper: #f1f0ec;
+  --muted-dark: #85817e;
+  --muted-light: #706d69;
+  color: var(--ink);
+  background: var(--paper);
+  font-family: Inter, Arial, sans-serif;
+  font-synthesis: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: var(--ink);
+}
+
+body {
+  width: 100%;
+  margin: 0;
+  overflow-x: clip;
+  background: var(--paper);
+}
+
+::selection {
+  color: var(--ink);
+  background: var(--signal);
+}
+
+section[id] {
+  scroll-margin-top: 4.25rem;
+}
+
+body,
+button,
+a {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  border: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 3px;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.site-shell {
+  min-height: 100vh;
+  overflow: clip;
+}
+
+.skip-link {
+  position: fixed;
+  z-index: 1000;
+  top: 0;
+  left: 0;
+  padding: 0.75rem 1rem;
+  color: var(--ink);
+  background: var(--signal);
+  transform: translateY(-110%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+main > section {
+  min-height: 48rem;
+  padding: 8rem 2rem;
+}
+
+.eyebrow,
+article > span {
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+}
+
+.systems-section,
+.faq-section {
+  color: var(--paper);
+  background: var(--ink);
+}

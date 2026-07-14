@@ -1,67 +1,77 @@
+import { useLayoutEffect, useRef } from 'react'
 import { ArrowUpRight } from 'lucide-react'
-import { CALENDLY_URL, EMAIL } from '../data'
-import { useMagnetic, useReveal } from '../hooks'
-import { SectionMarker } from './SectionMarker'
+import { CALENDLY_URL, EMAIL, LINKEDIN_URL } from '../data'
+import { gsap } from '../motion'
+import { FooterGlyphStream } from './FooterGlyphStream'
 
 export function Contact() {
-  const magnet = useMagnetic()
-  const { ref, inView } = useReveal<HTMLElement>()
+  const rootRef = useRef<HTMLElement>(null)
+
+  useLayoutEffect(() => {
+    const root = rootRef.current
+    if (!root || navigator.userAgent.includes('jsdom')) return
+    const context = gsap.context(() => {
+      gsap.fromTo('.contact-line > span', { yPercent: 110 }, {
+        yPercent: 0,
+        stagger: 0.08,
+        ease: 'power4.out',
+        scrollTrigger: { trigger: root, start: 'top 68%', end: 'center 54%', scrub: 0.7 },
+      })
+      gsap.fromTo('.contact-actions-new', { opacity: 0, y: 34 }, {
+        opacity: 1,
+        y: 0,
+        scrollTrigger: { trigger: root, start: 'top 42%' },
+        duration: 0.8,
+      })
+      gsap.timeline({
+        scrollTrigger: { trigger: root, start: 'top 88%', end: 'top 74%', scrub: 0.2 },
+      })
+        .to('.contact-flash-word', { color: '#ff5a1f', duration: 0.2, ease: 'power3.inOut' })
+        .to('.contact-flash-word', { color: '#ff5a1f', duration: 0.12, ease: 'none' })
+        .to('.contact-flash-word', { color: '#11100f', duration: 0.24, ease: 'power3.inOut' })
+    }, root)
+    return () => context.revert()
+  }, [])
+
   return (
-    <section
-      ref={ref}
-      id="contact"
-      className={`contact-panel w-full text-black mt-16 ${inView ? 'rv-in' : ''}`}
-    >
-      <header className="contact-topline">
-        <SectionMarker index={4} label="Contact" />
-        <p className="contact-consulting rv" style={{ animationDelay: '0.08s' }}>
-          <span />
-          Independent consulting · London / worldwide
-        </p>
-      </header>
-
-      <div className="contact-layout">
-        <div className="contact-message">
-          <h2 className="rv" style={{ animationDelay: '0.1s' }}>
-            Let's get your data <span className="font-playfair italic">working for you.</span>
-          </h2>
-          <p className="rv contact-intro" style={{ animationDelay: '0.18s' }}>
-            Bring the measurement problem. We’ll use the first call to clarify the decision, the
-            evidence required and the most useful next step.
-          </p>
+    <>
+      <section ref={rootRef} id="contact" className="contact-section" aria-labelledby="contact-title">
+        <div className="contact-topline-new">
+          <span>// Start a conversation</span>
+          <span>Independent consulting · London / worldwide</span>
         </div>
-
-        <div className="rv contact-actions" style={{ animationDelay: '0.24s' }}>
-          <p className="contact-action-label">Start with a 30-minute intro</p>
-          <a
-            ref={magnet.ref}
-            href={CALENDLY_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="site-primary-cta self-start"
-          >
-            <span>Schedule a call</span>
-            <span className="site-cta-icon">
-              <ArrowUpRight size={17} strokeWidth={2} />
-            </span>
+        <h2 id="contact-title" aria-label="Ready to make your data useful?">
+          <span className="contact-line"><span>Ready to make</span></span>
+          <span className="contact-line"><span><span className="contact-flash-word" data-scroll-flash="tight">your</span> data <em>useful?</em></span></span>
+        </h2>
+        <div className="contact-actions-new">
+          <p>Bring the measurement problem. We’ll clarify the decision, the evidence required and the most useful next move.</p>
+          <a className="contact-primary" href={CALENDLY_URL} target="_blank" rel="noreferrer">
+            <span>Schedule a call</span><ArrowUpRight aria-hidden="true" />
           </a>
-
-          <div className="contact-email">
-            <p>Prefer email?</p>
-            <a
-              href={`mailto:${EMAIL}`}
-              className="font-playfair italic"
-            >
-              {EMAIL}
-            </a>
-          </div>
+          <a className="contact-email-new" href={`mailto:${EMAIL}`} aria-label={EMAIL}>
+            <span>Prefer email?</span><strong>{EMAIL}</strong><ArrowUpRight aria-hidden="true" />
+          </a>
         </div>
-      </div>
+      </section>
 
-      <footer className="contact-footer">
-        <p>© {new Date().getFullYear()} Jabed Ahmed — Data & Analytics Consulting</p>
-        <p>30-minute intro call, no obligation.</p>
+      <footer className="signal-footer">
+        <FooterGlyphStream />
+        <div className="signal-footer__top">
+          <span>JA / DATA</span>
+          <span>Signals into decisions</span>
+        </div>
+        <div className="signal-footer__wordmark" aria-hidden="true">JA<span>.</span>DATA</div>
+        <div className="signal-footer__bottom">
+          <p>© {new Date().getFullYear()} Jabed Ahmed</p>
+          <nav aria-label="Footer navigation">
+            <a href={LINKEDIN_URL} target="_blank" rel="noreferrer">LinkedIn</a>
+            <a href={`mailto:${EMAIL}`}>Email</a>
+            <a href="#home">Back to top</a>
+          </nav>
+          <p>Data &amp; analytics consulting</p>
+        </div>
       </footer>
-    </section>
+    </>
   )
 }

@@ -2,13 +2,13 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="/src/assets/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
       content="Jabed Ahmed — Data & Analytics Consultant. Tag management, server-side tracking, CRO and privacy-compliant data pipelines for global digital products."
     />
-    <meta name="theme-color" content="#f3efe6" />
+    <meta name="theme-color" content="#11100f" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Jabed Ahmed — Data & Analytics Consulting" />
     <meta
@@ -16,13 +16,32 @@
       content="Tag management, server-side tracking, CRO and privacy-compliant data pipelines for global digital products."
     />
     <title>Jabed Ahmed</title>
-    <!-- Fonts load from the head with early connections, instead of a
-         render-blocking @import discovered only after the CSS bundle lands -->
+    <style>
+      html.is-loading,
+      html.is-loading body,
+      html.is-loading #root {
+        min-height: 100%;
+        background: #ff5a1f;
+        overflow: hidden;
+      }
+    </style>
+    <script>
+      history.scrollRestoration = 'manual'
+      if (location.hash) history.replaceState(null, '', location.pathname + location.search)
+      document.documentElement.classList.add('is-loading')
+      scrollTo(0, 0)
+      addEventListener('beforeunload', () => scrollTo(0, 0))
+      addEventListener('pageshow', () => scrollTo(0, 0))
+      window.__loaderFallback = setTimeout(() => {
+        document.documentElement.classList.remove('is-loading')
+        document.documentElement.classList.add('loader-complete')
+      }, 7000)
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@1,400;1,500&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
     />
   </head>
   <body>

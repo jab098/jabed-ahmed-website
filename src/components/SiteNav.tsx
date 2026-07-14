@@ -1,91 +1,80 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowUpRight, Menu, X } from 'lucide-react'
+import { ArrowUpRight } from 'lucide-react'
 import { CALENDLY_URL, EMAIL, NAV_LINKS } from '../data'
-import { LogoMark } from './LogoMark'
-import { MagneticLink } from './MagneticLink'
+
+type NavMotionState = {
+  y: number
+  direction: -1 | 0 | 1
+  travel: number
+  hidden: boolean
+}
+
+function getNextNavMotionState(
+  state: NavMotionState,
+  nextY: number,
+  viewportHeight: number,
+): NavMotionState {
+  const delta = nextY - state.y
+  if (Math.abs(delta) < 1) return { ...state, y: nextY }
+
+  const direction: -1 | 1 = delta > 0 ? 1 : -1
+  const travel = direction === state.direction ? state.travel + Math.abs(delta) : Math.abs(delta)
+  let hidden = state.hidden
+
+  if (nextY <= 80) hidden = false
+  else if (direction === 1 && nextY > viewportHeight * 0.55 && travel >= 48) hidden = true
+  else if (direction === -1 && travel >= 56) hidden = false
+
+  return { y: nextY, direction, travel, hidden }
+}
 
 export function SiteNav() {
-  const [hidden, setHidden] = useState(false)
-  const [onDark, setOnDark] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [activeSection, setActiveSection] = useState<(typeof NAV_LINKS)[number]['href']>('#home')
-  const progressRef = useRef<HTMLSpanElement>(null)
+  const [hidden, setHidden] = useState(false)
+  const triggerRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    let lastY = window.scrollY
-    let raf = 0
-    const decisionRoom = document.querySelector<HTMLElement>(
-      '[data-insights-stage="decision-room"]',
-    )
-    const sections = NAV_LINKS.map((link) => ({
-      href: link.href,
-      element: document.querySelector<HTMLElement>(link.href),
-    }))
-
+    let motion: NavMotionState = { y: window.scrollY, direction: 0, travel: 0, hidden: false }
+    let frame = 0
     const update = () => {
-      raf = 0
-      const y = window.scrollY
-      const viewportHeight = window.innerHeight
-
-      if (y <= viewportHeight * 0.45) setHidden(false)
-      else if (y > lastY + 3) setHidden(true)
-      else if (y < lastY - 3) setHidden(false)
-      lastY = y
-
-      const navigationAnchor = Math.min(150, viewportHeight * 0.24)
-      const currentSection = sections.find(({ element }) => {
-        const bounds = element?.getBoundingClientRect()
-        return Boolean(bounds && bounds.top <= navigationAnchor && bounds.bottom > navigationAnchor)
-      })
-      if (currentSection) setActiveSection(currentSection.href)
-
-      const roomBounds = decisionRoom?.getBoundingClientRect()
-      setOnDark(Boolean(roomBounds && roomBounds.top < 92 && roomBounds.bottom > 92))
-
-      const maxScroll = document.documentElement.scrollHeight - viewportHeight
-      const progress = maxScroll > 0 ? Math.min(Math.max(y / maxScroll, 0), 1) : 0
-      if (progressRef.current) {
-        progressRef.current.style.transform = `scaleX(${progress})`
-      }
+      frame = 0
+      const next = getNextNavMotionState(motion, window.scrollY, window.innerHeight)
+      if (next.hidden !== motion.hidden) setHidden(next.hidden)
+      motion = next
     }
-
     const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(update)
+      if (!frame) frame = window.requestAnimationFrame(update)
     }
-
-    update()
     window.addEventListener('scroll', onScroll, { passive: true })
-    window.addEventListener('resize', onScroll)
     return () => {
-      cancelAnimationFrame(raf)
+      window.cancelAnimationFrame(frame)
       window.removeEventListener('scroll', onScroll)
-      window.removeEventListener('resize', onScroll)
     }
   }, [])
 
   useEffect(() => {
     if (!menuOpen) return
 
+    const panel = menuRef.current
+    const trigger = triggerRef.current
+    const focusable = Array.from(
+      panel?.querySelectorAll<HTMLElement>('a[href], button:not([disabled])') ?? [],
+    )
+    const frame = window.requestAnimationFrame(() => focusable[0]?.focus())
     const previousOverflow = document.body.style.overflow
-    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null
-    const menu = menuRef.current
-    const focusable = menu
-      ? Array.from(menu.querySelectorAll<HTMLElement>('a[href], button:not([disabled])'))
-      : []
-    const focusRaf = requestAnimationFrame(() => focusable[0]?.focus())
+
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setMenuOpen(false)
         return
       }
       if (event.key !== 'Tab' || focusable.length === 0) return
-
       const first = focusable[0]
-      const last = focusable[focusable.length - 1]
+      const last = focusable.at(-1)
       if (event.shiftKey && document.activeElement === first) {
         event.preventDefault()
-        last.focus()
+        last?.focus()
       } else if (!event.shiftKey && document.activeElement === last) {
         event.preventDefault()
         first.focus()
@@ -93,118 +82,80 @@ export function SiteNav() {
     }
 
     document.body.style.overflow = 'hidden'
-    window.addEventListener('keydown', onKeyDown)
+    document.addEventListener('keydown', onKeyDown)
     return () => {
-      cancelAnimationFrame(focusRaf)
+      window.cancelAnimationFrame(frame)
+      document.removeEventListener('keydown', onKeyDown)
       document.body.style.overflow = previousOverflow
-      window.removeEventListener('keydown', onKeyDown)
-      previouslyFocused?.focus()
+      trigger?.focus()
     }
   }, [menuOpen])
 
-  const effectiveDark = onDark && !menuOpen
-  const effectiveHidden = hidden && !menuOpen
+  const closeMenu = () => setMenuOpen(false)
 
   return (
     <nav
-      className={`site-nav ${effectiveHidden ? 'is-hidden' : ''} ${effectiveDark ? 'is-dark' : ''} ${menuOpen ? 'is-menu-open' : ''}`}
+      className={`site-nav${hidden && !menuOpen ? ' is-hidden' : ''}${menuOpen ? ' is-open' : ''}`}
       aria-label="Primary navigation"
     >
-      <div className="site-nav-frame">
-        <a href="#home" className="site-wordmark" onClick={() => setMenuOpen(false)}>
-          <LogoMark size={20} className="site-wordmark-mark" />
-          <span>Jabed Ahmed</span>
-        </a>
+      <a className="site-wordmark" href="#home" aria-label="Jabed Ahmed — home" onClick={closeMenu}>
+        <span className="site-wordmark__monogram">JA</span>
+        <span className="site-wordmark__name">Jabed Ahmed</span>
+      </a>
 
-        <div className="site-nav-links">
-          {NAV_LINKS.map((link) => (
-            <MagneticLink
-              key={link.label}
-              href={link.href}
-              className={activeSection === link.href ? 'is-active' : ''}
-              aria-current={activeSection === link.href ? 'page' : undefined}
-            >
-              {link.label}
-            </MagneticLink>
-          ))}
-        </div>
-
-        <div className="site-nav-consulting">
-          <span>
-            <i />
-            Independent consulting
-          </span>
-          <a href={CALENDLY_URL} target="_blank" rel="noreferrer">
-            Book an intro
-            <ArrowUpRight size={13} strokeWidth={1.9} />
-          </a>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setMenuOpen((open) => !open)}
-          className="site-menu-toggle"
-          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-          aria-expanded={menuOpen}
-          aria-controls="mobile-site-menu"
-        >
-          {menuOpen ? <X size={22} /> : <Menu size={22} />}
-        </button>
+      <div className="site-nav__status" aria-hidden="true">
+        <span /> Independent data consultancy
       </div>
+
+      <a className="site-nav__call" href={CALENDLY_URL} target="_blank" rel="noreferrer">
+        <span>Schedule a call</span>
+        <ArrowUpRight size={17} strokeWidth={1.6} />
+      </a>
+
+      <button
+        ref={triggerRef}
+        className="site-menu-toggle"
+        type="button"
+        aria-label="Menu"
+        aria-controls="site-menu"
+        aria-expanded={menuOpen}
+        onClick={() => setMenuOpen((value) => !value)}
+      >
+        <span className="site-menu-toggle__label" key={menuOpen ? 'close' : 'menu'}>
+          {menuOpen ? 'CLOSE' : 'MENU'}
+        </span>
+        <i aria-hidden="true"><b /><b /></i>
+      </button>
 
       <div
         ref={menuRef}
-        id="mobile-site-menu"
-        className={`mobile-menu-panel ${menuOpen ? 'is-open' : ''}`}
+        id="site-menu"
+        className="site-menu"
         role="dialog"
         aria-modal={menuOpen || undefined}
         aria-label="Site menu"
         aria-hidden={!menuOpen}
         inert={!menuOpen}
       >
-        <div className="mobile-menu-material" aria-hidden="true" />
-        <div className="mobile-menu-inner">
-          <p className="mobile-menu-kicker">Data &amp; analytics consulting</p>
-          <div className="mobile-menu-links">
-            {NAV_LINKS.map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                className={activeSection === link.href ? 'is-active' : ''}
-                aria-current={activeSection === link.href ? 'page' : undefined}
-                onClick={() => setMenuOpen(false)}
-              >
-                <span className="font-data">{link.number}</span>
-                <strong>{link.label}</strong>
-                <ArrowUpRight size={19} strokeWidth={1.55} aria-hidden="true" />
-              </a>
-            ))}
-          </div>
-
-          <div className="mobile-menu-footer">
-            <p>
-              <span />
-              Independent consulting · London / worldwide
-            </p>
-            <a href={`mailto:${EMAIL}`} className="mobile-menu-email">
-              {EMAIL}
+        <div className="site-menu__wipe" aria-hidden="true" />
+        <div className="site-menu__header" data-menu-fade>
+          <span>Navigation / 2026</span>
+          <span>London → Worldwide</span>
+        </div>
+        <div className="site-menu__links">
+          {NAV_LINKS.map((link) => (
+            <a key={link.href} href={link.href} onClick={closeMenu} data-menu-fade>
+              <span>{link.number}</span>
+              <strong>{link.label}</strong>
+              <ArrowUpRight aria-hidden="true" />
             </a>
-            <a
-              href={CALENDLY_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="mobile-menu-call"
-            >
-              Book a 30-minute intro
-              <ArrowUpRight size={16} strokeWidth={1.8} />
-            </a>
-          </div>
+          ))}
+        </div>
+        <div className="site-menu__footer" data-menu-fade>
+          <a href={`mailto:${EMAIL}`}>{EMAIL}</a>
+          <span>Make the data useful.</span>
         </div>
       </div>
-
-      <span className="site-scroll-progress-track" aria-hidden="true">
-        <span ref={progressRef} className="site-scroll-progress" />
-      </span>
     </nav>
   )
 }

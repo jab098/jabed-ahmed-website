@@ -1,115 +1,154 @@
-import { BarChart3, Code2, FlaskConical, Server, ShieldCheck, Tag } from 'lucide-react'
-
-/* Site-wide constants shared across sections */
-
 export const NAV_LINKS = [
-  { label: 'Home', href: '#home', number: '00' },
-  { label: 'Profile', href: '#who', number: '01' },
-  { label: 'Insights', href: '#insights', number: '02' },
-  { label: 'Capabilities', href: '#service', number: '03' },
-  { label: 'Contact', href: '#contact', number: '04' },
+  { label: 'Home', href: '#home', number: '01' },
+  { label: 'Process', href: '#process', number: '02' },
+  { label: 'Systems', href: '#systems', number: '03' },
+  { label: 'Capabilities', href: '#capabilities', number: '04' },
+  { label: 'Questions', href: '#faq', number: '05' },
+  { label: 'Contact', href: '#contact', number: '06' },
 ] as const
+
 export const LINKEDIN_URL = 'https://linkedin.com/in/jabed98'
 export const CALENDLY_URL = 'https://calendly.com/jabed098/30min'
 export const EMAIL = 'consulting@jabed.co.uk'
 
-export const SERVICES = [
+export const METRICS = [
+  { value: '8+', label: 'Years of experience', digits: ['8'] },
+  { value: '16', label: 'Global markets', digits: ['1', '6'] },
+  { value: '€2M+', label: 'Experimentation uplift', digits: ['2'] },
+] as const
+
+export const PROCESS_STEPS = [
   {
     number: '01',
-    icon: Tag,
-    overline: 'Implementation',
-    headline: 'Tag Management',
-    blurb:
-      'Tag ecosystems managed across five international markets — dataLayer design specs, documentation and QA standards that keep tracking consistent at scale.',
-    stack: ['GTM', 'Tealium iQ', 'Snowplow', 'Custom templates', 'dataLayer architecture'],
+    title: 'Diagnose the decision.',
+    copy: 'Start with the decision, then identify the measurement gaps, broken signals and evidence that would make the next move defensible.',
+    visual: 'Measurement audit',
   },
   {
     number: '02',
-    icon: Server,
-    overline: 'Infrastructure',
-    headline: 'Server-Side Tracking',
-    blurb:
-      'End-to-end behavioural pipelines: browser-level capture, collector configuration, stream processing and enrichment — delivered cleanly into the warehouse.',
-    stack: ['sGTM', 'GA4', 'Tealium EventStream', 'First-party cookies'],
+    title: 'Architect the system.',
+    copy: 'Translate product behaviour into a governed event model that connects consent, collection, destinations and reporting.',
+    visual: 'Event architecture',
   },
   {
     number: '03',
-    icon: FlaskConical,
-    overline: 'Experimentation',
-    headline: 'CRO & Testing',
-    blurb:
-      'Adobe Target A/B and personalisation programmes with measurable impact — contributing over €2M in annual revenue uplift for a global telco.',
-    stack: ['Adobe Target', 'A/B testing', 'Personalisation rules'],
+    title: 'Build and validate.',
+    copy: 'Implement the instrumentation, test the edge cases and prove every critical signal before it reaches a decision-maker.',
+    visual: 'Quality assurance matrix',
   },
   {
     number: '04',
-    icon: ShieldCheck,
-    overline: 'Compliance',
-    headline: 'Consent & Privacy',
-    blurb:
-      'OneTrust administration and GDPR-aligned consent across multiple markets, including ATT and SKAdNetwork compliance after the iOS privacy changes.',
-    stack: ['OneTrust', 'Consent Mode v2', 'GDPR-aligned tagging'],
+    title: 'Enable and improve.',
+    copy: 'Turn the system into useful reporting, clear documentation and an operating rhythm the team can continue without dependency.',
+    visual: 'Decision brief',
+  },
+] as const
+
+export const SYSTEMS = [
+  {
+    number: '01',
+    title: 'Measurement architecture',
+    summary: 'A governed event model that keeps product, engineering and growth aligned.',
+    tags: ['DATA LAYER', 'GOVERNANCE', 'SCHEMA'],
+    metric: '42 EVENTS',
+  },
+  {
+    number: '02',
+    title: 'Experimentation readout',
+    summary: 'A clear commercial view of tests, confidence and the value of the winning experience.',
+    tags: ['CRO', 'ADOBE TARGET', 'UPLIFT'],
+    metric: '+18.4%',
+  },
+  {
+    number: '03',
+    title: 'Consent and server-side pipeline',
+    summary: 'Privacy-aware collection that preserves useful signals across browser and server boundaries.',
+    tags: ['ONETRUST', 'SGTM', 'CONSENT MODE'],
+    metric: '99.2%',
+  },
+  {
+    number: '04',
+    title: 'Executive decision dashboard',
+    summary: 'A focused outcome layer that turns governed measurement into confident action.',
+    tags: ['POWER BI', 'LOOKER', 'SQL'],
+    metric: '16 MARKETS',
+  },
+] as const
+
+export const CAPABILITIES = [
+  {
+    number: '01',
+    title: 'Tag Management',
+    discipline: 'Implementation',
+    copy: 'GTM and Tealium ecosystems, dataLayer specifications, documentation and QA standards that remain consistent at scale.',
+    stack: ['GTM', 'Tealium iQ', 'Snowplow'],
+  },
+  {
+    number: '02',
+    title: 'Server-Side Tracking',
+    discipline: 'Infrastructure',
+    copy: 'Behavioural pipelines spanning browser capture, collectors, enrichment and dependable warehouse delivery.',
+    stack: ['sGTM', 'GA4', 'EventStream'],
+  },
+  {
+    number: '03',
+    title: 'CRO & Testing',
+    discipline: 'Experimentation',
+    copy: 'A/B testing and personalisation programmes with hypotheses, clean evaluation and measurable commercial outcomes.',
+    stack: ['Adobe Target', 'A/B testing', 'Personalisation'],
+  },
+  {
+    number: '04',
+    title: 'Consent & Privacy',
+    discipline: 'Compliance',
+    copy: 'GDPR-aligned consent architecture across markets, including Consent Mode, ATT and SKAdNetwork requirements.',
+    stack: ['OneTrust', 'Consent Mode v2', 'GDPR'],
   },
   {
     number: '05',
-    icon: BarChart3,
-    overline: 'Reporting',
-    headline: 'BI & Data Modelling',
-    blurb:
-      'GA4-powered pipelines feeding the data lake, with downstream Power BI and Looker reporting — governed, accurate and stakeholder-ready.',
-    stack: ['Power BI', 'Looker', 'SQL', 'Dashboarding'],
+    title: 'BI & Data Modelling',
+    discipline: 'Reporting',
+    copy: 'Stakeholder-ready reporting built on governed models and reliable definitions instead of fragile dashboard logic.',
+    stack: ['Power BI', 'Looker', 'SQL'],
   },
   {
     number: '06',
-    icon: Code2,
-    overline: 'Engineering',
-    headline: 'Front-End Instrumentation',
-    blurb:
-      'First-class Software Engineering foundations. Custom JavaScript event tracking with structured QA and validation baked into every release.',
-    stack: ['JavaScript', 'Custom event tracking', 'QA validation'],
+    title: 'Front-End Instrumentation',
+    discipline: 'Engineering',
+    copy: 'Custom JavaScript event tracking with structured validation and release-quality implementation discipline.',
+    stack: ['JavaScript', 'Event tracking', 'QA'],
   },
-]
-
-/* AI query-lane glyphs use the pinned simple-icons set. The capability tools
-   are intentionally text-only so the page does not fetch a separate logo
-   asset for every platform. */
-export const SIMPLE_ICONS = 'https://cdn.jsdelivr.net/npm/simple-icons@13/icons'
-export const TOOL_NAMES = [
-  'Google Analytics',
-  'Google Tag Manager',
-  'Google BigQuery',
-  'Mixpanel',
-  'Optimizely',
-  'Tealium',
-  'Adobe Analytics',
-  'Snowplow',
-  'OneTrust',
-  'Amplitude',
-  'PostgreSQL',
-  'Apache Kafka',
-  'Snowflake',
-  'Looker',
-  'Tableau',
-  'Twilio Segment',
-  'mParticle',
-  'Heap',
-  'Microsoft Power BI',
-  'VWO',
 ] as const
 
-export const WHO_HEADLINE =
-  "I'm an Analytics Specialist with 8+ Years of Experience in Designing Scalable Data Collection Environments and High growth Digital Products."
-
-export const WHO_STATS = [
-  { value: '8+', label: 'Years of Experience', tag: '/01' },
+export const FAQS = [
   {
-    value: '€2M+',
-    label: 'Annual Revenue Uplift',
-    tag: '/02',
-    // finer-grained count (0.5 → 2.0 in 0.1 steps) so the ease-out
-    // deceleration is visible instead of just snapping 0 → 1 → 2
-    from: 0.5,
-    decimals: 1,
+    id: 'fit',
+    question: 'What kinds of measurement problems are a good fit?',
+    answer: 'Projects where a product, growth or engineering decision depends on evidence you do not yet trust: fragmented tracking, unclear event models, consent gaps, weak experimentation or reporting that teams cannot defend.',
   },
-  { value: '16', label: 'Global Market Apps Managed', tag: '/03' },
-]
+  {
+    id: 'stack',
+    question: 'Can you work with our existing analytics stack?',
+    answer: 'Yes. The first step is understanding what should remain, what is creating risk and where a targeted intervention is more useful than a platform replacement.',
+  },
+  {
+    id: 'delivery',
+    question: 'Do you implement as well as advise?',
+    answer: 'Both. Engagements can cover strategy, specifications and governance, or continue into hands-on implementation, validation and enablement with your teams.',
+  },
+  {
+    id: 'timing',
+    question: 'How long does an engagement take?',
+    answer: 'Focused audits can run for a few weeks. Architecture and implementation programmes are shaped around the system, markets and release constraints after an initial working session.',
+  },
+  {
+    id: 'privacy',
+    question: 'Can you support international consent requirements?',
+    answer: 'Yes. My experience includes governed tagging and consent across multiple international markets, with OneTrust, Consent Mode, ATT and related privacy constraints.',
+  },
+  {
+    id: 'aftercare',
+    question: 'What happens after launch?',
+    answer: 'The handover includes validation evidence, documentation and a clear operating model so your team can maintain and improve the system rather than inherit a black box.',
+  },
+] as const
