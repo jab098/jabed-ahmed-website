@@ -5,6 +5,11 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   publicDir: false,
   plugins: [react()],
+  build: {
+    rollupOptions: {
+      input: { main: 'index.html', privacy: 'privacy.html' },
+    },
+  },
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],

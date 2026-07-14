@@ -67,6 +67,7 @@ export function Contact() {
           <nav aria-label="Footer navigation">
             <a href={LINKEDIN_URL} target="_blank" rel="noreferrer">LinkedIn</a>
             <a href={`mailto:${EMAIL}`}>Email</a>
+            <a href="/privacy.html">Privacy</a>
             <a href="#home">Back to top</a>
           </nav>
           <p>Data &amp; analytics consulting</p>

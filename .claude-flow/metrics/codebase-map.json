@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-07-14T08:42:08.869Z",
+  "projectRoot": "/Users/jabed/Desktop/Jabed's Trash/Dev/Website/jabed-ahmed-website",
+  "structure": {
+    "hasPackageJson": true,
+    "hasTsConfig": true,
+    "hasClaudeConfig": true,
+    "hasClaudeFlow": true
+  },
+  "scannedAt": 1784018528869
+}
