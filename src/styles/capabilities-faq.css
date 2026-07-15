@@ -127,7 +127,7 @@
   .faq-section { align-content: center; }
 }
 
-@media (min-width: 901px) and (max-height: 760px) {
+@media (min-width: 901px) and (max-height: 940px) {
   .faq-section {
     padding-block: clamp(1.5rem, 4vh, 2.25rem);
     gap: clamp(2rem, 4vw, 4rem);

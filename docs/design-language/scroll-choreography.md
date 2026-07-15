@@ -132,7 +132,7 @@ When a section changes from a row to a stack, mark each complete stacked item as
 
 Above `900px`, the shared frame rule supplies `min-height: calc(100svh - var(--nav-height))`. It is a layout contract, not a waypoint: the element still needs an authored physical declaration, and content may grow beyond the minimum when it genuinely needs more room. At `900px` and below, content returns to its natural stacked height and its mobile waypoints define the story.
 
-Proof and FAQ are the current viewport-framed chapters. Their desktop landings must read as isolated, complete compositions without a strip of the following section showing. FAQ owns `faq-heading` at the section boundary so its sticky heading and question list arrive as one frame. Proof uses one stretching grid row so all evidence tiles share the available height, while the title and three metric blocks are vertically centred on a shared line at `60%` of that frame. This horizontal content band removes the bottom-heavy diagonal of empty space without shortening the frame or changing its waypoint. Between `901px` and `1200px`, Proof uses a compact metric type clamp so decimal count-up states remain inside their quarter-width tiles. At `900px` and below, Proof returns to its existing bottom-aligned stacked cards and per-card stops. Short desktop viewports at or below `760px` compact FAQ padding, row height and type scale so all six closed questions remain inside the authored frame; opening an answer may then grow the section naturally.
+Proof and FAQ are the current viewport-framed chapters. Their desktop landings must read as isolated, complete compositions without a strip of the following section showing. FAQ owns `faq-heading` at the section boundary so its sticky heading and question list arrive as one frame. Proof uses one stretching grid row so all evidence tiles share the available height, while the title and three metric blocks are vertically centred on a shared line at `60%` of that frame. This horizontal content band removes the bottom-heavy diagonal of empty space without shortening the frame or changing its waypoint. Between `901px` and `1200px`, Proof uses a compact metric type clamp so decimal count-up states remain inside their quarter-width tiles. At `900px` and below, Proof returns to its existing bottom-aligned stacked cards and per-card stops. Laptop-height desktop viewports at or below `940px` compact FAQ padding, row height and type scale so all six closed questions remain inside the nav-adjusted authored frame; the threshold uses the raw browser viewport and therefore includes the fixed `4.25rem` navigation. Opening an answer may then grow the section naturally.
 
 ## Gesture epochs
 
@@ -235,7 +235,7 @@ Responsive text and font loading may move an already-reached destination by a fe
 | --- | --- |
 | A momentum tail or dense line-wheel burst advances twice. | One epoch owns one landing token; all events remain absorbed until verified quiet, with no animation-position promotion. |
 | A fresh gesture resolves from an obsolete preview coordinate. | Pending preview writes are cancelled before handoff, and the one-slot queue stores semantic direction and intent rather than pixels. |
-| Proof or FAQ reveals part of the next chapter on an awkward desktop height. | `data-scroll-frame="viewport"` supplies a nav-adjusted desktop minimum while the authored section waypoint owns the full composition. |
+| Proof or FAQ reveals part of the next chapter on an awkward desktop height. | `data-scroll-frame="viewport"` supplies a nav-adjusted desktop minimum while the authored section waypoint owns the full composition. FAQ enters its compact composition at a raw `940px` viewport height so the fixed navigation cannot push its sixth row below the landing. |
 | A masked orange headline leaves fragments after landing in Safari. | Exact shared scrub, `0.999` transform cleanup, `overflow: hidden`, and `contain: paint` settle all three headline scenes. |
 | A Process state flashes, slides, or is removed by an old timer. | Stable previous/current layers crossfade with opacity only; effect cleanup cancels stale `480ms` timers. |
 | Proof digits replay, reel, or stop short of the source value. | The observer disconnects after first visibility, the counter writes the exact final string, and reduced motion bypasses counting. |
@@ -261,6 +261,7 @@ A missing required scene must fail a structural test rather than silently disapp
   | Viewport | Required observation |
   | --- | --- |
   | `1440x900` | Standard desktop chapter framing, complete card/state landings, and exact masked headlines. |
+  | `1512x839` | 14-inch Safari content viewport: all six closed FAQ rows remain visible below the fixed navigation. |
   | `1499x886` | Awkward desktop height: no clipped copy, partial following surface, or duplicate stop. |
   | `2554x1425` | Large-display Safari regression: no orange headline fragments after Process, Systems, or Contact settles. |
   | `1455x1279` | Tall desktop frame: Proof and FAQ remain isolated and Process content stays balanced. |

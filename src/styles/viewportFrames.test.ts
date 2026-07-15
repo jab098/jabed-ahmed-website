@@ -7,12 +7,12 @@ const faqStyles = readFileSync('src/styles/capabilities-faq.css', 'utf8')
 const heroStyles = readFileSync('src/styles/hero.css', 'utf8')
 
 describe('short desktop viewport frames', () => {
-  it('compacts the complete FAQ composition below 760px tall', () => {
+  it('compacts the complete FAQ composition across laptop-height viewports', () => {
     expect(faqStyles).toContain(
-      '@media (min-width: 901px) and (max-height: 760px)',
+      '@media (min-width: 901px) and (max-height: 940px)',
     )
     expect(faqStyles).toMatch(
-      /@media \(min-width: 901px\) and \(max-height: 760px\)[\s\S]*?\.faq-list button\s*\{[^}]*min-height:/,
+      /@media \(min-width: 901px\) and \(max-height: 940px\)[\s\S]*?\.faq-list button\s*\{[^}]*min-height:/,
     )
   })
 
