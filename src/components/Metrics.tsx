@@ -32,6 +32,7 @@ export function Metrics() {
       className="proof-section"
       aria-labelledby="proof-title"
       data-scroll-scene="proof"
+      data-scroll-frame="viewport"
       data-scroll-waypoint="proof"
     >
       <div className="proof-art">
