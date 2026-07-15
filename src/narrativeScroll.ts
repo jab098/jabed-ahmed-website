@@ -56,6 +56,7 @@ const TOUCH_CLASSIFICATION_DISTANCE = 8
 const TOUCH_VERTICAL_DOMINANCE = 1.25
 const WHEEL_QUIET_MS = 180
 const PREVIEW_TIME_CONSTANT_MS = 55
+const ACTIVE_LANDING_REMAINING_RATIO = 0.2
 
 function clamp(minimum: number, value: number, maximum: number) {
   return Math.min(maximum, Math.max(minimum, value))
@@ -156,6 +157,8 @@ type TouchSession = {
 }
 
 export class NarrativeGestureDirector {
+  private activeAnimationOriginY?: number
+  private activeAnimationTargetY?: number
   private animationActive = false
   private activeTargetId?: string
   private cancelAnimation?: () => void
@@ -192,11 +195,22 @@ export class NarrativeGestureDirector {
 
     if (this.animationActive || this.wheel?.committed || this.wheelDisarmed) {
       input.preventDefault()
-      if (this.animationActive && (this.queuedWheel || this.wheelStreamQuiet)) {
-        this.captureQueuedWheel(direction, Math.abs(delta))
+      if (this.animationActive) {
+        if (
+          this.queuedWheel ||
+          this.wheelStreamQuiet ||
+          this.isActiveAnimationNearLanding()
+        ) {
+          this.captureQueuedWheel(direction, Math.abs(delta))
+        }
+        this.wheelDisarmed = true
+        this.scheduleWheelQuiet()
+        return true
       }
+
+      this.captureQueuedWheel(direction, Math.abs(delta))
       this.wheelDisarmed = true
-      this.scheduleWheelQuiet()
+      if (this.quietTimer === undefined) this.scheduleWheelQuiet()
       return true
     }
 
@@ -496,8 +510,10 @@ export class NarrativeGestureDirector {
     this.cancelActiveAnimation()
     this.animationActive = true
     this.activeTargetId = targetId
+    this.activeAnimationOriginY = this.dependencies.getScrollY()
+    this.activeAnimationTargetY = target
     let completedSynchronously = false
-    const distance = target - this.dependencies.getScrollY()
+    const distance = target - this.activeAnimationOriginY
     const cancellation = this.dependencies.animate({
       to: target,
       duration: mode === 'return' ? returnDuration(distance) : handoffDuration(distance),
@@ -506,6 +522,8 @@ export class NarrativeGestureDirector {
         completedSynchronously = true
         this.animationActive = false
         this.activeTargetId = undefined
+        this.activeAnimationOriginY = undefined
+        this.activeAnimationTargetY = undefined
         this.cancelAnimation = undefined
         this.dependencies.writeScroll(target)
         if (targetId) {
@@ -523,8 +541,20 @@ export class NarrativeGestureDirector {
   private cancelActiveAnimation() {
     this.cancelAnimation?.()
     this.activeTargetId = undefined
+    this.activeAnimationOriginY = undefined
+    this.activeAnimationTargetY = undefined
     this.cancelAnimation = undefined
     this.animationActive = false
+  }
+
+  private isActiveAnimationNearLanding() {
+    const origin = this.activeAnimationOriginY
+    const target = this.activeAnimationTargetY
+    if (origin === undefined || target === undefined) return false
+    const totalDistance = Math.abs(target - origin)
+    if (totalDistance <= 0.5) return true
+    const remainingDistance = Math.abs(target - this.dependencies.getScrollY())
+    return remainingDistance / totalDistance <= ACTIVE_LANDING_REMAINING_RATIO
   }
 
   private findGestureWaypoint(currentY: number, direction: Direction) {
@@ -729,6 +759,16 @@ export class NarrativeGestureDirector {
       if (this.animationActive) {
         if (this.queuedWheel) this.queuedWheel.quiet = true
         else this.wheelStreamQuiet = true
+        return
+      }
+      const queuedWheel = this.queuedWheel
+      if (queuedWheel) {
+        this.queuedWheel = undefined
+        this.wheel = undefined
+        this.wheelDisarmed = false
+        this.wheelStreamQuiet = false
+        this.startQueuedWheel(this.dependencies.getScrollY(), queuedWheel)
+        if (this.wheel || this.animationActive) this.scheduleWheelQuiet()
         return
       }
       this.wheelDisarmed = false

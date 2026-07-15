@@ -132,7 +132,7 @@ Raw intent—not the damped visual preview—determines commitment. Reaching eit
 
 The browser adapter follows the latest preview target through `requestAnimationFrame` with a time-based `55ms` exponential filter. Time-based interpolation keeps the feel consistent on 60Hz and 120Hz displays. It writes the exact target once the remaining distance is at most `0.5px`.
 
-If a fresh wheel stream begins after the quiet boundary while another handoff is active, the director stores its direction and raw intent—not a pixel destination. At the current landing it resolves the adjacent authored waypoint from the settled semantic composition. The one-slot reservation can never advance more than one additional stop, regardless of delta size or repeated events inside that fresh stream.
+If a fresh wheel stream begins after the quiet boundary while another handoff is active, the director stores its direction and raw intent—not a pixel destination. Input that begins inside the final `20%` of the remaining handoff path is retained the same way, because suppressing it would make a visibly completed landing feel unresponsive. At the current landing the director resolves the adjacent authored waypoint from the settled semantic composition. The one-slot reservation can never advance more than one additional stop, regardless of delta size or repeated events inside that stream.
 
 ## Handoff motion
 
@@ -152,7 +152,7 @@ Spatial motion belongs to the scroll handoff. Process state changes therefore fa
 
 ## Gesture ownership and safety
 
-Wheel input from the active stream remains disarmed until that stream is genuinely quiet for `180ms`, even if the animation finishes first. A later stream that starts after that boundary is deliberate input: it may reserve one adjacent semantic destination and runs only after the current composition has landed. Further momentum remains absorbed, so one stream still cannot cross multiple authored stops.
+Wheel input from the active stream remains disarmed during the early and middle portions of a handoff. The quiet boundary is `180ms`, but landing turns it into a fixed rearm deadline: wheel events received after landing are buffered in the one-slot semantic queue and may not restart that deadline. This guarantees forward progress without requiring pointer movement or a click. Input retained near or after landing can advance only to the immediately adjacent composition; further momentum cannot reserve a second follow-on destination inside that handoff.
 
 If wheel direction reverses before commitment, the reversed preview may start from the current partial position, but its quiet rollback still resolves to the gesture's original composition. A reversal must never strand the page between stops.
 
@@ -225,6 +225,7 @@ A missing required scene must fail a structural test rather than silently disapp
 - Test FAQ expansion, the menu, nested scrolling, taps, horizontal movement, pinch zoom, anchors, keyboard navigation, scrollbar dragging, and Back to top.
 - Hover every FAQ question and open, close, and switch answers without any unsolicited change to `window.scrollY`.
 - Start a second wheel and touch gesture shortly after the first; verify it registers once after landing while continuous momentum still cannot skip.
+- Keep the pointer stationary and continue wheel input through the final part of a handoff; verify the fixed rearm deadline advances to the adjacent stop without requiring a hover or click reset.
 - Confirm Process states and every System and Capability card fade into their own composition without a pre-animation flash.
 - Test loader completion, resize and orientation changes, and reduced-motion mode.
 - Confirm there are no console errors, Vite overlays, or horizontal page overflow before release.

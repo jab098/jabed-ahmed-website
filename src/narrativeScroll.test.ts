@@ -35,6 +35,7 @@ function createDirectorHarness(
 ) {
   let scrollY = initialY
   let quietTimer = () => {}
+  let timerScheduleCount = 0
   let animationCancellationCount = 0
   let pendingAnimationCompletion = () => {}
   const animations: number[] = []
@@ -68,8 +69,9 @@ function createDirectorHarness(
       }
     },
     setTimer: (callback) => {
+      timerScheduleCount += 1
       quietTimer = callback
-      return 1
+      return timerScheduleCount
     },
     clearTimer: () => {},
   })
@@ -91,6 +93,9 @@ function createDirectorHarness(
       scrollY = y
     },
     scrollWrites,
+    get timerScheduleCount() {
+      return timerScheduleCount
+    },
   }
 }
 
@@ -186,14 +191,43 @@ describe('NarrativeGestureDirector', () => {
   })
 
   it('absorbs momentum until the quiet timer rearms the director', () => {
-    const harness = createDirectorHarness([0, 600, 1200])
+    const harness = createDirectorHarness([0, 600, 1200], 0, false)
 
     harness.director.handleWheel(wheelInput(10000))
+    harness.setRenderedScroll(100)
     harness.director.handleWheel(wheelInput(10000))
     expect(harness.animations).toEqual([600])
 
     harness.runQuietTimer()
+    harness.completeAnimation()
     harness.director.handleWheel(wheelInput(10000))
+    expect(harness.animations).toEqual([600, 1200])
+  })
+
+  it('buffers post-landing wheel input without sliding the rearm deadline', () => {
+    const harness = createDirectorHarness([0, 600, 1200, 1800], 0, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.completeAnimation()
+    const schedulesAtLanding = harness.timerScheduleCount
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.director.handleWheel(wheelInput(10000))
+    harness.director.handleWheel(wheelInput(10000))
+
+    expect(harness.timerScheduleCount).toBe(schedulesAtLanding)
+    harness.runQuietTimer()
+    expect(harness.animations).toEqual([600, 1200])
+  })
+
+  it('buffers a wheel gesture that begins near the active landing', () => {
+    const harness = createDirectorHarness([0, 600, 1200], 0, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.setRenderedScroll(570)
+    harness.director.handleWheel(wheelInput(10000))
+    harness.completeAnimation()
+
     expect(harness.animations).toEqual([600, 1200])
   })
 
@@ -249,6 +283,7 @@ describe('NarrativeGestureDirector', () => {
 
     harness.director.goTo(600)
     expect(harness.animationModes).toEqual(['direct'])
+    harness.setRenderedScroll(100)
     expect(harness.director.handleWheel(wheelInput(10000))).toBe(true)
     harness.completeAnimation()
     expect(harness.director.handleWheel(wheelInput(10000))).toBe(true)
@@ -265,6 +300,7 @@ describe('NarrativeGestureDirector', () => {
     harness.director.handleTouchStart(touchInput(100, 700))
     harness.director.handleTouchMove(touchInput(100, 500))
     harness.director.handleTouchEnd()
+    harness.setRenderedScroll(100)
     harness.director.handleWheel(wheelInput(10000))
     harness.completeAnimation()
     harness.director.handleWheel(wheelInput(10000))
