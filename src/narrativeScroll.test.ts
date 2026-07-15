@@ -14,10 +14,10 @@ import {
   type HandoffMode,
 } from './narrativeScroll'
 
-const wheelInput = (deltaY: number, deltaX = 0) => ({
+const wheelInput = (deltaY: number, deltaMode = 0) => ({
   ctrlKey: false,
-  deltaMode: 0,
-  deltaX,
+  deltaMode,
+  deltaX: 0,
   deltaY,
   preventDefault: vi.fn(),
 })
@@ -35,7 +35,6 @@ function createDirectorHarness(
 ) {
   let scrollY = initialY
   let quietTimer = () => {}
-  let timerScheduleCount = 0
   let animationCancellationCount = 0
   let pendingAnimationCompletion = () => {}
   const animations: number[] = []
@@ -69,9 +68,8 @@ function createDirectorHarness(
       }
     },
     setTimer: (callback) => {
-      timerScheduleCount += 1
       quietTimer = callback
-      return timerScheduleCount
+      return 1
     },
     clearTimer: () => {},
   })
@@ -93,9 +91,6 @@ function createDirectorHarness(
       scrollY = y
     },
     scrollWrites,
-    get timerScheduleCount() {
-      return timerScheduleCount
-    },
   }
 }
 
@@ -204,31 +199,31 @@ describe('NarrativeGestureDirector', () => {
     expect(harness.animations).toEqual([600, 1200])
   })
 
-  it('buffers post-landing wheel input without sliding the rearm deadline', () => {
+  it('absorbs one long wheel epoch through the final approach and landing', () => {
     const harness = createDirectorHarness([0, 600, 1200, 1800], 0, false)
 
-    harness.director.handleWheel(wheelInput(10000))
+    harness.director.handleWheel(wheelInput(140))
+    harness.setRenderedScroll(570)
+    harness.director.handleWheel(wheelInput(80))
     harness.completeAnimation()
-    const schedulesAtLanding = harness.timerScheduleCount
-
-    harness.director.handleWheel(wheelInput(10000))
-    harness.director.handleWheel(wheelInput(10000))
-    harness.director.handleWheel(wheelInput(10000))
-
-    expect(harness.timerScheduleCount).toBe(schedulesAtLanding)
+    harness.director.handleWheel(wheelInput(80))
+    harness.director.handleWheel(wheelInput(80))
     harness.runQuietTimer()
-    expect(harness.animations).toEqual([600, 1200])
+
+    expect(harness.animations).toEqual([600])
   })
 
-  it('buffers a wheel gesture that begins near the active landing', () => {
+  it('treats a dense line-wheel burst as one landing token', () => {
     const harness = createDirectorHarness([0, 600, 1200], 0, false)
 
-    harness.director.handleWheel(wheelInput(10000))
-    harness.setRenderedScroll(570)
-    harness.director.handleWheel(wheelInput(10000))
+    for (let index = 0; index < 12; index += 1) {
+      harness.director.handleWheel(wheelInput(3, 1))
+      if (index === 8) harness.setRenderedScroll(570)
+    }
     harness.completeAnimation()
+    harness.runQuietTimer()
 
-    expect(harness.animations).toEqual([600, 1200])
+    expect(harness.animations).toEqual([600])
   })
 
   it('queues one adjacent move when a fresh wheel stream starts during a handoff', () => {
