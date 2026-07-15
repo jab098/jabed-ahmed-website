@@ -8,6 +8,8 @@ The full-height orange and paper tiles, borders, metric count-up, grid artwork, 
 
 At `900px` and below, the approved stacked layout keeps its existing bottom alignment and per-card waypoints. The content-band positioning is desktop-only.
 
+Between `901px` and `1200px`, cap the metric type with `clamp(3.1rem, 5.8vw, 6rem)` so the longer decimal values shown during count-up remain inside their quarter-width tiles. Larger desktop and stacked mobile type scales remain unchanged.
+
 ## Structure
 
 Wrap the Proof heading and each metric value/label in dedicated content containers. All four wrappers share a stable `data-proof-content-band` hook. Desktop CSS positions those wrappers absolutely at `top: 60%` and centres each block around that line with `translateY(-50%)`; the wrappers remain normal flex children on tablet and mobile.
@@ -16,6 +18,6 @@ Wrap the Proof heading and each metric value/label in dedicated content containe
 
 - A structural component test must find exactly four content-band wrappers while preserving the viewport frame and waypoint declarations.
 - A CSS contract test must confirm the `60%` desktop band and centred transform.
+- The compact-desktop count-up state must not overflow its metric tile.
 - The existing metric count-up, reduced-motion, narrative-scroll and viewport-framing tests must remain green.
 - Lint and the production build must pass before localhost is started.
-

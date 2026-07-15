@@ -82,8 +82,10 @@ export function Metrics() {
         <div className="proof-art__grid" aria-hidden="true">
           {Array.from({ length: 49 }, (_, index) => <i key={index} />)}
         </div>
-        <p className="eyebrow">// Evidence</p>
-        <h2 id="proof-title">Proof in the system.</h2>
+        <div className="proof-art__content" data-proof-content-band>
+          <p className="eyebrow">// Evidence</p>
+          <h2 id="proof-title">Proof in the system.</h2>
+        </div>
       </div>
       {METRICS.map((metric, index) => (
         <article
@@ -93,13 +95,15 @@ export function Metrics() {
           data-scroll-waypoint-mobile={`proof-metric-0${index + 1}`}
         >
           <span className="proof-metric__number">0{index + 1}</span>
-          <CountUpValue
-            value={metric.value}
-            isVisible={isVisible}
-            from={'from' in metric ? metric.from : undefined}
-            decimals={'decimals' in metric ? metric.decimals : undefined}
-          />
-          <p>{metric.label}</p>
+          <div className="proof-metric__content" data-proof-content-band>
+            <CountUpValue
+              value={metric.value}
+              isVisible={isVisible}
+              from={'from' in metric ? metric.from : undefined}
+              decimals={'decimals' in metric ? metric.decimals : undefined}
+            />
+            <p>{metric.label}</p>
+          </div>
         </article>
       ))}
     </section>

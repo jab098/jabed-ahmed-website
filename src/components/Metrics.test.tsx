@@ -25,6 +25,7 @@ it('renders the evidence tile and accessible count-up metric values', () => {
   expect(document.querySelectorAll('[data-digit-reel]')).toHaveLength(0)
   expect(container.querySelector('#proof')).toHaveAttribute('data-scroll-frame', 'viewport')
   expect(container.querySelector('#proof')).toHaveAttribute('data-scroll-waypoint', 'proof')
+  expect(container.querySelectorAll('[data-proof-content-band]')).toHaveLength(4)
   expect(container.querySelectorAll('[data-scroll-waypoint-mobile^="proof-metric-"]')).toHaveLength(3)
 })
 

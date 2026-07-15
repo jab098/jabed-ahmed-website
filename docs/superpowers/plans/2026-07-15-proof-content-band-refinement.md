@@ -30,7 +30,7 @@
 - Consumes: the existing `Metrics` component, `data-scroll-frame="viewport"`, `data-scroll-waypoint="proof"`, and desktop `@media (min-width: 901px)` rule.
 - Produces: four `[data-proof-content-band]` wrappers and the CSS custom property `--proof-content-band: 60%`.
 
-- [ ] **Step 1: Write the failing structural and CSS tests**
+- [x] **Step 1: Write the failing structural and CSS tests**
 
 Add to the rendered Proof assertion in `src/components/Metrics.test.tsx`:
 
@@ -47,7 +47,7 @@ expect(heroStyles).toMatch(
 )
 ```
 
-- [ ] **Step 2: Run the focused tests and verify RED**
+- [x] **Step 2: Run the focused tests and verify RED**
 
 Run:
 
@@ -57,7 +57,7 @@ npm test -- --run src/components/Metrics.test.tsx src/styles/viewportFrames.test
 
 Expected: both new assertions fail because the wrappers and desktop band do not exist.
 
-- [ ] **Step 3: Add the four semantic wrappers**
+- [x] **Step 3: Add the four semantic wrappers**
 
 Wrap the Proof heading block:
 
@@ -77,7 +77,7 @@ Wrap each metric's value and label:
 </div>
 ```
 
-- [ ] **Step 4: Position the shared desktop band**
+- [x] **Step 4: Position the shared desktop band**
 
 Add stable wrapper layering outside media queries:
 
@@ -114,7 +114,16 @@ Extend the desktop rule:
 }
 ```
 
-- [ ] **Step 5: Update the design language and verify GREEN**
+Add a compact-desktop metric clamp between `901px` and `1200px` so the widest
+decimal count-up state stays within its tile:
+
+```css
+@media (min-width: 901px) and (max-width: 1200px) {
+  .static-value { font-size: clamp(3.1rem, 5.8vw, 6rem); }
+}
+```
+
+- [x] **Step 5: Update the design language and verify GREEN**
 
 Document that desktop Proof centres its four content blocks on the shared `60%` band while the viewport frame, next-section isolation and mobile stops remain unchanged.
 
@@ -130,7 +139,7 @@ git diff --check
 
 Expected: all commands exit `0` with no failed tests, lint findings, build errors or whitespace errors.
 
-- [ ] **Step 6: Commit and start the test server**
+- [x] **Step 6: Commit and start the test server**
 
 ```bash
 git add docs/superpowers/specs/2026-07-15-proof-content-band-refinement-design.md docs/superpowers/plans/2026-07-15-proof-content-band-refinement.md docs/design-language/scroll-choreography.md src/components/Metrics.test.tsx src/styles/viewportFrames.test.ts src/components/Metrics.tsx src/styles/hero.css
@@ -139,4 +148,3 @@ npm run dev -- --host 127.0.0.1
 ```
 
 Expected: Vite reports a working localhost URL and remains running for user testing.
-

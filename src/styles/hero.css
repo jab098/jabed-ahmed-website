@@ -292,6 +292,8 @@
 .proof-art__grid i { border-right: 1px solid rgba(17, 16, 15, 0.22); border-bottom: 1px solid rgba(17, 16, 15, 0.22); }
 .proof-art__grid i:nth-child(3n) { background: rgba(17, 16, 15, 0.08); transform: scale(0); transition: transform 600ms cubic-bezier(0.16, 1, 0.3, 1); }
 .proof-section.is-visible .proof-art__grid i:nth-child(3n) { transform: scale(1); }
+.proof-art__content,
+.proof-metric__content { position: relative; z-index: 1; }
 .proof-art .eyebrow { position: relative; margin: 0 0 0.7rem; font-size: 0.62rem; }
 .proof-art h2 { position: relative; max-width: 7ch; margin: 0; font-size: clamp(2rem, 3.3vw, 4rem); font-weight: 500; letter-spacing: -0.065em; line-height: 0.92; }
 
@@ -327,7 +329,28 @@
 .proof-metric p { margin: 1.3rem 0 0; font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; letter-spacing: 0.04em; text-transform: uppercase; }
 
 @media (min-width: 901px) {
-  .proof-section { grid-template-rows: 1fr; }
+  .proof-section {
+    --proof-content-band: 60%;
+    grid-template-rows: 1fr;
+  }
+
+  .proof-art__content,
+  .proof-metric__content {
+    position: absolute;
+    top: var(--proof-content-band);
+    right: 1.3rem;
+    left: 1.3rem;
+    transform: translateY(-50%);
+  }
+
+  .proof-art__content {
+    right: 1.4rem;
+    left: 1.4rem;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1200px) {
+  .static-value { font-size: clamp(3.1rem, 5.8vw, 6rem); }
 }
 
 @media (max-width: 900px) {
