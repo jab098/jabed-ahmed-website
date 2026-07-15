@@ -21,6 +21,7 @@ html {
 
 html.narrative-scroll-active {
   scroll-behavior: auto;
+  overflow-anchor: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -94,6 +94,21 @@ export function SystemsShowcase() {
     return () => query.removeEventListener('change', update)
   }, [])
 
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return
+        entry.target.classList.add('is-visible')
+        observer.unobserve(entry.target)
+      })
+    }, { rootMargin: '0px -6% 0px -6%', threshold: 0.18 })
+
+    root.querySelectorAll('.system-card').forEach((card) => observer.observe(card))
+    return () => observer.disconnect()
+  }, [])
+
   useLayoutEffect(() => {
     const root = rootRef.current
     const stage = stageRef.current

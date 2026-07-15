@@ -87,7 +87,7 @@
 
 .process-stage__copy {
   margin-top: auto;
-  animation: process-copy-in 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: process-copy-in 600ms ease both;
 }
 
 .process-stage__copy span { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; }
@@ -98,7 +98,7 @@
   min-width: 0;
   padding: clamp(1rem, 3vw, 3rem);
   overflow: hidden;
-  animation: process-visual-in 760ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: process-visual-in 760ms ease both;
 }
 
 .process-visual {
@@ -201,8 +201,8 @@
 .brief-visual__handoff b { font-size: 0.7rem; text-transform: uppercase; }
 .brief-visual__handoff small { overflow: hidden; opacity: 0.58; text-overflow: ellipsis; white-space: nowrap; }
 
-@keyframes process-copy-in { from { opacity: 0; transform: translateY(1.5rem); } }
-@keyframes process-visual-in { from { opacity: 0; transform: translateX(8%) skewX(-3deg); } }
+@keyframes process-copy-in { from { opacity: 0; } }
+@keyframes process-visual-in { from { opacity: 0; } }
 @keyframes grow-line { from { transform: scaleX(0); } }
 @keyframes node-in { from { opacity: 0; transform: translate(-50%, -50%) scale(0.6) rotate(-4deg); } to { transform: translate(-50%, -50%); } }
 @keyframes architecture-path { to { stroke-dashoffset: 0; } }

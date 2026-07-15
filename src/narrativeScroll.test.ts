@@ -197,6 +197,42 @@ describe('NarrativeGestureDirector', () => {
     expect(harness.animations).toEqual([600, 1200])
   })
 
+  it('queues one adjacent move when a fresh wheel stream starts during a handoff', () => {
+    const harness = createDirectorHarness([0, 600, 1200], 0, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.runQuietTimer()
+    harness.director.handleWheel(wheelInput(10000))
+    harness.completeAnimation()
+
+    expect(harness.animations).toEqual([600, 1200])
+    expect(harness.animationModes).toEqual(['continue', 'continue'])
+  })
+
+  it('caps a queued wheel stream at one follow-on destination', () => {
+    const harness = createDirectorHarness([0, 600, 1200, 1800], 0, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.runQuietTimer()
+    harness.director.handleWheel(wheelInput(10000))
+    harness.director.handleWheel(wheelInput(10000))
+    harness.completeAnimation()
+    harness.completeAnimation()
+
+    expect(harness.animations).toEqual([600, 1200])
+  })
+
+  it('queues a fresh reverse wheel stream without crossing the current landing', () => {
+    const harness = createDirectorHarness([0, 600, 1200], 600, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.runQuietTimer()
+    harness.director.handleWheel(wheelInput(-10000))
+    harness.completeAnimation()
+
+    expect(harness.animations).toEqual([1200, 600])
+  })
+
   it('keeps wheel momentum disarmed past a direct handoff until it is actually quiet', () => {
     const harness = createDirectorHarness([0, 600, 1200], 0, false)
 
@@ -341,6 +377,30 @@ describe('NarrativeGestureDirector', () => {
     expect(harness.director.handleTouchMove(move)).toBe(true)
     expect(move.preventDefault).toHaveBeenCalledOnce()
     expect(harness.director.handleTouchEnd()).toBe(true)
+    expect(harness.animations).toEqual([600])
+  })
+
+  it('queues one committed touch swipe that begins during a handoff', () => {
+    const harness = createDirectorHarness([0, 600, 1200], 0, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.director.handleTouchStart(touchInput(100, 700))
+    harness.director.handleTouchMove(touchInput(100, 500))
+    harness.director.handleTouchEnd()
+    harness.completeAnimation()
+
+    expect(harness.animations).toEqual([600, 1200])
+  })
+
+  it('does not queue a short touch drag during a handoff', () => {
+    const harness = createDirectorHarness([0, 600, 1200], 0, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.director.handleTouchStart(touchInput(100, 700))
+    harness.director.handleTouchMove(touchInput(100, 670))
+    harness.director.handleTouchEnd()
+    harness.completeAnimation()
+
     expect(harness.animations).toEqual([600])
   })
 

@@ -97,7 +97,13 @@ export function NarrativeScroll() {
       scheduleRebuild()
     }
     const onTransitionEnd = (event: TransitionEvent) => {
-      if (event.target instanceof Element && event.target.closest('.faq-item')) scheduleRebuild()
+      if (
+        event.target instanceof Element &&
+        event.target.matches('.faq-answer-shell') &&
+        event.propertyName === 'grid-template-rows'
+      ) {
+        scheduleRebuild()
+      }
     }
     const onDirectNavigation = (event: MouseEvent) => {
       if (

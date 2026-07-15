@@ -32,9 +32,11 @@ export function Faq() {
                 aria-controls={`faq-answer-${item.id}`}
                 onClick={() => setOpenId(isOpen ? null : item.id)}
               >
-                <span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
-                <strong>{item.question}</strong>
-                <i aria-hidden="true"><b /><b /></i>
+                <span className="faq-question__index" aria-hidden="true">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+                <strong className="faq-question__label">{item.question}</strong>
+                <i className="faq-question__icon" aria-hidden="true"><b /><b /></i>
               </button>
               <div
                 className="faq-answer-shell"

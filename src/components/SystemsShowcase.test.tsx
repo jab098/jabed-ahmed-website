@@ -52,3 +52,21 @@ it('rebuilds its pinned scene when the desktop/mobile breakpoint changes', () =>
     window.matchMedia = originalMatchMedia
   }
 })
+
+it('observes every system card for its own fade entrance', () => {
+  const OriginalIntersectionObserver = globalThis.IntersectionObserver
+  const observed: Element[] = []
+  class RecordingIntersectionObserver {
+    observe(element: Element) { observed.push(element) }
+    unobserve() {}
+    disconnect() {}
+  }
+  vi.stubGlobal('IntersectionObserver', RecordingIntersectionObserver)
+
+  try {
+    render(<SystemsShowcase />)
+    expect(observed.filter((element) => element.matches('.system-card'))).toHaveLength(4)
+  } finally {
+    vi.stubGlobal('IntersectionObserver', OriginalIntersectionObserver)
+  }
+})

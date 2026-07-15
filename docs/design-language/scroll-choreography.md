@@ -8,8 +8,9 @@ One physical gesture may reach only the immediately adjacent authored waypoint i
 
 - A restrained amount of direct movement is shown first, then the site completes the handoff.
 - A very large wheel delta, fast swipe, or momentum tail cannot skip a headline, card, or scene.
-- Input received during a handoff is absorbed; it is never queued as another move.
-- A fresh move requires a fresh gesture after wheel input has been quiet for at least `180ms`, or after the previous touch has ended.
+- Continuous input from the gesture that started a handoff is absorbed as momentum.
+- After wheel input has been quiet for at least `180ms`, a new stream is a fresh gesture and may reserve exactly one adjacent move even if the current handoff is still finishing.
+- A new committed single-touch swipe may likewise reserve one adjacent move after the current landing. A short second swipe reserves nothing.
 - Full headline, card, state, bridge, Contact, and Footer compositions are destinations—not content to pass over.
 - Geometry never invents a destination between two authored compositions.
 
@@ -131,6 +132,8 @@ Raw intent—not the damped visual preview—determines commitment. Reaching eit
 
 The browser adapter follows the latest preview target through `requestAnimationFrame` with a time-based `55ms` exponential filter. Time-based interpolation keeps the feel consistent on 60Hz and 120Hz displays. It writes the exact target once the remaining distance is at most `0.5px`.
 
+If a fresh wheel stream begins after the quiet boundary while another handoff is active, the director stores its direction and raw intent—not a pixel destination. At the current landing it resolves the adjacent authored waypoint from the settled semantic composition. The one-slot reservation can never advance more than one additional stop, regardless of delta size or repeated events inside that fresh stream.
+
 ## Handoff motion
 
 Every automated handoff starts from the currently rendered `window.scrollY`. Pending preview targets are cancelled and discarded before GSAP begins; an unseen queued value is never flushed into the document.
@@ -145,13 +148,15 @@ The sinusoidal family is the shared velocity language for automated motion: rest
 
 Direct preview writes are never applied through a transformed virtual-scroll surface. The page always animates real `window.scrollY`. Each generated frame uses an explicit instant browser write, allowing GSAP to own the timing curve even if ScrollTrigger has restored inline smooth-scroll behavior; native smoothing must never ease an already-eased frame a second time.
 
+Spatial motion belongs to the scroll handoff. Process state changes therefore fade their copy and visual without a second lateral or skew movement. System and Capability cards reveal individually with opacity as each card enters the viewport; a section-wide reveal must not finish while later cards are still offscreen. Reduced-motion mode renders every card immediately.
+
 ## Gesture ownership and safety
 
-Wheel input absorbed during any active handoff—including a link, tab, touch, or geometry-reconciliation animation—remains disarmed until the input stream is genuinely quiet for `180ms`, even if the animation finishes first.
+Wheel input from the active stream remains disarmed until that stream is genuinely quiet for `180ms`, even if the animation finishes first. A later stream that starts after that boundary is deliberate input: it may reserve one adjacent semantic destination and runs only after the current composition has landed. Further momentum remains absorbed, so one stream still cannot cross multiple authored stops.
 
 If wheel direction reverses before commitment, the reversed preview may start from the current partial position, but its quiet rollback still resolves to the gesture's original composition. A reversal must never strand the page between stops.
 
-Vertical touch movement that begins during an active handoff is absorbed so it cannot queue another destination. If a second finger appears after a single-touch preview has been claimed, the preview returns to its origin synchronously before control returns to the browser for pinch or multi-touch behavior.
+A new vertical touch gesture that begins during an active handoff is classified without moving the current animation. If it crosses the normal touch threshold, it reserves one adjacent semantic destination; otherwise it is discarded. If a second finger appears after a single-touch preview has been claimed, the preview returns to its origin synchronously before control returns to the browser for pinch or multi-touch behavior.
 
 The director never claims:
 
@@ -173,6 +178,8 @@ The system does not move focus, announce routine scroll changes, block pinch zoo
 
 The standalone privacy page does not mount the director.
 
+Because the narrative director owns document position, `html.narrative-scroll-active` disables browser scroll anchoring. Dynamic content may change future geometry, but it may never move the current viewport without wheel, touch, direct navigation, keyboard, or scrollbar input. FAQ hover/open motion must therefore be layout-neutral: animate child transforms inside the fixed question grid, never padding, width, height, or line wrapping.
+
 ## Dynamic layout
 
 Waypoint geometry is cached outside wheel and touch hot paths. It rebuilds after:
@@ -182,7 +189,7 @@ Waypoint geometry is cached outside wheel and touch hot paths. It rebuilds after
 - viewport resize or orientation change;
 - a GSAP `ScrollTrigger` refresh;
 - a `ResizeObserver` change to the nav, main content, or footer;
-- FAQ transition completion.
+- FAQ answer-height transition completion. Hover/color/transform transitions do not rebuild waypoint geometry.
 
 Rebuild requests are coalesced into one animation frame. New sections join the movement language through authored declarations rather than controller edits. If geometry changes during an active handoff, the director re-resolves the destination by semantic waypoint ID and continues toward the refreshed coordinate. A touch that is still physically held remains blocked through its eventual `touchend` or `touchcancel`, so it cannot fight the corrected animation.
 
@@ -196,7 +203,7 @@ Any section addition, removal, breakpoint change, or pinned-state change must up
 
 - Structural component tests assert every required desktop and mobile waypoint and the eight-scene inventory.
 - `NarrativeScroll.test.tsx` covers physical, virtual, track, responsive, authored-only gap, preview follower, handoff ease, and nested-scroll behavior.
-- `narrativeScroll.test.ts` covers delta normalization, damping, raw commitment, one-stop clamping, mode selection, momentum absorption across every handoff type, reversal, sub-threshold return, touch classification and cancellation, rebuild ownership, and nearby unvisited stops.
+- `narrativeScroll.test.ts` covers delta normalization, damping, raw commitment, one-stop clamping, mode selection, momentum absorption, one-slot follow-on wheel and touch intent, reversal, sub-threshold return, touch classification and cancellation, rebuild ownership, and nearby unvisited stops.
 - `App.test.tsx` protects chapter order, director mount, and the permanent README link to this document.
 
 A missing required scene must fail a structural test rather than silently disappearing from the journey.
@@ -214,5 +221,8 @@ A missing required scene must fail a structural test rather than silently disapp
 - Verify short and long touch swipes at `390x844`, `375x812`, and `320x568`.
 - Cross and rotate through the `900px` breakpoint and confirm the active waypoint inventory rebuilds correctly.
 - Test FAQ expansion, the menu, nested scrolling, taps, horizontal movement, pinch zoom, anchors, keyboard navigation, scrollbar dragging, and Back to top.
+- Hover every FAQ question and open, close, and switch answers without any unsolicited change to `window.scrollY`.
+- Start a second wheel and touch gesture shortly after the first; verify it registers once after landing while continuous momentum still cannot skip.
+- Confirm Process states and every System and Capability card fade into their own composition without a pre-animation flash.
 - Test loader completion, resize and orientation changes, and reduced-motion mode.
 - Confirm there are no console errors, Vite overlays, or horizontal page overflow before release.
