@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react'
+import { fireEvent, render } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NarrativeScroll } from './NarrativeScroll'
 import {
@@ -284,6 +284,27 @@ it('registers and cleans up delegated direct-navigation clicks', () => {
   expect(addEventListener).toHaveBeenCalledWith('click', expect.any(Function))
   unmount()
   expect(removeEventListener).toHaveBeenCalledWith('click', expect.any(Function))
+})
+
+it('cancels the pending FAQ transition-completion frame during teardown', () => {
+  let nextFrame = 0
+  const requestFrame = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(() => ++nextFrame)
+  const cancelFrame = vi.spyOn(window, 'cancelAnimationFrame')
+  document.body.innerHTML = `
+    <div class="faq-list">
+      <article class="faq-item"><div class="faq-answer-shell"></div></article>
+    </div>
+  `
+  const shell = document.querySelector('.faq-answer-shell') as HTMLElement
+  const { unmount } = render(<NarrativeScroll />)
+
+  fireEvent.transitionEnd(shell, { propertyName: 'grid-template-rows' })
+  const transitionCompletionFrame = requestFrame.mock.results.at(-1)?.value
+  expect(transitionCompletionFrame).toBeGreaterThan(0)
+
+  unmount()
+
+  expect(cancelFrame).toHaveBeenCalledWith(transitionCompletionFrame)
 })
 
 it('leaves scrolling fully native when reduced motion is requested', () => {

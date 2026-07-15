@@ -11,10 +11,25 @@ export const LINKEDIN_URL = 'https://linkedin.com/in/jabed98'
 export const CALENDLY_URL = 'https://calendly.com/jabed098/30min'
 export const EMAIL = 'consulting@jabed.co.uk'
 
+export function formatMetricCount(value: string, progress: number, from = 0, decimals = 0) {
+  if (progress === 1) return value
+
+  const match = value.match(/^([^\d]*)([\d.]+)(.*)$/)
+  if (!match) return value
+
+  const [, prefix, numericValue, suffix] = match
+  const target = Number(numericValue)
+  const easedProgress = 1 - Math.pow(1 - progress, 3)
+  const currentValue = from + (target - from) * easedProgress
+  const formattedValue = decimals > 0 ? currentValue.toFixed(decimals) : Math.round(currentValue).toString()
+
+  return `${prefix}${formattedValue}${suffix}`
+}
+
 export const METRICS = [
-  { value: '8+', label: 'Years of experience', digits: ['8'] },
-  { value: '16', label: 'Global markets', digits: ['1', '6'] },
-  { value: '€2M+', label: 'Experimentation uplift', digits: ['2'] },
+  { value: '8+', label: 'Years of experience' },
+  { value: '16', label: 'Global markets' },
+  { value: '€2M+', label: 'Experimentation uplift', from: 0.5, decimals: 1 },
 ] as const
 
 export const PROCESS_STEPS = [

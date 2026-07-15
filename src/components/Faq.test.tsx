@@ -11,10 +11,9 @@ it('opens and closes one black-section question at a time', async () => {
   const second = screen.getByRole('button', { name: 'Can you work with our existing analytics stack?' })
   const firstAnswer = container.querySelector('#faq-answer-fit')
   const secondAnswer = container.querySelector('#faq-answer-stack')
-  expect(container.querySelector('.faq-header')).toHaveAttribute(
-    'data-scroll-waypoint',
-    'faq-heading',
-  )
+  expect(container.querySelector('#faq')).toHaveAttribute('data-scroll-frame', 'viewport')
+  expect(container.querySelector('#faq')).toHaveAttribute('data-scroll-waypoint', 'faq-heading')
+  expect(container.querySelector('.faq-header')).not.toHaveAttribute('data-scroll-waypoint')
   expect(container.querySelectorAll('[data-scroll-waypoint-mobile^="faq-"]')).toHaveLength(6)
   expect(container.querySelectorAll('.faq-item')).toHaveLength(6)
   expect(container.querySelectorAll('.faq-question__index')).toHaveLength(6)

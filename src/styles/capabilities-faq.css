@@ -77,7 +77,6 @@
 
 .faq-section {
   display: grid;
-  min-height: auto;
   padding: clamp(7rem, 10vw, 11rem) 3vw;
   color: var(--paper);
   background: var(--ink);
@@ -124,6 +123,29 @@
 .faq-answer span { display: block; width: 3rem; height: 0.25rem; margin-top: 0.65rem; background: var(--signal); }
 .faq-answer p { max-width: 38rem; margin: 0; color: #aaa7a2; font-size: 0.95rem; line-height: 1.6; }
 
+@media (min-width: 901px) {
+  .faq-section { align-content: center; }
+}
+
+@media (min-width: 901px) and (max-height: 940px) {
+  .faq-section {
+    padding-block: clamp(1.5rem, 4vh, 2.25rem);
+    gap: clamp(2rem, 4vw, 4rem);
+  }
+
+  .faq-header > .eyebrow { margin-bottom: 1.5rem; }
+  .faq-header h2 { font-size: clamp(3.5rem, 6vw, 6rem); line-height: 0.78; }
+  .faq-header > p:last-child { margin-top: 1.5rem; }
+  .faq-list button {
+    min-height: clamp(4rem, 10.4vh, 5rem);
+    grid-template-columns: 2.75rem 1fr 2rem;
+  }
+  .faq-question__label {
+    font-size: clamp(1.1rem, 1.8vw, 1.65rem);
+    line-height: 1.04;
+  }
+}
+
 @media (max-width: 900px) {
   .capabilities-header { min-height: 60svh; padding-inline: 1.2rem; }
   .capabilities-header > .eyebrow { left: 1.2rem; }
@@ -133,7 +155,7 @@
   .capabilities-grid article { min-height: 52vw; }
   .capabilities-grid article:nth-child(3n) { border-right: 1px solid var(--ink); }
   .capabilities-grid article:nth-child(2n) { border-right: 0; }
-  .faq-section { display: block; padding-inline: 1.2rem; }
+  .faq-section { display: block; min-height: auto; padding-inline: 1.2rem; }
   .faq-header { position: static; margin-bottom: 5rem; }
 }
 

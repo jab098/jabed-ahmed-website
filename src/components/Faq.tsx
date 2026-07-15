@@ -10,8 +10,10 @@ export function Faq() {
       className="faq-section"
       aria-labelledby="faq-title"
       data-scroll-scene="faq"
+      data-scroll-frame="viewport"
+      data-scroll-waypoint="faq-heading"
     >
-      <header className="faq-header" data-scroll-waypoint="faq-heading">
+      <header className="faq-header">
         <p className="eyebrow">// Common questions</p>
         <h2 id="faq-title">Common<br /><span>questions.</span></h2>
         <p>Clear answers before we start.</p>

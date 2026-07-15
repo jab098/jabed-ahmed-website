@@ -9,19 +9,35 @@ type NavMotionState = {
   hidden: boolean
 }
 
+const DESKTOP_FRAME_BREAKPOINT = 900
+const FRAME_LANDING_TOLERANCE = 1
+
+function isViewportFramedLanding(navHeight: number, viewportWidth: number) {
+  if (viewportWidth <= DESKTOP_FRAME_BREAKPOINT) return false
+
+  return Array.from(
+    document.querySelectorAll('[data-scroll-frame="viewport"][data-scroll-waypoint]'),
+  ).some((frame) => (
+    Math.abs(frame.getBoundingClientRect().top - navHeight) <= FRAME_LANDING_TOLERANCE
+  ))
+}
+
 function getNextNavMotionState(
   state: NavMotionState,
   nextY: number,
   viewportHeight: number,
+  keepVisible: boolean,
 ): NavMotionState {
   const delta = nextY - state.y
-  if (Math.abs(delta) < 1) return { ...state, y: nextY }
+  if (Math.abs(delta) < 1) {
+    return { ...state, y: nextY, hidden: keepVisible ? false : state.hidden }
+  }
 
   const direction: -1 | 1 = delta > 0 ? 1 : -1
   const travel = direction === state.direction ? state.travel + Math.abs(delta) : Math.abs(delta)
   let hidden = state.hidden
 
-  if (nextY <= 80) hidden = false
+  if (nextY <= 80 || keepVisible) hidden = false
   else if (direction === 1 && nextY > viewportHeight * 0.55 && travel >= 48) hidden = true
   else if (direction === -1 && travel >= 56) hidden = false
 
@@ -31,6 +47,7 @@ function getNextNavMotionState(
 export function SiteNav() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [hidden, setHidden] = useState(false)
+  const navRef = useRef<HTMLElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -39,7 +56,16 @@ export function SiteNav() {
     let frame = 0
     const update = () => {
       frame = 0
-      const next = getNextNavMotionState(motion, window.scrollY, window.innerHeight)
+      const keepVisible = isViewportFramedLanding(
+        navRef.current?.getBoundingClientRect().height ?? 0,
+        window.innerWidth,
+      )
+      const next = getNextNavMotionState(
+        motion,
+        window.scrollY,
+        window.innerHeight,
+        keepVisible,
+      )
       if (next.hidden !== motion.hidden) setHidden(next.hidden)
       motion = next
     }
@@ -95,6 +121,7 @@ export function SiteNav() {
 
   return (
     <nav
+      ref={navRef}
       className={`site-nav${hidden && !menuOpen ? ' is-hidden' : ''}${menuOpen ? ' is-open' : ''}`}
       aria-label="Primary navigation"
     >

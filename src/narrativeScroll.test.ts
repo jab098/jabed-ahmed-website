@@ -14,12 +14,13 @@ import {
   type HandoffMode,
 } from './narrativeScroll'
 
-const wheelInput = (deltaY: number, deltaX = 0) => ({
+const wheelInput = (deltaY: number, deltaMode = 0, timeStamp = 0) => ({
   ctrlKey: false,
-  deltaMode: 0,
-  deltaX,
+  deltaMode,
+  deltaX: 0,
   deltaY,
   preventDefault: vi.fn(),
+  timeStamp,
 })
 
 const touchInput = (clientX: number, clientY: number) => ({
@@ -35,7 +36,6 @@ function createDirectorHarness(
 ) {
   let scrollY = initialY
   let quietTimer = () => {}
-  let timerScheduleCount = 0
   let animationCancellationCount = 0
   let pendingAnimationCompletion = () => {}
   const animations: number[] = []
@@ -69,9 +69,8 @@ function createDirectorHarness(
       }
     },
     setTimer: (callback) => {
-      timerScheduleCount += 1
       quietTimer = callback
-      return timerScheduleCount
+      return 1
     },
     clearTimer: () => {},
   })
@@ -93,9 +92,6 @@ function createDirectorHarness(
       scrollY = y
     },
     scrollWrites,
-    get timerScheduleCount() {
-      return timerScheduleCount
-    },
   }
 }
 
@@ -204,31 +200,96 @@ describe('NarrativeGestureDirector', () => {
     expect(harness.animations).toEqual([600, 1200])
   })
 
-  it('buffers post-landing wheel input without sliding the rearm deadline', () => {
+  it('absorbs one long wheel epoch through the final approach and landing', () => {
     const harness = createDirectorHarness([0, 600, 1200, 1800], 0, false)
 
-    harness.director.handleWheel(wheelInput(10000))
+    harness.director.handleWheel(wheelInput(140, 0, 0))
+    harness.setRenderedScroll(570)
+    harness.director.handleWheel(wheelInput(80, 0, 16))
     harness.completeAnimation()
-    const schedulesAtLanding = harness.timerScheduleCount
-
-    harness.director.handleWheel(wheelInput(10000))
-    harness.director.handleWheel(wheelInput(10000))
-    harness.director.handleWheel(wheelInput(10000))
-
-    expect(harness.timerScheduleCount).toBe(schedulesAtLanding)
+    harness.director.handleWheel(wheelInput(80, 0, 32))
+    harness.director.handleWheel(wheelInput(80, 0, 48))
     harness.runQuietTimer()
+
+    expect(harness.animations).toEqual([600])
+  })
+
+  it('queues a deliberate second wheel impulse before the first handoff ends', () => {
+    const harness = createDirectorHarness([0, 600, 1200], 0, false)
+
+    harness.director.handleWheel(wheelInput(110, 0, 0))
+    harness.director.handleWheel(wheelInput(44, 0, 16))
+    harness.director.handleWheel(wheelInput(18, 0, 32))
+    harness.director.handleWheel(wheelInput(90, 0, 72))
+    harness.director.handleWheel(wheelInput(20, 0, 88))
+    harness.completeAnimation()
+
     expect(harness.animations).toEqual([600, 1200])
   })
 
-  it('buffers a wheel gesture that begins near the active landing', () => {
+  it('queues a second wheel impulse after a short intra-animation pause', () => {
     const harness = createDirectorHarness([0, 600, 1200], 0, false)
 
-    harness.director.handleWheel(wheelInput(10000))
-    harness.setRenderedScroll(570)
-    harness.director.handleWheel(wheelInput(10000))
+    harness.director.handleWheel(wheelInput(110, 0, 0))
+    harness.director.handleWheel(wheelInput(20, 0, 16))
+    harness.director.handleWheel(wheelInput(42, 0, 104))
+    harness.director.handleWheel(wheelInput(60, 0, 120))
     harness.completeAnimation()
 
     expect(harness.animations).toEqual([600, 1200])
+  })
+
+  it('accepts a fresh impulse immediately after landing without pointer activity', () => {
+    const harness = createDirectorHarness([0, 600, 1200], 0, false)
+
+    harness.director.handleWheel(wheelInput(110, 0, 0))
+    harness.director.handleWheel(wheelInput(24, 0, 16))
+    harness.completeAnimation()
+    harness.director.handleWheel(wheelInput(12, 0, 32))
+    harness.director.handleWheel(wheelInput(90, 0, 80))
+    harness.director.handleWheel(wheelInput(20, 0, 96))
+
+    expect(harness.animations).toEqual([600, 1200])
+  })
+
+  it('keeps a decaying momentum tail inside the original landing token', () => {
+    const harness = createDirectorHarness([0, 600, 1200], 0, false)
+
+    harness.director.handleWheel(wheelInput(110, 0, 0))
+    harness.director.handleWheel(wheelInput(70, 0, 16))
+    harness.director.handleWheel(wheelInput(42, 0, 32))
+    harness.director.handleWheel(wheelInput(24, 0, 48))
+    harness.director.handleWheel(wheelInput(16, 0, 64))
+    harness.director.handleWheel(wheelInput(20, 0, 80))
+    harness.completeAnimation()
+    harness.runQuietTimer()
+
+    expect(harness.animations).toEqual([600])
+  })
+
+  it('treats a dense line-wheel burst as one landing token', () => {
+    const harness = createDirectorHarness([0, 600, 1200], 0, false)
+
+    for (let index = 0; index < 12; index += 1) {
+      harness.director.handleWheel(wheelInput(3, 1, index * 24))
+      if (index === 8) harness.setRenderedScroll(570)
+    }
+    harness.completeAnimation()
+    harness.runQuietTimer()
+
+    expect(harness.animations).toEqual([600])
+  })
+
+  it('keeps a spaced line-wheel roll inside one landing token', () => {
+    const harness = createDirectorHarness([0, 600, 1200], 0, false)
+
+    for (let index = 0; index < 6; index += 1) {
+      harness.director.handleWheel(wheelInput(3, 1, index * 100))
+    }
+    harness.completeAnimation()
+    harness.runQuietTimer()
+
+    expect(harness.animations).toEqual([600])
   })
 
   it('queues one adjacent move when a fresh wheel stream starts during a handoff', () => {
@@ -241,6 +302,98 @@ describe('NarrativeGestureDirector', () => {
 
     expect(harness.animations).toEqual([600, 1200])
     expect(harness.animationModes).toEqual(['continue', 'continue'])
+  })
+
+  it('does not combine quiet sub-threshold queued epochs', () => {
+    const harness = createDirectorHarness([0, 600, 1200], 0, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.runQuietTimer()
+    harness.director.handleWheel(wheelInput(50))
+    harness.runQuietTimer()
+    harness.director.handleWheel(wheelInput(50))
+    harness.completeAnimation()
+
+    expect(harness.animations).toEqual([600])
+  })
+
+  it('freezes a committed queued epoch against a reverse tail', () => {
+    const harness = createDirectorHarness([0, 600, 1200], 0, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.runQuietTimer()
+    harness.director.handleWheel(wheelInput(100))
+    harness.director.handleWheel(wheelInput(-10))
+    harness.completeAnimation()
+
+    expect(harness.animations).toEqual([600, 1200])
+  })
+
+  it('commits a queued wheel epoch that reaches the projected adjacent distance', () => {
+    const harness = createDirectorHarness([0, 600, 650], 0, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.runQuietTimer()
+    harness.director.handleWheel(wheelInput(50))
+    harness.director.handleWheel(wheelInput(-10))
+    harness.completeAnimation()
+
+    expect(harness.animations).toEqual([600, 650])
+  })
+
+  it('does not let a reverse touch replace a committed queued wheel follow-on', () => {
+    const harness = createDirectorHarness([0, 600, 1200], 0, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.runQuietTimer()
+    harness.director.handleWheel(wheelInput(100))
+    harness.director.handleTouchStart(touchInput(100, 700))
+    harness.director.handleTouchMove(touchInput(100, 900))
+    harness.director.handleTouchEnd()
+    harness.completeAnimation()
+
+    expect(harness.animations).toEqual([600, 1200])
+  })
+
+  it('keeps a committed one-slot follow-on when a third epoch arrives', () => {
+    const harness = createDirectorHarness([0, 600, 1200, 1800], 0, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.runQuietTimer()
+    harness.director.handleWheel(wheelInput(100))
+    harness.runQuietTimer()
+    harness.director.handleWheel(wheelInput(-10000))
+    harness.completeAnimation()
+    harness.completeAnimation()
+
+    expect(harness.animations).toEqual([600, 1200])
+  })
+
+  it('allows reversal to replace an uncommitted queued epoch', () => {
+    const harness = createDirectorHarness([0, 600, 1200], 600, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.runQuietTimer()
+    harness.director.handleWheel(wheelInput(50))
+    harness.director.handleWheel(wheelInput(-100))
+    harness.completeAnimation()
+
+    expect(harness.animations).toEqual([1200, 600])
+  })
+
+  it('accepts the next stationary-pointer epoch only after the post-landing tail is quiet', () => {
+    const harness = createDirectorHarness([0, 600, 1200], 0, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.completeAnimation()
+    harness.director.handleWheel(wheelInput(40))
+    harness.director.handleWheel(wheelInput(40))
+    expect(harness.animations).toEqual([600])
+
+    harness.runQuietTimer()
+    harness.director.handleWheel(wheelInput(10000))
+
+    expect(harness.animations).toEqual([600, 1200])
   })
 
   it('caps a queued wheel stream at one follow-on destination', () => {
@@ -590,6 +743,45 @@ describe('NarrativeGestureDirector', () => {
     harness.director.handleWheel(wheelInput(10000))
     harness.director.handleTouchStart(touchInput(100, 700))
     harness.director.handleTouchMove(touchInput(100, 500))
+    harness.director.handleTouchEnd()
+    harness.completeAnimation()
+
+    expect(harness.animations).toEqual([600, 1200])
+  })
+
+  it('commits a blocked touch that reaches the projected adjacent distance', () => {
+    const harness = createDirectorHarness([0, 600, 650], 0, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.director.handleTouchStart(touchInput(100, 700))
+    harness.director.handleTouchMove(touchInput(100, 650))
+    harness.director.handleTouchEnd()
+    harness.completeAnimation()
+
+    expect(harness.animations).toEqual([600, 650])
+  })
+
+  it('commits a short blocked touch after landing but before wheel quiet', () => {
+    const harness = createDirectorHarness([0, 600, 650], 0, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.completeAnimation()
+    harness.director.handleTouchStart(touchInput(100, 700))
+    harness.director.handleTouchMove(touchInput(100, 650))
+    harness.director.handleTouchEnd()
+
+    expect(harness.animations).toEqual([600, 650])
+  })
+
+  it('does not let a later touch replace a committed touch follow-on', () => {
+    const harness = createDirectorHarness([0, 600, 1200], 0, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.director.handleTouchStart(touchInput(100, 700))
+    harness.director.handleTouchMove(touchInput(100, 500))
+    harness.director.handleTouchEnd()
+    harness.director.handleTouchStart(touchInput(100, 700))
+    harness.director.handleTouchMove(touchInput(100, 900))
     harness.director.handleTouchEnd()
     harness.completeAnimation()
 
