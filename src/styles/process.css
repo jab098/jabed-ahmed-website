@@ -35,8 +35,9 @@
 .process-intro__line {
   display: block;
   padding: 0.06em 0.1em 0.2em;
-  overflow: clip;
+  overflow: hidden;
   margin: -0.06em -0.1em -0.2em;
+  contain: paint;
 }
 
 .process-intro__line > span { display: block; }

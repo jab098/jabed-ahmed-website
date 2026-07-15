@@ -122,6 +122,30 @@ Pinned scenes must react to the `900px` media-query lifecycle—not only the ini
 
 When a section changes from a row to a stack, mark each complete stacked item as a mobile destination. The current inventory includes the hero report, proof metrics, four Process scenes, four System cards and bridge, six capability cards, every FAQ row, Contact, and the full Footer composition.
 
+## Viewport-framed compositions
+
+`data-scroll-frame="viewport"` declares that a desktop composition owns the available viewport beneath the fixed navigation:
+
+```tsx
+<section data-scroll-frame="viewport" data-scroll-waypoint="proof">...</section>
+```
+
+Above `900px`, the shared frame rule supplies `min-height: calc(100svh - var(--nav-height))`. It is a layout contract, not a waypoint: the element still needs an authored physical declaration, and content may grow beyond the minimum when it genuinely needs more room. At `900px` and below, content returns to its natural stacked height and its mobile waypoints define the story.
+
+Proof and FAQ are the current viewport-framed chapters. Their desktop landings must read as isolated, complete compositions without a strip of the following section showing. FAQ owns `faq-heading` at the section boundary so its sticky heading and question list arrive as one frame; Proof uses one stretching grid row so all evidence tiles share the available height.
+
+## Gesture epochs
+
+A wheel gesture epoch begins with the first eligible pixel-, line-, or page-mode event after verified quiet. That epoch owns one landing token.
+
+- Committing consumes the token for the immediately adjacent authored waypoint.
+- Every later event in the same continuous stream is absorbed through the final approach and after landing. Each event moves the `180ms` quiet boundary; animation progress or proximity to the landing never promotes it into another gesture.
+- Once the quiet callback has actually fired, the next eligible event begins a fresh epoch. If the current handoff is still active, that fresh epoch may occupy the one-slot semantic queue.
+- The queue stores direction and accumulated raw intent, never a pixel coordinate. It resolves one adjacent waypoint from the semantic landing, so repeated events within the queued epoch cannot reserve a second follow-on destination.
+- Changing delta mode or sending an extreme delta does not create another token. A dense line-mode burst and a long pixel stream still produce one landing.
+
+Touch does not share wheel-session timing. A new single-touch gesture is classified independently and, when it commits during an active handoff, may reserve one adjacent semantic destination.
+
 ## Input preview and commitment
 
 Wheel and trackpad deltas are normalized from pixel, line, and page units. The raw intent threshold is `clamp(72px, 12vh, 120px)`. The visible wheel preview target is `min(rawIntent * 0.55, adjacentDistance)`.
@@ -131,8 +155,6 @@ Single-touch gestures are classified after eight pixels of travel and only claim
 Raw intent—not the damped visual preview—determines commitment. Reaching either the input threshold or the adjacent destination's raw distance commits the gesture. Input that becomes quiet or ends below threshold returns to its origin.
 
 The browser adapter follows the latest preview target through `requestAnimationFrame` with a time-based `55ms` exponential filter. Time-based interpolation keeps the feel consistent on 60Hz and 120Hz displays. It writes the exact target once the remaining distance is at most `0.5px`.
-
-If a fresh wheel stream begins after the quiet boundary while another handoff is active, the director stores its direction and raw intent—not a pixel destination. Input that begins inside the final `20%` of the remaining handoff path is retained the same way, because suppressing it would make a visibly completed landing feel unresponsive. At the current landing the director resolves the adjacent authored waypoint from the settled semantic composition. The one-slot reservation can never advance more than one additional stop, regardless of delta size or repeated events inside that stream.
 
 ## Handoff motion
 
@@ -148,11 +170,18 @@ The sinusoidal family is the shared velocity language for automated motion: rest
 
 Direct preview writes are never applied through a transformed virtual-scroll surface. The page always animates real `window.scrollY`. Each generated frame uses an explicit instant browser write, allowing GSAP to own the timing curve even if ScrollTrigger has restored inline smooth-scroll behavior; native smoothing must never ease an already-eased frame a second time.
 
-Spatial motion belongs to the scroll handoff. Process state changes therefore fade their copy and visual without a second lateral or skew movement. System and Capability cards reveal individually with opacity as each card enters the viewport; a section-wide reveal must not finish while later cards are still offscreen. Reduced-motion mode renders every card immediately.
+## Component motion
+
+Spatial motion belongs to the scroll handoff. Local component motion supports the composition without competing with it:
+
+- Proof metrics keep their clipped rise and count once when Proof first intersects. Numeric text follows `1 - (1 - progress)^3` for `2400ms`, preserves prefixes, suffixes and configured decimals, and writes the exact source string at completion. The visible digits use tabular numerals; the metric article keeps the final value in its accessible label. There are no digit reels.
+- Process retains the previous and current copy/visual layers for a symmetric `480ms` opacity crossfade. Cleanup timers are cancelled when another state wins, preventing stale layers from deleting the current state. The transition adds no translation, skew, or blur.
+- System and Capability cards reveal individually with opacity as each card enters the viewport; a section-wide reveal must not finish while later cards are still offscreen.
+- Reduced motion shows final metric values immediately, completes Process layer transitions in `1ms`, renders cards and masked headlines in their final state, and leaves document scrolling native because the narrative director is not mounted.
 
 ## Gesture ownership and safety
 
-Wheel input from the active stream remains disarmed during the early and middle portions of a handoff. The quiet boundary is `180ms`, but landing turns it into a fixed rearm deadline: wheel events received after landing are buffered in the one-slot semantic queue and may not restart that deadline. This guarantees forward progress without requiring pointer movement or a click. Input retained near or after landing can advance only to the immediately adjacent composition; further momentum cannot reserve a second follow-on destination inside that handoff.
+Wheel input from the active epoch remains disarmed until the stream has been quiet for `180ms`. Accepted events reset that deadline even when the visual handoff is nearly complete or has already landed, so a long physical stream cannot become a second landing by crossing an animation-position threshold. After actual quiet, a fresh epoch may queue one adjacent semantic move while the current handoff finishes. Rearming depends only on input timing—never pointer movement, hover, or a click.
 
 If wheel direction reverses before commitment, the reversed preview may start from the current partial position, but its quiet rollback still resolves to the gesture's original composition. A reversal must never strand the page between stops.
 
@@ -172,7 +201,7 @@ If a valid adjacent authored destination cannot be resolved, browser scrolling r
 
 ## Accessibility exceptions
 
-`prefers-reduced-motion: reduce` disables the narrative director completely. The browser retains native scrolling and existing reduced-motion presentation rules.
+`prefers-reduced-motion: reduce` disables the narrative director completely. The browser retains native scrolling and the final-state component rules recorded above.
 
 The system does not move focus, announce routine scroll changes, block pinch zoom, or apply `touch-action: none` to the page. Taps remain taps because touch default behavior is not cancelled until movement has been classified as a vertical swipe. Keyboard scrolling, focus-driven movement, browser find, and scrollbar dragging remain native.
 
@@ -195,9 +224,22 @@ Rebuild requests are coalesced into one animation frame. New sections join the m
 
 FAQ class mutations and answer-height transitions mark their rebuilds as passive content reflow. A passive rebuild refreshes future waypoint coordinates but preserves the exact current viewport. The director retains the semantic identity of the already-reached FAQ row even when that row moves around the stationary viewport, so the next gesture advances to the adjacent question rather than re-landing the shifted row. That identity must survive short previews, reversals and return animations; it clears only after a committed semantic landing or genuine native displacement. Later ordinary rebuilds may not replay the deferred coordinate correction.
 
-Scroll-scrubbed headline reveals must finish at the same measured `.site-nav` edge used by their physical waypoint. Use a refreshable functional ScrollTrigger endpoint rather than a viewport percentage; otherwise a shorter display can land on the correct composition while leaving the headline on a fractional transform.
+Scroll-scrubbed headline reveals must finish at the same measured `.site-nav` edge used by their physical waypoint. Process, Systems, and Contact share exact `scrub: true` motion and clear their inline line transforms when ScrollTrigger progress reaches `0.999`. Their masks use `overflow: hidden` with paint containment. Keep that shared settling contract, the refreshable functional endpoint, and both mask safeguards together; otherwise a landing can leave a fractional transform or a clipped antialias fragment, especially on large Safari displays.
 
 Responsive text and font loading may move an already-reached destination by a few pixels. Only the same last-settled semantic waypoint may be reconciled within `12px`; nearby unvisited waypoints remain eligible with only a sub-pixel directional tolerance. This prevents a small layout drift from creating a duplicate gesture without allowing a real headline one to three pixels away to be skipped. The separate authored-position deduplication rule remains `4px`.
+
+## Known failure modes and safeguards
+
+| Failure mode | Safeguard |
+| --- | --- |
+| A momentum tail or dense line-wheel burst advances twice. | One epoch owns one landing token; all events remain absorbed until verified quiet, with no animation-position promotion. |
+| A fresh gesture resolves from an obsolete preview coordinate. | Pending preview writes are cancelled before handoff, and the one-slot queue stores semantic direction and intent rather than pixels. |
+| Proof or FAQ reveals part of the next chapter on an awkward desktop height. | `data-scroll-frame="viewport"` supplies a nav-adjusted desktop minimum while the authored section waypoint owns the full composition. |
+| A masked orange headline leaves fragments after landing in Safari. | Exact shared scrub, `0.999` transform cleanup, `overflow: hidden`, and `contain: paint` settle all three headline scenes. |
+| A Process state flashes, slides, or is removed by an old timer. | Stable previous/current layers crossfade with opacity only; effect cleanup cancels stale `480ms` timers. |
+| Proof digits replay, reel, or stop short of the source value. | The observer disconnects after first visibility, the counter writes the exact final string, and reduced motion bypasses counting. |
+| FAQ hover or expansion moves a stationary viewport or re-lands the same row. | Hover transforms are layout-neutral; passive rebuilds preserve `window.scrollY` and the last settled semantic identity. |
+| A breakpoint change leaves desktop pins or destinations active on mobile. | The `900px` media-query lifecycle tears down and rebuilds pinning and the active waypoint inventory. |
 
 ## Tests
 
@@ -213,19 +255,36 @@ A missing required scene must fail a structural test rather than silently disapp
 ## Release checklist
 
 - Run `npm test -- --run`, `npm run lint`, `npm run build`, and `git diff --check`.
+- Run the viewport matrix in both current Chrome and Safari:
+
+  | Viewport | Required observation |
+  | --- | --- |
+  | `1440x900` | Standard desktop chapter framing, complete card/state landings, and exact masked headlines. |
+  | `1499x886` | Awkward desktop height: no clipped copy, partial following surface, or duplicate stop. |
+  | `2554x1425` | Large-display Safari regression: no orange headline fragments after Process, Systems, or Contact settles. |
+  | `1455x1279` | Tall desktop frame: Proof and FAQ remain isolated and Process content stays balanced. |
+  | `390x844` | Wide mobile: short/long touch classification and the complete stacked waypoint inventory. |
+  | `375x812` | Baseline mobile: touch rollback/commit, FAQ open/close, Contact, and Footer. |
+  | `320x568` | Small mobile: no overflow, hidden required copy, or unreachable authored state. |
+
 - Walk the resolved authored stop IDs in both directions; do not judge only by total scroll distance.
 - Confirm Proof reaches the complete Process headline without a label-only frame.
 - Confirm every chapter transition skips standalone eyebrow and running-label frames.
 - Confirm each Systems gesture shows one complete destination card, followed by the bridge.
 - Confirm Contact reaches the full Footer without a `JA / DATA`-only stop.
 - Verify one small and one extreme wheel gesture with a mouse, plus a high-resolution trackpad flick and its momentum tail.
+- Hold one long pixel stream through the final approach and landing; it must stop at exactly one adjacent composition.
+- Send a dense line-mode burst through the same interval; it must also spend exactly one landing token.
+- After at least `180ms` of verified quiet, start a quick fresh second gesture while the first handoff is still finishing; it may queue exactly one adjacent landing.
 - Verify short rollback motion and committed handoff blending on wheel, trackpad, and touch.
 - Verify short and long touch swipes at `390x844`, `375x812`, and `320x568`.
 - Cross and rotate through the `900px` breakpoint and confirm the active waypoint inventory rebuilds correctly.
 - Test FAQ expansion, the menu, nested scrolling, taps, horizontal movement, pinch zoom, anchors, keyboard navigation, scrollbar dragging, and Back to top.
 - Hover every FAQ question and open, close, and switch answers without any unsolicited change to `window.scrollY`.
-- Start a second wheel and touch gesture shortly after the first; verify it registers once after landing while continuous momentum still cannot skip.
-- Keep the pointer stationary and continue wheel input through the final part of a handoff; verify the fixed rearm deadline advances to the adjacent stop without requiring a hover or click reset.
+- Start a second committed touch gesture during a handoff; verify it registers once after landing while a short second swipe reserves nothing.
+- Keep the pointer stationary and continue the same wheel stream through and after landing; verify it remains on that landing until a real quiet boundary, with no hover or click reset involved.
 - Confirm Process states and every System and Capability card fade into their own composition without a pre-animation flash.
+- Confirm all three Proof metrics count once to their exact strings, Process transitions keep only the current and previous layers, and reduced motion shows every final state immediately.
+- Leave the pointer stationary at the end of Process, Systems, and Contact headline reveals; inspect at normal scale and zoom for fractional transforms or retained orange mask fragments.
 - Test loader completion, resize and orientation changes, and reduced-motion mode.
 - Confirm there are no console errors, Vite overlays, or horizontal page overflow before release.

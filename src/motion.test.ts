@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { navigationEdgeScrollPosition } from './motion'
+import {
+  HEADLINE_SCRUB,
+  navigationEdgeScrollPosition,
+  settleHeadlineReveal,
+} from './motion'
 
 afterEach(() => {
   document.body.innerHTML = ''
@@ -27,5 +31,21 @@ describe('navigationEdgeScrollPosition', () => {
 
   it('falls back to the viewport top when navigation is absent', () => {
     expect(navigationEdgeScrollPosition()).toBe('top 0px')
+  })
+})
+
+describe('headline reveal motion', () => {
+  it('uses an exact scrub contract', () => {
+    expect(HEADLINE_SCRUB).toBe(true)
+  })
+
+  it('settles line transforms only at the completed reveal threshold', () => {
+    const line = document.createElement('span')
+    line.style.transform = 'translateY(8px)'
+
+    expect(settleHeadlineReveal([line], 0.8)).toBe(false)
+    expect(line.style.transform).toBe('translateY(8px)')
+    expect(settleHeadlineReveal([line], 1)).toBe(true)
+    expect(line.style.transform).toBe('')
   })
 })

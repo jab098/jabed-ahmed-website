@@ -1,7 +1,12 @@
 import { useLayoutEffect, useRef } from 'react'
 import { ArrowUpRight } from 'lucide-react'
 import { CALENDLY_URL, EMAIL, LINKEDIN_URL } from '../data'
-import { gsap, navigationEdgeScrollPosition } from '../motion'
+import {
+  gsap,
+  HEADLINE_SCRUB,
+  navigationEdgeScrollPosition,
+  settleHeadlineReveal,
+} from '../motion'
 import { FooterGlyphStream } from './FooterGlyphStream'
 
 export function Contact() {
@@ -10,8 +15,9 @@ export function Contact() {
   useLayoutEffect(() => {
     const root = rootRef.current
     if (!root || navigator.userAgent.includes('jsdom')) return
+    const headlineLines = root.querySelectorAll<HTMLElement>('.contact-line > span')
     const context = gsap.context(() => {
-      gsap.fromTo('.contact-line > span', { yPercent: 110 }, {
+      gsap.fromTo(headlineLines, { yPercent: 110 }, {
         yPercent: 0,
         stagger: 0.08,
         ease: 'power4.out',
@@ -19,8 +25,11 @@ export function Contact() {
           trigger: root,
           start: 'top 68%',
           end: navigationEdgeScrollPosition,
-          scrub: 0.7,
+          scrub: HEADLINE_SCRUB,
           invalidateOnRefresh: true,
+          onUpdate: ({ progress }) => {
+            settleHeadlineReveal(headlineLines, progress)
+          },
         },
       })
       gsap.fromTo('.contact-actions-new', { opacity: 0, y: 34 }, {

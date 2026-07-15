@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { PROCESS_STEPS } from '../data'
-import { gsap, navigationEdgeScrollPosition, ScrollTrigger } from '../motion'
+import {
+  gsap,
+  HEADLINE_SCRUB,
+  navigationEdgeScrollPosition,
+  ScrollTrigger,
+  settleHeadlineReveal,
+} from '../motion'
 
 const PROCESS_SCROLL_PROGRESS = [0.08, 0.34, 0.6, 0.86] as const
 const PROCESS_CROSSFADE_MS = 480
@@ -172,10 +178,11 @@ export function Process() {
     const stage = stageRef.current
     if (!root || navigator.userAgent.includes('jsdom')) return
 
+    const headlineLines = root.querySelectorAll<HTMLElement>('.process-intro__line > span')
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const context = gsap.context(() => {
       gsap.fromTo(
-        '.process-intro__line > span',
+        headlineLines,
         { yPercent: 110 },
         {
           yPercent: 0,
@@ -185,8 +192,11 @@ export function Process() {
             trigger: '.process-intro',
             start: 'top 68%',
             end: navigationEdgeScrollPosition,
-            scrub: 0.7,
+            scrub: HEADLINE_SCRUB,
             invalidateOnRefresh: true,
+            onUpdate: ({ progress }) => {
+              settleHeadlineReveal(headlineLines, progress)
+            },
           },
         },
       )

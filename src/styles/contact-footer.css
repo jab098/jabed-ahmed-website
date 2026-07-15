@@ -30,7 +30,7 @@
   line-height: 0.76;
 }
 
-.contact-line { display: block; padding: 0.05em 0.1em 0.2em; overflow: clip; margin: -0.05em -0.1em -0.2em; }
+.contact-line { display: block; padding: 0.05em 0.1em 0.2em; overflow: hidden; margin: -0.05em -0.1em -0.2em; contain: paint; }
 .contact-line > span { display: block; }
 .contact-flash-word { color: var(--ink); }
 .contact-section h2 em { color: var(--signal); font-style: normal; }

@@ -17,7 +17,7 @@
 
 .systems-header > .eyebrow { position: absolute; top: 4rem; left: 3vw; margin: 0; font-size: 0.62rem; }
 .systems-header h2 { max-width: 9ch; margin: 0; font-size: clamp(5rem, 12vw, 14rem); font-weight: 500; letter-spacing: -0.085em; line-height: 0.78; }
-.systems-heading__line { display: block; padding: 0.06em 0.1em 0.22em; overflow: clip; margin: -0.06em -0.1em -0.22em; }
+.systems-heading__line { display: block; padding: 0.06em 0.1em 0.22em; overflow: hidden; margin: -0.06em -0.1em -0.22em; contain: paint; }
 .systems-heading__line > span { display: block; }
 .systems-heading__line--signal { color: var(--signal); }
 .systems-header > p:last-child { position: absolute; right: 3vw; bottom: 3rem; margin: 0; color: #8c8984; font: 600 0.6rem 'JetBrains Mono', monospace; letter-spacing: 0.08em; text-transform: uppercase; }

@@ -1,7 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { ArrowUpRight } from 'lucide-react'
 import { SYSTEMS } from '../data'
-import { gsap, navigationEdgeScrollPosition } from '../motion'
+import {
+  gsap,
+  HEADLINE_SCRUB,
+  navigationEdgeScrollPosition,
+  settleHeadlineReveal,
+} from '../motion'
 
 function SystemGraphic({ index }: { index: number }) {
   if (index === 0) {
@@ -115,8 +120,9 @@ export function SystemsShowcase() {
     const track = trackRef.current
     if (!root || !stage || !track || navigator.userAgent.includes('jsdom')) return
 
+    const headlineLines = root.querySelectorAll<HTMLElement>('.systems-heading__line > span')
     const context = gsap.context(() => {
-      gsap.fromTo('.systems-heading__line > span', { yPercent: 110 }, {
+      gsap.fromTo(headlineLines, { yPercent: 110 }, {
         yPercent: 0,
         stagger: 0.08,
         ease: 'power4.out',
@@ -124,8 +130,11 @@ export function SystemsShowcase() {
           trigger: '.systems-header',
           start: 'top 70%',
           end: navigationEdgeScrollPosition,
-          scrub: 0.7,
+          scrub: HEADLINE_SCRUB,
           invalidateOnRefresh: true,
+          onUpdate: ({ progress }) => {
+            settleHeadlineReveal(headlineLines, progress)
+          },
         },
       })
 
