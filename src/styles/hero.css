@@ -317,6 +317,7 @@
   margin: -0.1em -0.14em -0.16em -0.04em;
   font-size: clamp(4rem, 7vw, 9rem);
   font-weight: 500;
+  font-variant-numeric: tabular-nums;
   letter-spacing: -0.065em;
   line-height: 0.82;
   white-space: nowrap;
