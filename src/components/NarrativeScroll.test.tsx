@@ -12,6 +12,57 @@ import {
   shouldYieldToNativeScroll,
   type NarrativeTrigger,
 } from '../narrativeScrollDom'
+import {
+  shouldUseNativeTouchScrolling,
+  TOUCH_FIRST_INPUT_QUERY,
+} from '../narrativeScrollCapabilities'
+
+function mockInputCapabilities({
+  innerWidth = 1_440,
+  maxTouchPoints,
+  touchFirst,
+}: {
+  innerWidth?: number
+  maxTouchPoints: number
+  touchFirst: boolean
+}) {
+  const originalMatchMedia = window.matchMedia
+  const innerWidthDescriptor = Object.getOwnPropertyDescriptor(window, 'innerWidth')
+  const maxTouchPointsDescriptor = Object.getOwnPropertyDescriptor(navigator, 'maxTouchPoints')
+
+  Object.defineProperty(window, 'innerWidth', {
+    configurable: true,
+    value: innerWidth,
+  })
+  Object.defineProperty(navigator, 'maxTouchPoints', {
+    configurable: true,
+    value: maxTouchPoints,
+  })
+  window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+    matches: query === TOUCH_FIRST_INPUT_QUERY ? touchFirst : false,
+    media: query,
+    onchange: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }))
+
+  return () => {
+    window.matchMedia = originalMatchMedia
+    if (innerWidthDescriptor) {
+      Object.defineProperty(window, 'innerWidth', innerWidthDescriptor)
+    } else {
+      Reflect.deleteProperty(window, 'innerWidth')
+    }
+    if (maxTouchPointsDescriptor) {
+      Object.defineProperty(navigator, 'maxTouchPoints', maxTouchPointsDescriptor)
+    } else {
+      Reflect.deleteProperty(navigator, 'maxTouchPoints')
+    }
+  }
+}
 
 function setRect(element: Element, top: number, bottom = top) {
   vi.spyOn(element, 'getBoundingClientRect').mockReturnValue({
@@ -326,5 +377,62 @@ it('leaves scrolling fully native when reduced motion is requested', () => {
     unmount()
   } finally {
     window.matchMedia = originalMatchMedia
+  }
+})
+
+it('leaves scrolling fully native without narrative listeners on touch-first devices', () => {
+  const restoreCapabilities = mockInputCapabilities({
+    maxTouchPoints: 5,
+    touchFirst: true,
+  })
+  const addWindowListener = vi.spyOn(window, 'addEventListener')
+  let unmount = () => {}
+
+  try {
+    ;({ unmount } = render(<NarrativeScroll />))
+
+    expect(document.documentElement).not.toHaveClass('narrative-scroll-active')
+    expect(addWindowListener.mock.calls.map(([type]) => type)).not.toEqual(
+      expect.arrayContaining([
+        'wheel',
+        'touchstart',
+        'touchmove',
+        'touchend',
+        'touchcancel',
+      ]),
+    )
+  } finally {
+    unmount()
+    addWindowListener.mockRestore()
+    restoreCapabilities()
+  }
+})
+
+it('requires both touch support and a touch-first primary pointer for native scrolling', () => {
+  expect(shouldUseNativeTouchScrolling(5, true)).toBe(true)
+  expect(shouldUseNativeTouchScrolling(5, false)).toBe(false)
+  expect(shouldUseNativeTouchScrolling(0, true)).toBe(false)
+})
+
+it('keeps narrative scrolling active in a narrow fine-pointer window', () => {
+  const restoreCapabilities = mockInputCapabilities({
+    innerWidth: 390,
+    maxTouchPoints: 0,
+    touchFirst: false,
+  })
+  const addWindowListener = vi.spyOn(window, 'addEventListener')
+  let unmount = () => {}
+
+  try {
+    ;({ unmount } = render(<NarrativeScroll />))
+
+    expect(document.documentElement).toHaveClass('narrative-scroll-active')
+    expect(addWindowListener).toHaveBeenCalledWith('wheel', expect.any(Function), {
+      passive: false,
+    })
+  } finally {
+    unmount()
+    addWindowListener.mockRestore()
+    restoreCapabilities()
   }
 })

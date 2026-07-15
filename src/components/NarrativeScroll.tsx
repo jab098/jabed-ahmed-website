@@ -19,10 +19,14 @@ import {
   registerMotion,
   ScrollTrigger,
 } from '../motion'
+import { shouldUseNativeTouchScrolling } from '../narrativeScrollCapabilities'
 
 export function NarrativeScroll() {
   useEffect(() => {
-    if (window.matchMedia(REDUCED_MOTION_QUERY).matches) return
+    if (
+      window.matchMedia(REDUCED_MOTION_QUERY).matches ||
+      shouldUseNativeTouchScrolling()
+    ) return
 
     registerMotion()
     let activeTarget: EventTarget | null = null

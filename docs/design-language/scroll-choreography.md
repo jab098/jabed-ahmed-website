@@ -1,20 +1,26 @@
 # Scroll choreography
 
-Scroll is part of the site's design language. The document remains a real, native page, but eligible wheel, trackpad, and single-touch vertical gestures are interpreted as intent to move between authored narrative compositions.
+Scroll is part of the site's design language. The document remains a real, native page. On fine-pointer laptops and desktops, eligible wheel and trackpad gestures are interpreted as intent to move between authored narrative compositions. On touch-first devices, finger scrolling remains completely browser-native.
+
+## Runtime input scope
+
+The narrative director is a fine-primary-pointer enhancement. It must not mount when the browser reports both `navigator.maxTouchPoints > 0` and `(hover: none) and (pointer: coarse)`. The capability gate runs before motion registration, waypoint collection, `html.narrative-scroll-active`, or any wheel, touch, transition, resize, and delegated navigation listeners.
+
+Both signals are required. Viewport width and user-agent strings are prohibited because tablets can be wide, desktop windows can be narrow, and hybrid laptops can expose touch while retaining a fine, hover-capable primary pointer. A hybrid fine-primary device keeps the desktop choreography, including its secondary single-touch safety path. A touch-first phone or tablet gets no preview, threshold, rollback, snap, or automated landing.
 
 ## Invariant
 
-One physical gesture may reach only the immediately adjacent authored waypoint in its direction.
+When the narrative director is mounted, one physical gesture may reach only the immediately adjacent authored waypoint in its direction.
 
 - A restrained amount of direct movement is shown first, then the site completes the handoff.
-- A very large wheel delta, fast swipe, or momentum tail cannot skip a headline, card, or scene.
+- A very large wheel delta or momentum tail cannot skip a headline, card, or scene.
 - Continuous input from the gesture that started a handoff is absorbed as momentum.
 - After wheel input has been quiet for at least `180ms`, a new stream is a fresh gesture. A clearly separated or rebounding physical impulse may also be recognised before the old momentum tail becomes fully quiet. Either form may reserve exactly one adjacent move even if the current handoff is still finishing.
-- A new committed single-touch swipe may likewise reserve one adjacent move after the current landing. A short second swipe reserves nothing.
+- On a hybrid fine-primary device, a new committed secondary-touch swipe may likewise reserve one adjacent move after the current landing. A short second swipe reserves nothing.
 - Full headline, card, state, bridge, Contact, and Footer compositions are destinations—not content to pass over.
 - Geometry never invents a destination between two authored compositions.
 
-Explicit choices are different from gestures. A real navigation link, CTA, or pinned-scene tab may select a non-adjacent destination, but site-owned choices still use the same smooth GSAP handoff. Browser find results, keyboard actions, the skip link, and scrollbar dragging remain native.
+Explicit choices are different from gestures. On an active fine-pointer experience, a real navigation link, CTA, or pinned-scene tab may select a non-adjacent destination, but site-owned choices still use the same smooth GSAP handoff. Browser find results, keyboard actions, the skip link, and scrollbar dragging remain native. On touch-first devices, navigation choices remain native too because the delegated director is absent.
 
 ## Declaring scenes and waypoints
 
@@ -122,6 +128,8 @@ Pinned scenes must react to the `900px` media-query lifecycle—not only the ini
 
 When a section changes from a row to a stack, mark each complete stacked item as a mobile destination. The current inventory includes the hero report, proof metrics, four Process scenes, four System cards and bridge, six capability cards, every FAQ row, Contact, and the full Footer composition.
 
+Here, `mobile` describes responsive layout width, not input ownership. These declarations still serve narrow fine-pointer windows and the structural story inventory. A touch-first device may render the same stacked layout, but it ignores every narrative waypoint because the director does not mount.
+
 ## Viewport-framed compositions
 
 `data-scroll-frame="viewport"` declares that a desktop composition owns the available viewport beneath the fixed navigation:
@@ -145,13 +153,13 @@ A wheel gesture epoch begins with the first eligible pixel-, line-, or page-mode
 - The queue stores direction and accumulated raw intent, never a pixel coordinate. It resolves one adjacent waypoint from the semantic landing, so repeated events within the queued epoch cannot reserve a second follow-on destination.
 - Changing delta mode or sending an extreme delta does not create another token. A dense line-mode burst and a long pixel stream still produce one landing.
 
-Touch does not share wheel-session timing. A new single-touch gesture is classified independently and, when it commits during an active handoff, may reserve one adjacent semantic destination.
+On a hybrid device whose primary pointer remains fine and hover-capable, secondary touch does not share wheel-session timing. A new single-touch gesture is classified independently and, when it commits during an active handoff, may reserve one adjacent semantic destination. This path is never active on a touch-first device.
 
 ## Input preview and commitment
 
 Wheel and trackpad deltas are normalized from pixel, line, and page units. The raw intent threshold is `clamp(72px, 12vh, 120px)`. The visible wheel preview target is `min(rawIntent * 0.55, adjacentDistance)`.
 
-Single-touch gestures are classified after eight pixels of travel and only claimed when vertical travel is at least `1.25` times horizontal travel. The raw touch threshold is `clamp(56px, 10vh, 96px)`. The visible touch preview target is `min(fingerTravel * 0.72, adjacentDistance)`.
+On an active hybrid fine-primary experience, single-touch gestures are classified after eight pixels of travel and only claimed when vertical travel is at least `1.25` times horizontal travel. The raw touch threshold is `clamp(56px, 10vh, 96px)`. The visible touch preview target is `min(fingerTravel * 0.72, adjacentDistance)`. Touch-first devices bypass this code entirely.
 
 Raw intent—not the damped visual preview—determines commitment. Reaching either the input threshold or the adjacent destination's raw distance commits the gesture. Input that becomes quiet or ends below threshold returns to its origin.
 
@@ -163,8 +171,8 @@ Every automated handoff starts from the currently rendered `window.scrollY`. Pen
 
 Three motion modes express different intent:
 
-- `continue` is a committed wheel, trackpad, or touch gesture. It uses `sine.out` and `clamp(520ms, 520ms + remainingDistance * 0.32ms, 980ms)` so preview motion carries gently into a decelerating arrival.
-- `return` is an insufficient wheel gesture, short touch, or claimed touch cancellation. It uses `sine.inOut` and `clamp(380ms, 340ms + remainingDistance * 1.6ms, 580ms)` for a gentle reversal.
+- `continue` is a committed wheel or trackpad gesture, plus secondary touch only on an active hybrid fine-primary experience. It uses `sine.out` and `clamp(520ms, 520ms + remainingDistance * 0.32ms, 980ms)` so preview motion carries gently into a decelerating arrival.
+- `return` is an insufficient controlled gesture or claimed hybrid-touch cancellation. It uses `sine.inOut` and `clamp(380ms, 340ms + remainingDistance * 1.6ms, 580ms)` for a gentle reversal.
 - `direct` is a navigation link, Process tab, or geometry correction. It uses `sine.inOut` and the `520–980ms` adaptive duration for a deliberate full handoff.
 
 The sinusoidal family is the shared velocity language for automated motion: restrained acceleration, no abrupt mid-flight change, and a soft arrival. The approved distance-adaptive duration functions remain unchanged.
@@ -186,7 +194,7 @@ Wheel input from the active epoch remains disarmed until the stream has been qui
 
 If wheel direction reverses before commitment, the reversed preview may start from the current partial position, but its quiet rollback still resolves to the gesture's original composition. A reversal must never strand the page between stops.
 
-A new vertical touch gesture that begins during an active handoff is classified without moving the current animation. If it crosses the normal touch threshold, it reserves one adjacent semantic destination; otherwise it is discarded. If a second finger appears after a single-touch preview has been claimed, the preview returns to its origin synchronously before control returns to the browser for pinch or multi-touch behavior.
+On an active hybrid fine-primary experience, a new vertical touch gesture that begins during a handoff is classified without moving the current animation. If it crosses the normal touch threshold, it reserves one adjacent semantic destination; otherwise it is discarded. If a second finger appears after a single-touch preview has been claimed, the preview returns to its origin synchronously before control returns to the browser for pinch or multi-touch behavior. Touch-first devices never enter this state machine.
 
 The director never claims:
 
@@ -202,17 +210,17 @@ If a valid adjacent authored destination cannot be resolved, browser scrolling r
 
 ## Accessibility exceptions
 
-`prefers-reduced-motion: reduce` disables the narrative director completely. The browser retains native scrolling and the final-state component rules recorded above.
+`prefers-reduced-motion: reduce` disables the narrative director completely. A touch-first primary input disables it independently. Either condition leaves browser scrolling native and prevents the active class and director listeners from being installed.
 
-The system does not move focus, announce routine scroll changes, block pinch zoom, or apply `touch-action: none` to the page. Taps remain taps because touch default behavior is not cancelled until movement has been classified as a vertical swipe. Keyboard scrolling, focus-driven movement, browser find, and scrollbar dragging remain native.
+The system does not move focus, announce routine scroll changes, block pinch zoom, or apply `touch-action: none` to the page. On touch-first devices, taps and finger movement are never intercepted. On a hybrid fine-primary experience, taps remain taps because touch default behavior is not cancelled until movement has been classified as a vertical swipe. Keyboard scrolling, focus-driven movement, browser find, and scrollbar dragging remain native.
 
 The standalone privacy page does not mount the director.
 
-Because the narrative director owns document position, `html.narrative-scroll-active` disables browser scroll anchoring. Dynamic content may change future geometry, but it may never move the current viewport without wheel, touch, direct navigation, keyboard, or scrollbar input. FAQ hover/open motion must therefore be layout-neutral: animate child transforms inside the fixed question grid, never padding, width, height, or line wrapping.
+When the narrative director owns document position, `html.narrative-scroll-active` disables browser scroll anchoring. That class must be absent on touch-first devices. Dynamic content may change future geometry, but it may never move an active controlled viewport without wheel, hybrid touch, direct navigation, keyboard, or scrollbar input. FAQ hover/open motion must therefore be layout-neutral: animate child transforms inside the fixed question grid, never padding, width, height, or line wrapping.
 
 ## Dynamic layout
 
-Waypoint geometry is cached outside wheel and touch hot paths. It rebuilds after:
+Waypoint geometry is cached outside wheel and active hybrid-touch hot paths. It rebuilds after:
 
 - initial mount and `document.fonts.ready`;
 - the loader-complete event;
@@ -221,7 +229,7 @@ Waypoint geometry is cached outside wheel and touch hot paths. It rebuilds after
 - a `ResizeObserver` change to the nav, main content, or footer;
 - FAQ answer-height transition completion. Hover/color/transform transitions do not rebuild waypoint geometry.
 
-Rebuild requests are coalesced into one animation frame. New sections join the movement language through authored declarations rather than controller edits. If geometry changes during an active handoff, the director re-resolves the destination by semantic waypoint ID and continues toward the refreshed coordinate. A touch that is still physically held remains blocked through its eventual `touchend` or `touchcancel`, so it cannot fight the corrected animation.
+Rebuild requests are coalesced into one animation frame. New sections join the movement language through authored declarations rather than controller edits. If geometry changes during an active handoff, the director re-resolves the destination by semantic waypoint ID and continues toward the refreshed coordinate. On a hybrid fine-primary experience, a touch that is still physically held remains blocked through its eventual `touchend` or `touchcancel`, so it cannot fight the corrected animation.
 
 FAQ class mutations and answer-height transitions mark their rebuilds as passive content reflow. A passive rebuild refreshes future waypoint coordinates but preserves the exact current viewport. The director retains the semantic identity of the already-reached FAQ row even when that row moves around the stationary viewport, so the next gesture advances to the adjacent question rather than re-landing the shifted row. That identity must survive short previews, reversals and return animations; it clears only after a committed semantic landing or genuine native displacement. Later ordinary rebuilds may not replay the deferred coordinate correction.
 
@@ -241,13 +249,14 @@ Responsive text and font loading may move an already-reached destination by a fe
 | Proof digits replay, reel, or stop short of the source value. | The observer disconnects after first visibility, the counter writes the exact final string, and reduced motion bypasses counting. |
 | FAQ hover or expansion moves a stationary viewport or re-lands the same row. | Hover transforms are layout-neutral; passive rebuilds preserve `window.scrollY` and the last settled semantic identity. |
 | A breakpoint change leaves desktop pins or destinations active on mobile. | The `900px` media-query lifecycle tears down and rebuilds pinning and the active waypoint inventory. |
+| A phone, tablet, or other touch-first device snaps finger scrolling or rolls back a short swipe. | The capability gate requires touch points plus a coarse, non-hovering primary pointer and returns before every narrative side effect. Never replace it with a width or user-agent check. |
 
 ## Tests
 
 Any section addition, removal, breakpoint change, or pinned-state change must update tests in the same change.
 
 - Structural component tests assert every required desktop and mobile waypoint and the eight-scene inventory.
-- `NarrativeScroll.test.tsx` covers physical, virtual, track, responsive, authored-only gap, preview follower, handoff ease, and nested-scroll behavior.
+- `NarrativeScroll.test.tsx` covers physical, virtual, track, responsive, authored-only gap, preview follower, handoff ease, nested-scroll behavior, the touch-first early lifecycle gate, and the narrow fine-pointer control.
 - `narrativeScroll.test.ts` covers delta normalization, damping, raw commitment, one-stop clamping, mode selection, momentum absorption, one-slot follow-on wheel and touch intent, reversal, sub-threshold return, touch classification and cancellation, rebuild ownership, and nearby unvisited stops.
 - `App.test.tsx` protects chapter order, director mount, and the permanent README link to this document.
 
@@ -265,9 +274,9 @@ A missing required scene must fail a structural test rather than silently disapp
   | `1499x886` | Awkward desktop height: no clipped copy, partial following surface, or duplicate stop. |
   | `2554x1425` | Large-display Safari regression: no orange headline fragments after Process, Systems, or Contact settles. |
   | `1455x1279` | Tall desktop frame: Proof and FAQ remain isolated and Process content stays balanced. |
-  | `390x844` | Wide mobile: short/long touch classification and the complete stacked waypoint inventory. |
-  | `375x812` | Baseline mobile: touch rollback/commit, FAQ open/close, Contact, and Footer. |
-  | `320x568` | Small mobile: no overflow, hidden required copy, or unreachable authored state. |
+  | `390x844` | Wide touch-first mobile: no active narrative class, continuous native finger scrolling, and complete stacked content. |
+  | `375x812` | Baseline touch-first mobile: native momentum, FAQ open/close, anchors, Contact, and Footer remain reachable. |
+  | `320x568` | Small touch-first mobile: native scrolling with no snap/rollback, overflow, hidden required copy, or unreachable content. |
 
 - Walk the resolved authored stop IDs in both directions; do not judge only by total scroll distance.
 - Confirm Proof reaches the complete Process headline without a label-only frame.
@@ -278,12 +287,12 @@ A missing required scene must fail a structural test rather than silently disapp
 - Hold one long pixel stream through the final approach and landing; it must stop at exactly one adjacent composition.
 - Send a dense line-mode burst through the same interval; it must also spend exactly one landing token.
 - After at least `180ms` of verified quiet, start a quick fresh second gesture while the first handoff is still finishing; it may queue exactly one adjacent landing.
-- Verify short rollback motion and committed handoff blending on wheel, trackpad, and touch.
-- Verify short and long touch swipes at `390x844`, `375x812`, and `320x568`.
+- Verify short rollback motion and committed handoff blending on wheel and trackpad.
+- Verify short and long finger swipes at `390x844`, `375x812`, and `320x568` remain continuous and native, with `html.narrative-scroll-active` absent.
 - Cross and rotate through the `900px` breakpoint and confirm the active waypoint inventory rebuilds correctly.
 - Test FAQ expansion, the menu, nested scrolling, taps, horizontal movement, pinch zoom, anchors, keyboard navigation, scrollbar dragging, and Back to top.
 - Hover every FAQ question and open, close, and switch answers without any unsolicited change to `window.scrollY`.
-- Start a second committed touch gesture during a handoff; verify it registers once after landing while a short second swipe reserves nothing.
+- On an explicitly tested hybrid fine-primary touchscreen only, retain the secondary-touch one-gesture safety behaviour; this must not be used as the phone/tablet acceptance path.
 - Keep the pointer stationary and continue the same wheel stream through and after landing; verify it remains on that landing until a real quiet boundary, with no hover or click reset involved.
 - Confirm Process states and every System and Capability card fade into their own composition without a pre-animation flash.
 - Confirm all three Proof metrics count once to their exact strings, Process transitions keep only the current and previous layers, and reduced motion shows every final state immediately.
