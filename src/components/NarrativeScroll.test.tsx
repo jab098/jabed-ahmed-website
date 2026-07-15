@@ -95,7 +95,7 @@ describe('collectNarrativeWaypoints', () => {
     )
   })
 
-  it('gives generated continuations stable ownership inside a declared scene', () => {
+  it('keeps only authored compositions across a tall declared scene', () => {
     document.body.innerHTML = `
       <section data-scroll-scene="chapter" data-scroll-waypoint="chapter-start">
         <h2 data-scroll-waypoint="chapter-end"></h2>
@@ -115,12 +115,7 @@ describe('collectNarrativeWaypoints', () => {
       viewportWidth: 1_200,
     })
 
-    expect(points.map(({ id }) => id)).toEqual([
-      'chapter-start',
-      'chapter--chapter-start--continuation-1',
-      'chapter--chapter-start--continuation-2',
-      'chapter-end',
-    ])
+    expect(points.map(({ id }) => id)).toEqual(['chapter-start', 'chapter-end'])
   })
 })
 

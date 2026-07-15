@@ -6,12 +6,6 @@ export type ScrollWaypoint = {
   priority?: number
 }
 
-export type ScrollSceneSpan = {
-  id: string
-  start: number
-  end: number
-}
-
 export type WheelInput = {
   ctrlKey: boolean
   deltaMode: number
@@ -51,7 +45,6 @@ export type DirectorDependencies = {
 const WAYPOINT_DEDUPE_EPSILON = 4
 const DIRECTIONAL_EPSILON = 0.5
 const SETTLED_LAYOUT_DRIFT_TOLERANCE = 12
-const MAXIMUM_GAP_RATIO = 0.82
 const TOUCH_CLASSIFICATION_DISTANCE = 8
 const TOUCH_VERTICAL_DOMINANCE = 1.25
 const WHEEL_QUIET_MS = 180
@@ -92,41 +85,17 @@ export function findDirectionalWaypoint(
 
 export function buildWaypointMap(
   points: ScrollWaypoint[],
-  viewportHeight: number,
   maxY: number,
-  scenes: ScrollSceneSpan[] = [],
 ) {
   const sorted = points
     .filter((point) => Number.isFinite(point.y))
     .map((point) => ({ ...point, y: clamp(0, point.y, Math.max(0, maxY)) }))
     .sort((left, right) => left.y - right.y || (right.priority ?? 0) - (left.priority ?? 0))
 
-  const authored = sorted.filter(
+  return sorted.filter(
     (point, index) =>
       index === 0 || Math.abs(point.y - sorted[index - 1].y) > WAYPOINT_DEDUPE_EPSILON,
   )
-  const maximumGap = Math.max(1, viewportHeight * MAXIMUM_GAP_RATIO)
-
-  return authored.flatMap((point, index) => {
-    const next = authored[index + 1]
-    if (!next || next.y - point.y <= maximumGap) return [point]
-
-    const scene = scenes.find(
-      ({ start, end }) =>
-        point.y >= start - WAYPOINT_DEDUPE_EPSILON &&
-        next.y <= end + WAYPOINT_DEDUPE_EPSILON,
-    )
-    if (!scene) return [point]
-
-    const segments = Math.ceil((next.y - point.y) / maximumGap)
-    const continuations = Array.from({ length: segments - 1 }, (_, offset) => ({
-      id: `${scene.id}--${point.id}--continuation-${offset + 1}`,
-      y: point.y + ((next.y - point.y) * (offset + 1)) / segments,
-      priority: 0,
-    }))
-
-    return [point, ...continuations]
-  })
 }
 
 type WheelSession = {

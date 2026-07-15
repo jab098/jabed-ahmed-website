@@ -83,35 +83,23 @@ function createDirectorHarness(
 }
 
 describe('narrative waypoint model', () => {
-  it('sorts and deduplicates authored positions before adding 82vh continuations', () => {
+  it('sorts, clamps, and deduplicates authored positions without filling large gaps', () => {
     const points = buildWaypointMap(
       [
-        { id: 'contact', y: 1800, priority: 2 },
-        { id: 'home-copy', y: 2, priority: 2 },
-        { id: 'home', y: 0, priority: 3 },
+        { id: 'process-heading', y: 1800, priority: 2 },
+        { id: 'proof-copy', y: 2, priority: 2 },
+        { id: 'proof', y: 0, priority: 3 },
+        { id: 'footer', y: 2400, priority: 3 },
       ],
-      1000,
-      2000,
-      [{ id: 'page', start: 0, end: 2000 }],
-    )
-
-    expect(points[0]).toMatchObject({ id: 'home', y: 0 })
-    expect(
-      Math.max(...points.slice(1).map((point, index) => point.y - points[index].y)),
-    ).toBeLessThanOrEqual(820)
-  })
-
-  it('does not invent continuation stops outside a declared narrative scene', () => {
-    const points = buildWaypointMap(
-      [
-        { id: 'a', y: 0 },
-        { id: 'b', y: 1800 },
-      ],
-      1000,
       2000,
     )
 
-    expect(points.map(({ id }) => id)).toEqual(['a', 'b'])
+    expect(points).toEqual([
+      expect.objectContaining({ id: 'proof', y: 0 }),
+      expect.objectContaining({ id: 'process-heading', y: 1800 }),
+      expect.objectContaining({ id: 'footer', y: 2000 }),
+    ])
+    expect(points.some(({ id }) => id.includes('continuation'))).toBe(false)
   })
 
   it('normalizes pixel, line, and page wheel deltas', () => {

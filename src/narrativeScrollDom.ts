@@ -1,7 +1,6 @@
 import {
   buildWaypointMap,
   type Direction,
-  type ScrollSceneSpan,
   type ScrollWaypoint,
 } from './narrativeScroll'
 import { ScrollTrigger } from './motion'
@@ -54,7 +53,6 @@ export function collectNarrativeWaypoints(options: CollectOptions = {}) {
     })
   const isMobile = viewportWidth <= MOBILE_BREAKPOINT
   const points: ScrollWaypoint[] = []
-  const scenes: ScrollSceneSpan[] = []
 
   const addPhysical = (selector: string, attribute: string) => {
     root.querySelectorAll(selector).forEach((element) => {
@@ -73,17 +71,6 @@ export function collectNarrativeWaypoints(options: CollectOptions = {}) {
     isMobile ? '[data-scroll-waypoint-mobile]' : '[data-scroll-waypoint-desktop]',
     isMobile ? 'data-scroll-waypoint-mobile' : 'data-scroll-waypoint-desktop',
   )
-
-  root.querySelectorAll<HTMLElement>('[data-scroll-scene]').forEach((element) => {
-    const id = readWaypoint(element, 'data-scroll-scene')
-    if (!id) return
-    const bounds = element.getBoundingClientRect()
-    scenes.push({
-      id,
-      start: bounds.top + scrollY - navHeight,
-      end: bounds.bottom + scrollY - navHeight,
-    })
-  })
 
   if (!isMobile) {
     root.querySelectorAll<HTMLElement>('[data-scroll-virtual]').forEach((element) => {
@@ -119,7 +106,7 @@ export function collectNarrativeWaypoints(options: CollectOptions = {}) {
     })
   }
 
-  return buildWaypointMap(points, viewportHeight, maxScrollY, scenes)
+  return buildWaypointMap(points, maxScrollY)
 }
 
 type DirectScrollOptions = {
