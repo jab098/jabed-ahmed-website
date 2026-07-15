@@ -66,7 +66,7 @@ export function NarrativeScroll() {
         document.body.style.overflow !== 'hidden' &&
         !shouldYieldToNativeScroll(activeTarget, direction),
       clearTimer: (timer) => window.clearTimeout(timer as number),
-      getScrollY: () => previewFollower.getPendingTarget() ?? window.scrollY,
+      getScrollY: previewFollower.getRenderedPosition,
       getViewportHeight: () => window.innerHeight,
       getWaypoints: () => waypoints,
       setTimer: (callback, delay) => window.setTimeout(callback, delay),

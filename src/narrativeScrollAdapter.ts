@@ -54,8 +54,8 @@ export function createPreviewFollower({
       lastFrameTime = undefined
       pendingTarget = undefined
     },
-    getPendingTarget() {
-      return pendingTarget
+    getRenderedPosition() {
+      return readScroll()
     },
     queue(y: number) {
       pendingTarget = y

@@ -31,6 +31,7 @@ function createDirectorHarness(
   positions: number[],
   initialY = positions[0],
   completeAnimationsSynchronously = true,
+  deferPreviewWrites = false,
 ) {
   let scrollY = initialY
   let quietTimer = () => {}
@@ -46,7 +47,7 @@ function createDirectorHarness(
     getWaypoints: () => positions.map((y, index) => ({ id: `point-${index}`, y })),
     canClaim: () => true,
     writeScroll: (y) => {
-      scrollY = y
+      if (!deferPreviewWrites) scrollY = y
       scrollWrites.push(y)
     },
     writeScrollImmediately: (y) => {
@@ -86,6 +87,9 @@ function createDirectorHarness(
     },
     immediateScrollWrites,
     runQuietTimer: () => quietTimer(),
+    setRenderedScroll: (y: number) => {
+      scrollY = y
+    },
     scrollWrites,
   }
 }
@@ -288,6 +292,18 @@ describe('NarrativeGestureDirector', () => {
     harness.runQuietTimer()
 
     expect(harness.animations).toEqual([0])
+  })
+
+  it('reverses from the rendered preview position instead of its pending target', () => {
+    const harness = createDirectorHarness([0, 600], 0, true, true)
+
+    harness.director.handleWheel(wheelInput(60))
+    expect(harness.scrollWrites).toEqual([33])
+
+    harness.setRenderedScroll(9)
+    harness.director.handleWheel(wheelInput(-20))
+
+    expect(harness.scrollWrites.at(-1)).toBeLessThanOrEqual(9)
   })
 
   it('clamps a long touch swipe to one adjacent target', () => {

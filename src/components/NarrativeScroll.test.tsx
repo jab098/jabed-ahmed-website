@@ -192,13 +192,13 @@ describe('narrative preview adapter', () => {
 
     expect(writes[0]).toBeGreaterThan(0)
     expect(writes[0]).toBeLessThan(100)
-    expect(follower.getPendingTarget()).toBe(100)
+    expect(follower.getRenderedPosition()).toBe(writes[0])
     expect(frames.size).toBe(1)
 
     follower.cancel()
 
     expect(frames.size).toBe(0)
-    expect(follower.getPendingTarget()).toBeUndefined()
+    expect(follower.getRenderedPosition()).toBe(writes[0])
     expect(writes).toHaveLength(1)
   })
 
