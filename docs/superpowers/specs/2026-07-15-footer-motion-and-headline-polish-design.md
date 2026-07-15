@@ -24,6 +24,8 @@ Keep the approved distance-based duration functions unchanged. Replace the curre
 
 The same easing contract applies to wheel, trackpad, touch, and direct-link handoffs because all routes use the shared adapter.
 
+Every adapter frame explicitly requests an instant browser scroll. This does not make the motion instantaneous: GSAP still produces the approved timed curve. It prevents the browser's own `scroll-behavior: smooth`—which ScrollTrigger may restore inline during refresh—from applying a second ease to every generated frame and making the handoff laggy or robotic.
+
 ## Headline settling
 
 The Process, Systems, and Contact headings use scroll-scrubbed transforms. Their previous percentage-based end positions did not necessarily coincide with the authored waypoint on shorter displays, leaving fractional or incomplete transforms when scrolling stopped.

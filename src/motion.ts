@@ -12,4 +12,10 @@ export function registerMotion() {
   registered = true
 }
 
+export function navigationEdgeScrollPosition() {
+  const navHeight =
+    document.querySelector<HTMLElement>('.site-nav')?.getBoundingClientRect().height ?? 0
+  return `top ${Math.max(0, navHeight)}px`
+}
+
 export { gsap, ScrollTrigger }

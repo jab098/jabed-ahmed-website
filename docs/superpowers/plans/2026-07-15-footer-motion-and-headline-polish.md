@@ -40,7 +40,8 @@
 1. Read `data-scroll-align` in the physical collector and subtract zero for `viewport`; preserve navigation-height subtraction as the default.
 2. Mark the Footer waypoint with `data-scroll-align="viewport"`.
 3. Replace the mixed power easing branches with the approved sinusoidal mapping; do not alter duration helpers.
-4. Run the Task 1 and Task 2 narrative tests to green.
+4. Route preview, continuation, return, and direct GSAP frame writes through an explicit `behavior: "instant"` browser adapter so native smooth scrolling cannot compound the designed animation.
+5. Run the Task 1 and Task 2 narrative tests to green.
 
 ## Task 4: Align all scroll-scrubbed headline reveals to the authored stop
 

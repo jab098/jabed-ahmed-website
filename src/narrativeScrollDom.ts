@@ -58,9 +58,11 @@ export function collectNarrativeWaypoints(options: CollectOptions = {}) {
     root.querySelectorAll(selector).forEach((element) => {
       const id = readWaypoint(element, attribute)
       if (!id) return
+      const alignmentOffset =
+        readWaypoint(element, 'data-scroll-align') === 'viewport' ? 0 : navHeight
       points.push({
         id,
-        y: element.getBoundingClientRect().top + scrollY - navHeight,
+        y: element.getBoundingClientRect().top + scrollY - alignmentOffset,
         priority: 3,
       })
     })

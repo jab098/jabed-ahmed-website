@@ -1,7 +1,11 @@
 import { render } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NarrativeScroll } from './NarrativeScroll'
-import { createPreviewFollower, handoffEase } from '../narrativeScrollAdapter'
+import {
+  createPreviewFollower,
+  handoffEase,
+  writeNarrativeScroll,
+} from '../narrativeScrollAdapter'
 import {
   collectNarrativeWaypoints,
   resolveDirectScrollTarget,
@@ -118,6 +122,33 @@ describe('collectNarrativeWaypoints', () => {
 
     expect(points.map(({ id }) => id)).toEqual(['chapter-start', 'chapter-end'])
   })
+
+  it('allows a full-viewport composition to opt out of the navigation offset', () => {
+    document.body.innerHTML = `
+      <header data-scroll-waypoint="chapter"></header>
+      <footer data-scroll-waypoint="footer" data-scroll-align="viewport"></footer>
+    `
+    const chapter = document.querySelector('[data-scroll-waypoint="chapter"]') as HTMLElement
+    const footer = document.querySelector('[data-scroll-waypoint="footer"]') as HTMLElement
+    setRect(chapter, 1_000)
+    setRect(footer, 1_800)
+
+    const points = collectNarrativeWaypoints({
+      getTrigger: () => undefined,
+      maxScrollY: 4_000,
+      navHeight: 64,
+      scrollY: 200,
+      viewportHeight: 1_000,
+      viewportWidth: 1_200,
+    })
+
+    expect(points).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'chapter', y: 1_136 }),
+        expect.objectContaining({ id: 'footer', y: 2_000 }),
+      ]),
+    )
+  })
 })
 
 it('resolves section anchors to their authored headline destination', () => {
@@ -203,9 +234,17 @@ describe('narrative preview adapter', () => {
   })
 
   it('uses a distinct ease for forward, return, and direct handoffs', () => {
-    expect(handoffEase('continue')).toBe('power1.out')
+    expect(handoffEase('continue')).toBe('sine.out')
     expect(handoffEase('return')).toBe('sine.inOut')
-    expect(handoffEase('direct')).toBe('power3.inOut')
+    expect(handoffEase('direct')).toBe('sine.inOut')
+  })
+
+  it('writes exact animation frames without browser smooth-scroll compounding', () => {
+    const scrollTo = vi.spyOn(window, 'scrollTo')
+
+    writeNarrativeScroll(321)
+
+    expect(scrollTo).toHaveBeenCalledWith({ behavior: 'instant', left: 0, top: 321 })
   })
 })
 

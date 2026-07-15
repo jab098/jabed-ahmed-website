@@ -3,7 +3,11 @@ import {
   NarrativeGestureDirector,
   type ScrollWaypoint,
 } from '../narrativeScroll'
-import { createPreviewFollower, handoffEase } from '../narrativeScrollAdapter'
+import {
+  createPreviewFollower,
+  handoffEase,
+  writeNarrativeScroll,
+} from '../narrativeScrollAdapter'
 import {
   collectNarrativeWaypoints,
   resolveDirectScrollTarget,
@@ -30,11 +34,11 @@ export function NarrativeScroll() {
       cancelFrame: (id) => window.cancelAnimationFrame(id),
       readScroll: () => window.scrollY,
       requestFrame: (callback) => window.requestAnimationFrame(callback),
-      writeScroll: (y) => window.scrollTo(0, y),
+      writeScroll: writeNarrativeScroll,
     })
     const writeScrollImmediately = (y: number) => {
       previewFollower.cancel()
-      window.scrollTo(0, y)
+      writeNarrativeScroll(y)
     }
 
     const rebuild = () => {
@@ -56,7 +60,7 @@ export function NarrativeScroll() {
           duration: duration / 1_000,
           ease: handoffEase(mode),
           overwrite: true,
-          onUpdate: () => window.scrollTo(0, proxy.y),
+          onUpdate: () => writeNarrativeScroll(proxy.y),
           onComplete,
         })
         return () => tween.kill()

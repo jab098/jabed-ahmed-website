@@ -48,6 +48,14 @@ Those elements remain visible inside their containing composition. A tall chapte
 
 The collector aligns physical points beneath `.site-nav`, clamps them to the document range, sorts them, and deduplicates positions within four CSS pixels. When two authored declarations resolve to the same position, the higher-priority content declaration wins.
 
+A complete full-viewport composition may explicitly align to the viewport edge instead:
+
+```tsx
+<footer data-scroll-waypoint="footer" data-scroll-align="viewport">...</footer>
+```
+
+This is reserved for compositions that need the entire viewport, including edge-anchored content such as the Footer's bottom navigation row. Navigation-edge alignment remains the default for every other physical waypoint.
+
 ## Pinned scenes
 
 Pinned content has virtual states that cannot be represented by element `offsetTop` alone. Give its `ScrollTrigger` a stable ID:
@@ -129,11 +137,13 @@ Every automated handoff starts from the currently rendered `window.scrollY`. Pen
 
 Three motion modes express different intent:
 
-- `continue` is a committed wheel, trackpad, or touch gesture. It uses `power1.out` and `clamp(520ms, 520ms + remainingDistance * 0.32ms, 980ms)` so preview motion blends into a decelerating arrival.
+- `continue` is a committed wheel, trackpad, or touch gesture. It uses `sine.out` and `clamp(520ms, 520ms + remainingDistance * 0.32ms, 980ms)` so preview motion carries gently into a decelerating arrival.
 - `return` is an insufficient wheel gesture, short touch, or claimed touch cancellation. It uses `sine.inOut` and `clamp(380ms, 340ms + remainingDistance * 1.6ms, 580ms)` for a gentle reversal.
-- `direct` is a navigation link, Process tab, or geometry correction. It uses `power3.inOut` and the `520–980ms` adaptive duration for a deliberate full handoff.
+- `direct` is a navigation link, Process tab, or geometry correction. It uses `sine.inOut` and the `520–980ms` adaptive duration for a deliberate full handoff.
 
-Direct preview writes are never applied through a transformed virtual-scroll surface. The page always animates real `window.scrollY`.
+The sinusoidal family is the shared velocity language for automated motion: restrained acceleration, no abrupt mid-flight change, and a soft arrival. The approved distance-adaptive duration functions remain unchanged.
+
+Direct preview writes are never applied through a transformed virtual-scroll surface. The page always animates real `window.scrollY`. Each generated frame uses an explicit instant browser write, allowing GSAP to own the timing curve even if ScrollTrigger has restored inline smooth-scroll behavior; native smoothing must never ease an already-eased frame a second time.
 
 ## Gesture ownership and safety
 
@@ -175,6 +185,8 @@ Waypoint geometry is cached outside wheel and touch hot paths. It rebuilds after
 - FAQ transition completion.
 
 Rebuild requests are coalesced into one animation frame. New sections join the movement language through authored declarations rather than controller edits. If geometry changes during an active handoff, the director re-resolves the destination by semantic waypoint ID and continues toward the refreshed coordinate. A touch that is still physically held remains blocked through its eventual `touchend` or `touchcancel`, so it cannot fight the corrected animation.
+
+Scroll-scrubbed headline reveals must finish at the same measured `.site-nav` edge used by their physical waypoint. Use a refreshable functional ScrollTrigger endpoint rather than a viewport percentage; otherwise a shorter display can land on the correct composition while leaving the headline on a fractional transform.
 
 Responsive text and font loading may move an already-reached destination by a few pixels. Only the same last-settled semantic waypoint may be reconciled within `12px`; nearby unvisited waypoints remain eligible with only a sub-pixel directional tolerance. This prevents a small layout drift from creating a duplicate gesture without allowing a real headline one to three pixels away to be skipped. The separate authored-position deduplication rule remains `4px`.
 

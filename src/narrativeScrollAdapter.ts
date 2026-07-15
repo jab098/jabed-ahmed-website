@@ -1,5 +1,9 @@
 import { previewFollowPosition, type HandoffMode } from './narrativeScroll'
 
+export function writeNarrativeScroll(y: number) {
+  window.scrollTo({ behavior: 'instant', left: 0, top: y })
+}
+
 type PreviewFollowerDependencies = {
   cancelFrame: (id: number) => void
   readScroll: () => number
@@ -68,7 +72,5 @@ export function createPreviewFollower({
 }
 
 export function handoffEase(mode: HandoffMode) {
-  if (mode === 'continue') return 'power1.out'
-  if (mode === 'return') return 'sine.inOut'
-  return 'power3.inOut'
+  return mode === 'continue' ? 'sine.out' : 'sine.inOut'
 }

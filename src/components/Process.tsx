@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { PROCESS_STEPS } from '../data'
-import { gsap, ScrollTrigger } from '../motion'
+import { gsap, navigationEdgeScrollPosition, ScrollTrigger } from '../motion'
 
 const PROCESS_SCROLL_PROGRESS = [0.08, 0.34, 0.6, 0.86] as const
 
@@ -132,7 +132,13 @@ export function Process() {
           yPercent: 0,
           stagger: 0.08,
           ease: 'power4.out',
-          scrollTrigger: { trigger: '.process-intro', start: 'top 68%', end: 'bottom 60%', scrub: 0.7 },
+          scrollTrigger: {
+            trigger: '.process-intro',
+            start: 'top 68%',
+            end: navigationEdgeScrollPosition,
+            scrub: 0.7,
+            invalidateOnRefresh: true,
+          },
         },
       )
 

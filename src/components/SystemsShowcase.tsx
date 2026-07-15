@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { ArrowUpRight } from 'lucide-react'
 import { SYSTEMS } from '../data'
-import { gsap } from '../motion'
+import { gsap, navigationEdgeScrollPosition } from '../motion'
 
 function SystemGraphic({ index }: { index: number }) {
   if (index === 0) {
@@ -105,7 +105,13 @@ export function SystemsShowcase() {
         yPercent: 0,
         stagger: 0.08,
         ease: 'power4.out',
-        scrollTrigger: { trigger: '.systems-header', start: 'top 70%', end: 'bottom 50%', scrub: 0.7 },
+        scrollTrigger: {
+          trigger: '.systems-header',
+          start: 'top 70%',
+          end: navigationEdgeScrollPosition,
+          scrub: 0.7,
+          invalidateOnRefresh: true,
+        },
       })
 
       const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
