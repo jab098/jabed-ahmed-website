@@ -1,6 +1,7 @@
 import { render } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NarrativeScroll } from './NarrativeScroll'
+import { createPreviewFollower, handoffEase } from '../narrativeScrollAdapter'
 import {
   collectNarrativeWaypoints,
   resolveDirectScrollTarget,
@@ -161,6 +162,50 @@ describe('shouldYieldToNativeScroll', () => {
     expect(shouldYieldToNativeScroll(child, 1)).toBe(true)
     scroller.scrollTop = 300
     expect(shouldYieldToNativeScroll(child, 1)).toBe(false)
+  })
+})
+
+describe('narrative preview adapter', () => {
+  it('approaches the latest preview target over time and cancels without flushing it', () => {
+    let nextFrameId = 0
+    let scrollY = 0
+    const frames = new Map<number, FrameRequestCallback>()
+    const writes: number[] = []
+    const follower = createPreviewFollower({
+      cancelFrame: (id) => frames.delete(id),
+      readScroll: () => scrollY,
+      requestFrame: (callback) => {
+        const id = ++nextFrameId
+        frames.set(id, callback)
+        return id
+      },
+      writeScroll: (y) => {
+        scrollY = y
+        writes.push(y)
+      },
+    })
+
+    follower.queue(100)
+    const firstFrame = frames.get(1)
+    frames.delete(1)
+    firstFrame?.(16)
+
+    expect(writes[0]).toBeGreaterThan(0)
+    expect(writes[0]).toBeLessThan(100)
+    expect(follower.getPendingTarget()).toBe(100)
+    expect(frames.size).toBe(1)
+
+    follower.cancel()
+
+    expect(frames.size).toBe(0)
+    expect(follower.getPendingTarget()).toBeUndefined()
+    expect(writes).toHaveLength(1)
+  })
+
+  it('uses a distinct ease for forward, return, and direct handoffs', () => {
+    expect(handoffEase('continue')).toBe('power1.out')
+    expect(handoffEase('return')).toBe('sine.inOut')
+    expect(handoffEase('direct')).toBe('power3.inOut')
   })
 })
 

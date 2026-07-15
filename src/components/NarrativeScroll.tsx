@@ -1,5 +1,9 @@
 import { useEffect } from 'react'
-import { NarrativeGestureDirector, type ScrollWaypoint } from '../narrativeScroll'
+import {
+  NarrativeGestureDirector,
+  type ScrollWaypoint,
+} from '../narrativeScroll'
+import { createPreviewFollower, handoffEase } from '../narrativeScrollAdapter'
 import {
   collectNarrativeWaypoints,
   resolveDirectScrollTarget,
@@ -20,25 +24,16 @@ export function NarrativeScroll() {
     let activeTarget: EventTarget | null = null
     let disposed = false
     let rebuildFrame = 0
-    let scrollFrame = 0
-    let pendingScrollY: number | undefined
     let waypoints: ScrollWaypoint[] = []
 
-    const flushScroll = () => {
-      if (scrollFrame) window.cancelAnimationFrame(scrollFrame)
-      scrollFrame = 0
-      if (pendingScrollY === undefined) return
-      window.scrollTo(0, pendingScrollY)
-      pendingScrollY = undefined
-    }
-    const queueScroll = (y: number) => {
-      pendingScrollY = y
-      if (!scrollFrame) scrollFrame = window.requestAnimationFrame(flushScroll)
-    }
+    const previewFollower = createPreviewFollower({
+      cancelFrame: (id) => window.cancelAnimationFrame(id),
+      readScroll: () => window.scrollY,
+      requestFrame: (callback) => window.requestAnimationFrame(callback),
+      writeScroll: (y) => window.scrollTo(0, y),
+    })
     const writeScrollImmediately = (y: number) => {
-      if (scrollFrame) window.cancelAnimationFrame(scrollFrame)
-      scrollFrame = 0
-      pendingScrollY = undefined
+      previewFollower.cancel()
       window.scrollTo(0, y)
     }
 
@@ -53,13 +48,13 @@ export function NarrativeScroll() {
     }
 
     const director = new NarrativeGestureDirector({
-      animate: ({ to, duration, onComplete }) => {
-        flushScroll()
+      animate: ({ to, duration, mode, onComplete }) => {
+        previewFollower.cancel()
         const proxy = { y: window.scrollY }
         const tween = gsap.to(proxy, {
           y: to,
           duration: duration / 1_000,
-          ease: 'power3.inOut',
+          ease: handoffEase(mode),
           overwrite: true,
           onUpdate: () => window.scrollTo(0, proxy.y),
           onComplete,
@@ -71,11 +66,11 @@ export function NarrativeScroll() {
         document.body.style.overflow !== 'hidden' &&
         !shouldYieldToNativeScroll(activeTarget, direction),
       clearTimer: (timer) => window.clearTimeout(timer as number),
-      getScrollY: () => pendingScrollY ?? window.scrollY,
+      getScrollY: () => previewFollower.getPendingTarget() ?? window.scrollY,
       getViewportHeight: () => window.innerHeight,
       getWaypoints: () => waypoints,
       setTimer: (callback, delay) => window.setTimeout(callback, delay),
-      writeScroll: queueScroll,
+      writeScroll: previewFollower.queue,
       writeScrollImmediately,
     })
 
@@ -165,7 +160,7 @@ export function NarrativeScroll() {
       disposed = true
       director.destroy()
       window.cancelAnimationFrame(rebuildFrame)
-      window.cancelAnimationFrame(scrollFrame)
+      previewFollower.cancel()
       resizeObserver.disconnect()
       document.documentElement.classList.remove('narrative-scroll-active')
       window.removeEventListener('wheel', onWheel)
