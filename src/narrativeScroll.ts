@@ -139,6 +139,7 @@ type WheelSession = {
 
 type QueuedWheelIntent = {
   accumulatedIntent: number
+  committed: boolean
   direction: Direction
   quiet: boolean
 }
@@ -627,14 +628,19 @@ export class NarrativeGestureDirector {
 
   private captureQueuedWheel(direction: Direction, intent: number) {
     const queued = this.queuedWheel
-    if (!queued || queued.direction !== direction) {
+    if (queued?.committed) {
+      queued.quiet = false
+    } else if (!queued || queued.quiet || queued.direction !== direction) {
       this.queuedWheel = {
         accumulatedIntent: intent,
+        committed: intent >= wheelIntentThreshold(this.dependencies.getViewportHeight()),
         direction,
         quiet: false,
       }
     } else {
       queued.accumulatedIntent += intent
+      queued.committed =
+        queued.accumulatedIntent >= wheelIntentThreshold(this.dependencies.getViewportHeight())
       queued.quiet = false
     }
     this.wheelStreamQuiet = false
@@ -675,6 +681,7 @@ export class NarrativeGestureDirector {
 
     const targetDistance = Math.abs(target.y - origin)
     const committed =
+      queued.committed ||
       queued.accumulatedIntent >= wheelIntentThreshold(this.dependencies.getViewportHeight()) ||
       queued.accumulatedIntent >= targetDistance
     const session: WheelSession = {

@@ -13,7 +13,7 @@ const PROCESS_CROSSFADE_MS = 480
 
 const DIAGNOSIS_EVIDENCE = [
   { number: '01', lane: 'Exposure', signal: 'Experiment viewed', fault: null },
-  { number: '02', lane: 'Conversion', signal: 'Purchase completed', fault: null },
+  { number: '02', lane: 'Conversion', signal: 'Purchase completed', fault: 'Duplicate purchase' },
   { number: '03', lane: 'Identity', signal: 'User stitching', fault: 'Identity join' },
   { number: '04', lane: 'Consent', signal: 'Measurement permission', fault: 'Consent loss' },
 ] as const
@@ -55,7 +55,7 @@ function ProcessVisual({ index }: { index: number }) {
           </div>
           <div className="diagnosis-visual__summary" data-diagnosis-summary>
             <div><span>Signals checked</span><strong>04</strong></div>
-            <div><span>Blockers found</span><strong>02</strong></div>
+            <div><span>Blockers found</span><strong>03</strong></div>
             <div><span>Next action /</span><strong>Fix identity joins</strong></div>
           </div>
         </div>

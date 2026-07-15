@@ -39,13 +39,19 @@ describe('headline reveal motion', () => {
     expect(HEADLINE_SCRUB).toBe(true)
   })
 
-  it('settles line transforms only at the completed reveal threshold', () => {
+  it('retains line transforms immediately below the completed reveal threshold', () => {
     const line = document.createElement('span')
     line.style.transform = 'translateY(8px)'
 
-    expect(settleHeadlineReveal([line], 0.8)).toBe(false)
+    expect(settleHeadlineReveal([line], 0.998999)).toBe(false)
     expect(line.style.transform).toBe('translateY(8px)')
-    expect(settleHeadlineReveal([line], 1)).toBe(true)
+  })
+
+  it('settles line transforms exactly at the completed reveal threshold', () => {
+    const line = document.createElement('span')
+    line.style.transform = 'translateY(8px)'
+
+    expect(settleHeadlineReveal([line], 0.999)).toBe(true)
     expect(line.style.transform).toBe('')
   })
 })

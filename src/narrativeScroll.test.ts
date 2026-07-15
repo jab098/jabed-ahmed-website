@@ -238,6 +238,72 @@ describe('NarrativeGestureDirector', () => {
     expect(harness.animationModes).toEqual(['continue', 'continue'])
   })
 
+  it('does not combine quiet sub-threshold queued epochs', () => {
+    const harness = createDirectorHarness([0, 600, 1200], 0, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.runQuietTimer()
+    harness.director.handleWheel(wheelInput(50))
+    harness.runQuietTimer()
+    harness.director.handleWheel(wheelInput(50))
+    harness.completeAnimation()
+
+    expect(harness.animations).toEqual([600])
+  })
+
+  it('freezes a committed queued epoch against a reverse tail', () => {
+    const harness = createDirectorHarness([0, 600, 1200], 0, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.runQuietTimer()
+    harness.director.handleWheel(wheelInput(100))
+    harness.director.handleWheel(wheelInput(-10))
+    harness.completeAnimation()
+
+    expect(harness.animations).toEqual([600, 1200])
+  })
+
+  it('keeps a committed one-slot follow-on when a third epoch arrives', () => {
+    const harness = createDirectorHarness([0, 600, 1200, 1800], 0, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.runQuietTimer()
+    harness.director.handleWheel(wheelInput(100))
+    harness.runQuietTimer()
+    harness.director.handleWheel(wheelInput(-10000))
+    harness.completeAnimation()
+    harness.completeAnimation()
+
+    expect(harness.animations).toEqual([600, 1200])
+  })
+
+  it('allows reversal to replace an uncommitted queued epoch', () => {
+    const harness = createDirectorHarness([0, 600, 1200], 600, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.runQuietTimer()
+    harness.director.handleWheel(wheelInput(50))
+    harness.director.handleWheel(wheelInput(-100))
+    harness.completeAnimation()
+
+    expect(harness.animations).toEqual([1200, 600])
+  })
+
+  it('accepts the next stationary-pointer epoch only after the post-landing tail is quiet', () => {
+    const harness = createDirectorHarness([0, 600, 1200], 0, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.completeAnimation()
+    harness.director.handleWheel(wheelInput(40))
+    harness.director.handleWheel(wheelInput(40))
+    expect(harness.animations).toEqual([600])
+
+    harness.runQuietTimer()
+    harness.director.handleWheel(wheelInput(10000))
+
+    expect(harness.animations).toEqual([600, 1200])
+  })
+
   it('caps a queued wheel stream at one follow-on destination', () => {
     const harness = createDirectorHarness([0, 600, 1200, 1800], 0, false)
 

@@ -44,7 +44,7 @@ Wheel input is grouped into a physical stream epoch. An epoch begins with an eli
 
 The epoch closes only after a verified quiet boundary. A first event after that boundary begins a new epoch. If the previous handoff is still active, the new epoch may reserve exactly one adjacent semantic destination; otherwise it starts normally from the settled waypoint.
 
-The quiet deadline must remain independent of pointer movement and must not slide indefinitely after landing. Landing may schedule one fixed liveness deadline, but events from the already-owned epoch cannot be promoted into a queued destination. When the deadline expires, it releases ownership so the next event begins a fresh epoch.
+The quiet deadline remains independent of pointer movement and slides whenever an accepted event arrives from the currently owned epoch, including after landing. Those events remain absorbed and cannot be promoted into a queued destination. Only a full `180ms` of verified quiet releases ownership; the next eligible event after that callback begins a fresh epoch without requiring pointer movement or a click.
 
 The director therefore distinguishes two things that the current code conflates:
 
@@ -134,7 +134,7 @@ Extend `docs/design-language/scroll-choreography.md` with:
 
 - viewport-framed composition declarations and the full-isolation rule;
 - gesture epoch ownership and one-token semantics;
-- fixed liveness deadlines that rearm input without promoting momentum;
+- sliding quiet boundaries that rearm input after actual quiet without promoting momentum;
 - a correction removing the final-20% queue rule;
 - known failures covering label-only stops, partial cards, momentum promotion, pointer-dependent rearming, FAQ hover/reflow, stale geometry, pre-animation flashes, and delayed headline compositor remnants;
 - count-up and crossfade reduced-motion requirements;
@@ -145,11 +145,11 @@ Extend `docs/design-language/scroll-choreography.md` with:
 ### Pure director tests
 
 - One extreme pixel event reaches one adjacent waypoint.
-- A long pixel stream continuing through the final 20%, landing, and post-landing deadline reaches only one waypoint.
+- A long pixel stream continuing through the final 20%, landing, and post-landing tail reaches only one waypoint.
 - A dense line-mode burst reaches only one waypoint.
 - A fresh epoch after verified quiet reserves one adjacent move while the current handoff is active.
 - A fresh epoch after landing registers without pointer movement or clicking.
-- Continuous tail events cannot slide the liveness deadline forever.
+- Continuous tail events slide the quiet boundary and remain one landing until actual quiet.
 - A later third epoch cannot be hidden inside a one-slot follow-on.
 - Touch retains one-session/one-landing parity.
 

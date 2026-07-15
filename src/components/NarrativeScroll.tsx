@@ -29,6 +29,7 @@ export function NarrativeScroll() {
     let disposed = false
     let faqLayoutChanging = false
     let faqLayoutFallbackTimer = 0
+    let faqTransitionCompletionFrame = 0
     let rebuildFrame = 0
     let preserveViewportOnRebuild = false
     let waypoints: ScrollWaypoint[] = []
@@ -110,6 +111,8 @@ export function NarrativeScroll() {
       event.propertyName === 'grid-template-rows'
     const markFaqLayoutChanging = () => {
       faqLayoutChanging = true
+      window.cancelAnimationFrame(faqTransitionCompletionFrame)
+      faqTransitionCompletionFrame = 0
       window.clearTimeout(faqLayoutFallbackTimer)
       faqLayoutFallbackTimer = window.setTimeout(() => {
         scheduleRebuild(true)
@@ -128,7 +131,9 @@ export function NarrativeScroll() {
       scheduleRebuild(true)
       if (activeFaqTransitions.size > 0) return
       window.clearTimeout(faqLayoutFallbackTimer)
-      window.requestAnimationFrame(() => {
+      window.cancelAnimationFrame(faqTransitionCompletionFrame)
+      faqTransitionCompletionFrame = window.requestAnimationFrame(() => {
+        faqTransitionCompletionFrame = 0
         faqLayoutChanging = false
       })
     }
@@ -213,6 +218,7 @@ export function NarrativeScroll() {
       disposed = true
       director.destroy()
       window.cancelAnimationFrame(rebuildFrame)
+      window.cancelAnimationFrame(faqTransitionCompletionFrame)
       window.clearTimeout(faqLayoutFallbackTimer)
       previewFollower.cancel()
       resizeObserver.disconnect()

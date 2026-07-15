@@ -65,3 +65,52 @@ it('ignores tiny scroll reversals and only changes visibility after deliberate t
   act(() => vi.runOnlyPendingTimers())
   expect(nav).not.toHaveClass('is-hidden')
 })
+
+it('keeps the navigation visible at a desktop viewport-framed landing', () => {
+  vi.useFakeTimers()
+  Object.defineProperty(window, 'innerHeight', { configurable: true, value: 800 })
+  Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1200 })
+  Object.defineProperty(window, 'scrollY', { configurable: true, writable: true, value: 600 })
+  const frame = document.createElement('section')
+  frame.dataset.scrollFrame = 'viewport'
+  frame.dataset.scrollWaypoint = 'faq-heading'
+  document.body.append(frame)
+  const { container } = render(<SiteNav />)
+  const nav = container.querySelector('.site-nav') as HTMLElement
+  let frameTop = 400
+
+  vi.spyOn(nav, 'getBoundingClientRect').mockReturnValue({
+    bottom: 68,
+    height: 68,
+    left: 0,
+    right: 1200,
+    top: 0,
+    width: 1200,
+    x: 0,
+    y: 0,
+    toJSON: () => ({}),
+  })
+  vi.spyOn(frame, 'getBoundingClientRect').mockImplementation(() => ({
+    bottom: frameTop + 800,
+    height: 800,
+    left: 0,
+    right: 1200,
+    top: frameTop,
+    width: 1200,
+    x: 0,
+    y: frameTop,
+    toJSON: () => ({}),
+  }))
+
+  window.scrollY = 670
+  fireEvent.scroll(window)
+  act(() => vi.runOnlyPendingTimers())
+  expect(nav).toHaveClass('is-hidden')
+
+  frameTop = 68
+  window.scrollY = 1000
+  fireEvent.scroll(window)
+  act(() => vi.runOnlyPendingTimers())
+
+  expect(nav).not.toHaveClass('is-hidden')
+})
