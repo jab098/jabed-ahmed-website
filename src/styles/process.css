@@ -127,6 +127,8 @@
 .process-stage__progress { position: absolute; right: 0; bottom: 0; left: 0; height: 0.25rem; background: #c5c2bd; }
 .process-stage__progress i { display: block; width: 100%; height: 100%; background: var(--signal); transform-origin: left; transition: transform 500ms ease; }
 
+.process-mobile { display: none; }
+
 .audit-visual { position: absolute; inset: 11% 6% 6%; display: flex; justify-content: center; flex-direction: column; }
 .audit-visual__score { display: grid; align-items: end; margin-bottom: 1.35rem; grid-template-columns: 1fr auto; }
 .audit-visual__score > span { align-self: start; font: 600 0.6rem 'JetBrains Mono', monospace; }
@@ -214,10 +216,14 @@
   .process-intro > .eyebrow { left: 1.2rem; }
   .process-intro h2 { font-size: clamp(3.5rem, 13vw, 7rem); }
   .process-intro__aside { position: static; width: min(32rem, 90%); margin-top: 2rem; }
-  .process-stage { display: block; min-height: auto; padding-top: 0; }
-  .process-stage__rail { padding: 4rem 1.2rem 2rem; border-right: 0; }
-  .process-stage__copy { min-height: 8rem; margin-top: 3rem; }
-  .process-stage__display { min-height: 70svh; padding: 1.2rem; }
+  .process-stage--desktop { display: none; }
+  .process-mobile { display: block; }
+  .process-mobile__scene { min-height: 100svh; padding: 4.25rem 1.2rem 1.2rem; border-bottom: 1px solid var(--ink); }
+  .process-mobile__copy { display: grid; min-height: 16rem; align-content: start; padding: 2rem 0 2.5rem; grid-template-columns: 3.2rem 1fr; }
+  .process-mobile__copy > span { padding-top: 0.4rem; font: 600 0.58rem 'JetBrains Mono', monospace; }
+  .process-mobile__copy h3 { max-width: 12ch; margin: 0; font-size: clamp(2.5rem, 9vw, 4.5rem); font-weight: 500; letter-spacing: -0.06em; line-height: 0.92; }
+  .process-mobile__copy p { max-width: 34rem; margin: 1.5rem 0 0; grid-column: 2; font-size: 1rem; line-height: 1.5; }
+  .process-mobile__display { min-height: 68svh; }
   .process-visual { min-height: 65svh; }
 }
 
@@ -225,7 +231,8 @@
   .process-intro h2 { font-size: clamp(3.15rem, 15vw, 5rem); }
   .process-tabs button { grid-template-columns: 2.2rem 1fr 2.5rem; }
   .process-tabs button strong { font-size: 1.15rem; }
-  .process-stage__display { min-height: 34rem; }
+  .process-mobile__copy { grid-template-columns: 2.5rem 1fr; }
+  .process-mobile__display { min-height: 34rem; }
   .process-visual { min-height: 32rem; }
   .architecture-visual__node { width: 5rem; height: 5rem; }
   .architecture-visual__node b { font-size: 0.48rem; }

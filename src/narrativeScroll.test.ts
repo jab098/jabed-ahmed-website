@@ -98,6 +98,16 @@ describe('narrative waypoint model', () => {
     expect(findDirectionalWaypoint(points, 980, -1)?.id).toBe('b')
   })
 
+  it('does not revisit a destination after a small responsive layout drift', () => {
+    const points = [
+      { id: 'proof', y: 500 },
+      { id: 'metric-01', y: 900 },
+    ]
+
+    expect(findDirectionalWaypoint(points, 493, 1)?.id).toBe('metric-01')
+    expect(findDirectionalWaypoint(points, 507, -1)).toBeUndefined()
+  })
+
   it('uses the approved adaptive thresholds and duration cap', () => {
     expect(wheelIntentThreshold(800)).toBe(96)
     expect(touchIntentThreshold(800)).toBe(80)

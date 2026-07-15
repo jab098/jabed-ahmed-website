@@ -105,6 +105,7 @@ export function SystemsShowcase() {
           x: () => -(track.scrollWidth - window.innerWidth + window.innerWidth * 0.04),
           ease: 'none',
           scrollTrigger: {
+            id: 'systems-pin',
             trigger: stage,
             start: 'top top',
             end: () => `+=${Math.max(track.scrollWidth - window.innerWidth, window.innerHeight * 2.8)}`,
@@ -144,7 +145,7 @@ export function SystemsShowcase() {
 
   return (
     <section ref={rootRef} id="systems" className="systems-section" aria-labelledby="systems-title">
-      <header className="systems-header">
+      <header className="systems-header" data-scroll-waypoint="systems-heading">
         <p className="eyebrow">// Working systems</p>
         <h2 id="systems-title" aria-label="Selected systems.">
           <span className="systems-heading__line"><span>Selected</span></span>
@@ -158,9 +159,20 @@ export function SystemsShowcase() {
           <span>SCROLL TO EXPLORE</span>
           <span>01—04</span>
         </div>
-        <div ref={trackRef} className="systems-track">
+        <div
+          ref={trackRef}
+          className="systems-track"
+          data-scroll-track
+          data-scroll-trigger="systems-pin"
+        >
           {SYSTEMS.map((system, index) => (
-            <article className="system-card" key={system.number} tabIndex={0}>
+            <article
+              className="system-card"
+              data-scroll-track-waypoint={`system-0${index + 1}`}
+              data-scroll-waypoint-mobile={`system-0${index + 1}`}
+              key={system.number}
+              tabIndex={0}
+            >
               <div className="system-card__visual"><SystemGraphic index={index} /></div>
               <div className="system-card__body">
                 <span className="system-card__number">{system.number}</span>
@@ -172,7 +184,11 @@ export function SystemsShowcase() {
               </div>
             </article>
           ))}
-          <div className="systems-track__end" aria-hidden="true"><span>NEXT</span><strong>Build <em data-scroll-flash="early-tight">yours.</em></strong></div>
+          <div
+            className="systems-track__end"
+            data-scroll-track-waypoint="systems-bridge"
+            data-scroll-waypoint-mobile="systems-bridge"
+          ><span>NEXT</span><strong>Build <em data-scroll-flash="early-tight">yours.</em></strong></div>
         </div>
       </div>
     </section>

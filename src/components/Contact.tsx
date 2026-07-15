@@ -35,7 +35,13 @@ export function Contact() {
 
   return (
     <>
-      <section ref={rootRef} id="contact" className="contact-section" aria-labelledby="contact-title">
+      <section
+        ref={rootRef}
+        id="contact"
+        className="contact-section"
+        aria-labelledby="contact-title"
+        data-scroll-waypoint="contact"
+      >
         <div className="contact-topline-new">
           <span>// Start a conversation</span>
           <span>Independent consulting · London / worldwide</span>
@@ -55,7 +61,7 @@ export function Contact() {
         </div>
       </section>
 
-      <footer className="signal-footer">
+      <footer className="signal-footer" data-scroll-waypoint="footer">
         <FooterGlyphStream />
         <div className="signal-footer__top">
           <span>JA / DATA</span>

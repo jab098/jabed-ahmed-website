@@ -26,7 +26,13 @@ export function Metrics() {
   }, [])
 
   return (
-    <section ref={rootRef} id="proof" className="proof-section" aria-labelledby="proof-title">
+    <section
+      ref={rootRef}
+      id="proof"
+      className="proof-section"
+      aria-labelledby="proof-title"
+      data-scroll-waypoint="proof"
+    >
       <div className="proof-art">
         <div className="proof-art__grid" aria-hidden="true">
           {Array.from({ length: 49 }, (_, index) => <i key={index} />)}
@@ -35,7 +41,12 @@ export function Metrics() {
         <h2 id="proof-title">Proof in the system.</h2>
       </div>
       {METRICS.map((metric, index) => (
-        <article key={metric.label} className="proof-metric" aria-label={`${metric.value} ${metric.label}`}>
+        <article
+          key={metric.label}
+          className="proof-metric"
+          aria-label={`${metric.value} ${metric.label}`}
+          data-scroll-waypoint-mobile={`proof-metric-0${index + 1}`}
+        >
           <span className="proof-metric__number">0{index + 1}</span>
           <StaticValue value={metric.value} />
           <p>{metric.label}</p>

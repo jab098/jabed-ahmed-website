@@ -41,7 +41,8 @@ export type DirectorDependencies = {
   clearTimer: (timer: unknown) => void
 }
 
-const WAYPOINT_EPSILON = 4
+const WAYPOINT_DEDUPE_EPSILON = 4
+const WAYPOINT_ARRIVAL_TOLERANCE = 12
 const MAXIMUM_GAP_RATIO = 0.82
 const TOUCH_CLASSIFICATION_DISTANCE = 8
 const TOUCH_VERTICAL_DOMINANCE = 1.25
@@ -75,10 +76,10 @@ export function findDirectionalWaypoint(
   direction: Direction,
 ) {
   if (direction === 1) {
-    return points.find((point) => point.y > currentY + WAYPOINT_EPSILON)
+    return points.find((point) => point.y > currentY + WAYPOINT_ARRIVAL_TOLERANCE)
   }
 
-  return points.findLast((point) => point.y < currentY - WAYPOINT_EPSILON)
+  return points.findLast((point) => point.y < currentY - WAYPOINT_ARRIVAL_TOLERANCE)
 }
 
 export function buildWaypointMap(
@@ -92,7 +93,8 @@ export function buildWaypointMap(
     .sort((left, right) => left.y - right.y || (right.priority ?? 0) - (left.priority ?? 0))
 
   const authored = sorted.filter(
-    (point, index) => index === 0 || Math.abs(point.y - sorted[index - 1].y) > WAYPOINT_EPSILON,
+    (point, index) =>
+      index === 0 || Math.abs(point.y - sorted[index - 1].y) > WAYPOINT_DEDUPE_EPSILON,
   )
   const maximumGap = Math.max(1, viewportHeight * MAXIMUM_GAP_RATIO)
 

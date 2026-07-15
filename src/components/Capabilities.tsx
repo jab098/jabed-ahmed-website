@@ -34,7 +34,7 @@ export function Capabilities() {
 
   return (
     <section ref={rootRef} id="capabilities" className="capabilities-section" aria-labelledby="capabilities-title">
-      <header className="capabilities-header">
+      <header className="capabilities-header" data-scroll-waypoint="capabilities-heading">
         <p className="eyebrow">// Inside the system</p>
         <h2 id="capabilities-title" aria-label="What's in a reliable measurement system?">
           <span>What’s in a reliable</span>
@@ -44,7 +44,13 @@ export function Capabilities() {
       </header>
       <div className="capabilities-grid">
         {CAPABILITIES.map((capability, index) => (
-          <article key={capability.number} tabIndex={0} style={{ '--delay': `${index * 80}ms` } as CSSProperties}>
+          <article
+            key={capability.number}
+            tabIndex={0}
+            data-scroll-waypoint-desktop={`capability-0${index + 1}`}
+            data-scroll-waypoint-mobile={`capability-0${index + 1}`}
+            style={{ '--delay': `${index * 80}ms` } as CSSProperties}
+          >
             <CapabilityMotif index={index} />
             <div className="capability-card__top">
               <span>{capability.number}</span>
