@@ -9,6 +9,7 @@ it('renders the approved v2 chapter order', () => {
   expect(screen.getByText('Skip to content')).toHaveAttribute('href', '#main-content')
   expect(container.querySelector('main#main-content')).toBeInTheDocument()
   expect(container.querySelector('[data-narrative-scroll-director]')).toBeInTheDocument()
+  expect(container.querySelectorAll('[data-scroll-scene]')).toHaveLength(8)
   expect([...container.querySelectorAll('main > section')].map((node) => node.id)).toEqual([
     'home',
     'proof',

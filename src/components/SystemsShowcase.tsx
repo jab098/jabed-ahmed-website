@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, type CSSProperties } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { ArrowUpRight } from 'lucide-react'
 import { SYSTEMS } from '../data'
 import { gsap } from '../motion'
@@ -79,9 +79,20 @@ function SystemGraphic({ index }: { index: number }) {
 }
 
 export function SystemsShowcase() {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches,
+  )
   const rootRef = useRef<HTMLElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 900px)')
+    const update = () => setIsMobile(query.matches)
+    update()
+    query.addEventListener('change', update)
+    return () => query.removeEventListener('change', update)
+  }, [])
 
   useLayoutEffect(() => {
     const root = rootRef.current
@@ -100,7 +111,7 @@ export function SystemsShowcase() {
       const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
       const endWord = root.querySelector<HTMLElement>('.systems-track__end em')
 
-      if (!reduced && window.matchMedia('(min-width: 901px)').matches) {
+      if (!reduced && !isMobile) {
         const horizontalTween = gsap.to(track, {
           x: () => -(track.scrollWidth - window.innerWidth + window.innerWidth * 0.04),
           ease: 'none',
@@ -141,10 +152,16 @@ export function SystemsShowcase() {
     }, root)
 
     return () => context.revert()
-  }, [])
+  }, [isMobile])
 
   return (
-    <section ref={rootRef} id="systems" className="systems-section" aria-labelledby="systems-title">
+    <section
+      ref={rootRef}
+      id="systems"
+      className="systems-section"
+      aria-labelledby="systems-title"
+      data-scroll-scene="systems"
+    >
       <header className="systems-header" data-scroll-waypoint="systems-heading">
         <p className="eyebrow">// Working systems</p>
         <h2 id="systems-title" aria-label="Selected systems.">

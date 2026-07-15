@@ -13,9 +13,17 @@ One physical gesture may reach only the immediately adjacent waypoint in its dir
 - Meaningful headline, card, state, and closing-bridge compositions are destinations—not content to pass over.
 - Adjacent resolved stops may never be more than `82vh` apart. Generated continuation stops keep tall content readable.
 
-Explicit choices are different from gestures. A real navigation link, CTA, tab, browser find result, keyboard action, or scrollbar drag may move directly to its chosen position.
+Explicit choices are different from gestures. A real navigation link, CTA, or pinned-scene tab may select a non-adjacent destination, but site-owned choices still use the same smooth GSAP handoff. Browser find results, keyboard actions, the skip link, and scrollbar dragging remain native.
 
 ## Declaring waypoints
+
+Every top-level narrative chapter must first declare a stable scene boundary:
+
+```tsx
+<section id="services" data-scroll-scene="services">...</section>
+```
+
+The current page owns eight scenes: Home, Proof, Process, Systems, Capabilities, FAQ, Contact, and Footer. New top-level sections must add their own `data-scroll-scene` identifier and update the structural inventory test.
 
 Add a stable content-based identifier to every physical headline or scene:
 
@@ -26,7 +34,7 @@ Add a stable content-based identifier to every physical headline or scene:
 
 Names describe the content, not its visual position. Keep them unique and do not mark decorative elements.
 
-When adding a tall scene, mark every meaningful internal headline or composition. The waypoint builder measures the final ordered map and automatically inserts the minimum number of continuation stops needed to keep every interval at or below `0.82 * viewportHeight`. Do not add empty spacer markup or hand-authored filler stops.
+When adding a tall scene, mark every meaningful internal headline or composition. When the interval between adjacent stops is contained by one declared scene boundary, the waypoint builder automatically inserts the minimum number of continuation stops needed to keep it at or below `0.82 * viewportHeight`. It never invents filler in undeclared space. Generated IDs include both the containing scene and preceding waypoint, so rebuilding or extending the page preserves semantic ownership. Do not add empty spacer markup or hand-authored filler stops.
 
 The collector aligns physical points beneath `.site-nav`, clamps them to the document range, sorts them, and deduplicates positions within four CSS pixels. Authored destinations take priority over generated continuations.
 
@@ -89,15 +97,23 @@ Use breakpoint-specific declarations when desktop and mobile tell the story diff
 
 Mobile content must be structurally present in narrative order. Do not hide required story states behind a single tabbed panel. Process, for example, renders four physical mobile scenes even though desktop uses one pinned panel with four virtual states.
 
+Pinned scenes must react to the `900px` media-query lifecycle—not only the initial width. Crossing the breakpoint tears down desktop pinning before the mobile layout takes over, and recreates it when returning to desktop.
+
 When a section changes from a row to a stack, mark each stacked item as a mobile destination. The current inventory includes the hero report, proof metrics, four Process scenes, four System cards and bridge, six capability cards, every FAQ row, Contact, and Footer.
 
 ## Input behavior
 
 Wheel and trackpad deltas are normalized from pixel, line, and page units. The intent threshold is `clamp(72px, 12vh, 120px)`. Input that becomes quiet below that threshold returns to its origin; committed input eases to one adjacent destination.
 
+Wheel input absorbed during any active handoff—including a link, tab, touch, or geometry-reconciliation animation—remains disarmed until the input stream is genuinely quiet for `180ms`, even if the animation finishes first.
+
+If wheel direction reverses before commitment, the reversed preview may start from the current partial position, but its quiet rollback still resolves to the gesture's original composition. A reversal must never strand the page between stops.
+
 Single-touch gestures are classified after eight pixels of travel and only claimed when vertical travel is at least `1.25` times horizontal travel. The page follows the finger one-to-one, clamped to the adjacent interval. The commitment threshold is `clamp(56px, 10vh, 96px)`; shorter swipes return to their origin.
 
-Handoffs animate real `window.scrollY` with GSAP `power3.inOut`. Duration is `clamp(520ms, 520ms + remainingDistance * 0.32ms, 980ms)`. The document is never translated into a virtual scroll surface.
+Handoffs animate real `window.scrollY` with GSAP `power3.inOut`. Duration is `clamp(520ms, 520ms + remainingDistance * 0.32ms, 980ms)`. Direct gesture previews are coalesced to at most one scroll write per animation frame. The document is never translated into a virtual scroll surface.
+
+Vertical touch movement that begins during an active handoff is absorbed so it cannot queue another destination. If a second finger appears after a single-touch preview has been claimed, the preview returns to its origin synchronously before control returns to the browser for pinch/multi-touch behavior.
 
 The director never claims:
 
@@ -130,7 +146,9 @@ Waypoint geometry is cached outside wheel and touch hot paths. It rebuilds after
 - a `ResizeObserver` change to the main content or footer;
 - FAQ transition completion.
 
-Rebuild requests are coalesced into one animation frame. New sections therefore join the movement language through declarations rather than controller edits.
+Rebuild requests are coalesced into one animation frame. New sections therefore join the movement language through declarations rather than controller edits. If geometry changes during an active handoff, the director re-resolves the destination by its semantic waypoint ID and continues toward the refreshed coordinate. A touch that is still physically held remains blocked through its eventual `touchend`/`touchcancel`, so it cannot fight the corrected animation.
+
+Responsive text and font loading may move an already-reached destination by a few pixels. Only the same last-settled semantic waypoint may be reconciled within `12px`; nearby unvisited waypoints remain eligible with only a sub-pixel directional tolerance. This prevents a small layout drift from creating a duplicate gesture without allowing a real headline one to three pixels away to be skipped. The separate authored-position deduplication rule remains `4px`.
 
 ## Tests
 
@@ -138,7 +156,7 @@ Any section addition, removal, breakpoint change, or pinned-state change must up
 
 - Structural component tests assert every required desktop and mobile waypoint.
 - `NarrativeScroll.test.tsx` covers physical, virtual, track, responsive, and nested-scroll mapping.
-- `narrativeScroll.test.ts` covers delta normalization, one-stop clamping, momentum absorption, reversal, sub-threshold return, touch classification, and the `82vh` rule.
+- `narrativeScroll.test.ts` covers delta normalization, one-stop clamping, momentum absorption across every handoff type, reversal, sub-threshold return, touch classification/cancellation/rebuild ownership, nearby unvisited stops, and the `82vh` rule.
 - `App.test.tsx` protects the chapter order, director mount, and this permanent README link.
 
 A missing required scene must fail a structural test rather than silently disappearing from the journey.

@@ -31,6 +31,7 @@ export function Metrics() {
       id="proof"
       className="proof-section"
       aria-labelledby="proof-title"
+      data-scroll-scene="proof"
       data-scroll-waypoint="proof"
     >
       <div className="proof-art">

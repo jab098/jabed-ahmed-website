@@ -40,6 +40,7 @@ export function Contact() {
         id="contact"
         className="contact-section"
         aria-labelledby="contact-title"
+        data-scroll-scene="contact"
         data-scroll-waypoint="contact"
       >
         <div className="contact-topline-new">
@@ -61,7 +62,11 @@ export function Contact() {
         </div>
       </section>
 
-      <footer className="signal-footer" data-scroll-waypoint="footer">
+      <footer
+        className="signal-footer"
+        data-scroll-scene="footer"
+        data-scroll-waypoint="footer"
+      >
         <FooterGlyphStream />
         <div className="signal-footer__top">
           <span>JA / DATA</span>

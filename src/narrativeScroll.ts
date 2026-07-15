@@ -6,6 +6,12 @@ export type ScrollWaypoint = {
   priority?: number
 }
 
+export type ScrollSceneSpan = {
+  id: string
+  start: number
+  end: number
+}
+
 export type WheelInput = {
   ctrlKey: boolean
   deltaMode: number
@@ -36,13 +42,15 @@ export type DirectorDependencies = {
   getWaypoints: () => ScrollWaypoint[]
   canClaim: (direction: Direction) => boolean
   writeScroll: (y: number) => void
+  writeScrollImmediately: (y: number) => void
   animate: (request: AnimationRequest) => (() => void) | void
   setTimer: (callback: () => void, delay: number) => unknown
   clearTimer: (timer: unknown) => void
 }
 
 const WAYPOINT_DEDUPE_EPSILON = 4
-const WAYPOINT_ARRIVAL_TOLERANCE = 12
+const DIRECTIONAL_EPSILON = 0.5
+const SETTLED_LAYOUT_DRIFT_TOLERANCE = 12
 const MAXIMUM_GAP_RATIO = 0.82
 const TOUCH_CLASSIFICATION_DISTANCE = 8
 const TOUCH_VERTICAL_DOMINANCE = 1.25
@@ -76,16 +84,17 @@ export function findDirectionalWaypoint(
   direction: Direction,
 ) {
   if (direction === 1) {
-    return points.find((point) => point.y > currentY + WAYPOINT_ARRIVAL_TOLERANCE)
+    return points.find((point) => point.y > currentY + DIRECTIONAL_EPSILON)
   }
 
-  return points.findLast((point) => point.y < currentY - WAYPOINT_ARRIVAL_TOLERANCE)
+  return points.findLast((point) => point.y < currentY - DIRECTIONAL_EPSILON)
 }
 
 export function buildWaypointMap(
   points: ScrollWaypoint[],
   viewportHeight: number,
   maxY: number,
+  scenes: ScrollSceneSpan[] = [],
 ) {
   const sorted = points
     .filter((point) => Number.isFinite(point.y))
@@ -102,9 +111,16 @@ export function buildWaypointMap(
     const next = authored[index + 1]
     if (!next || next.y - point.y <= maximumGap) return [point]
 
+    const scene = scenes.find(
+      ({ start, end }) =>
+        point.y >= start - WAYPOINT_DEDUPE_EPSILON &&
+        next.y <= end + WAYPOINT_DEDUPE_EPSILON,
+    )
+    if (!scene) return [point]
+
     const segments = Math.ceil((next.y - point.y) / maximumGap)
     const continuations = Array.from({ length: segments - 1 }, (_, offset) => ({
-      id: `${point.id}--continuation-${offset + 1}`,
+      id: `${scene.id}--${point.id}--continuation-${offset + 1}`,
       y: point.y + ((next.y - point.y) * (offset + 1)) / segments,
       priority: 0,
     }))
@@ -118,10 +134,13 @@ type WheelSession = {
   committed: boolean
   direction: Direction
   origin: number
+  settleOrigin: number
   target: number
+  targetId: string
 }
 
 type TouchSession = {
+  blocked: boolean
   claimed: boolean
   committed: boolean
   direction?: Direction
@@ -129,16 +148,20 @@ type TouchSession = {
   startX: number
   startY: number
   target?: number
+  targetId?: string
 }
 
 export class NarrativeGestureDirector {
   private animationActive = false
+  private activeTargetId?: string
   private cancelAnimation?: () => void
   private destroyed = false
+  private lastSettledWaypoint?: ScrollWaypoint
   private quietTimer?: unknown
   private rearmAfterAnimation = false
   private touch?: TouchSession
   private wheel?: WheelSession
+  private wheelDisarmed = false
   private readonly dependencies: DirectorDependencies
 
   constructor(dependencies: DirectorDependencies) {
@@ -160,25 +183,24 @@ export class NarrativeGestureDirector {
     const direction: Direction = delta > 0 ? 1 : -1
     if (!this.dependencies.canClaim(direction)) return false
 
-    if (this.animationActive || this.wheel?.committed) {
+    if (this.animationActive || this.wheel?.committed || this.wheelDisarmed) {
       input.preventDefault()
+      this.wheelDisarmed = true
       this.rearmAfterAnimation = false
       this.scheduleWheelQuiet()
       return true
     }
 
+    let settleOrigin: number | undefined
     if (this.wheel && this.wheel.direction !== direction) {
+      settleOrigin = this.wheel.settleOrigin
       this.clearQuietTimer()
       this.wheel = undefined
     }
 
     if (!this.wheel) {
       const origin = this.dependencies.getScrollY()
-      const target = findDirectionalWaypoint(
-        this.dependencies.getWaypoints(),
-        origin,
-        direction,
-      )
+      const target = this.findGestureWaypoint(origin, direction)
       if (!target) return false
 
       this.wheel = {
@@ -186,7 +208,9 @@ export class NarrativeGestureDirector {
         committed: false,
         direction,
         origin,
+        settleOrigin: settleOrigin ?? origin,
         target: target.y,
+        targetId: target.id,
       }
     }
 
@@ -200,7 +224,7 @@ export class NarrativeGestureDirector {
 
     if (session.accumulatedIntent >= threshold || previewDistance >= targetDistance) {
       session.committed = true
-      this.animateTo(session.target)
+      this.animateTo(session.target, undefined, session.targetId)
     }
 
     this.scheduleWheelQuiet()
@@ -208,13 +232,21 @@ export class NarrativeGestureDirector {
   }
 
   handleTouchStart(input: TouchInput) {
-    if (this.destroyed || this.animationActive || this.wheel?.committed || input.touches.length !== 1) {
+    if (this.destroyed) {
+      this.touch = undefined
+      return
+    }
+    if (input.touches.length !== 1) {
+      if (this.touch?.claimed && !this.touch.blocked) {
+        this.dependencies.writeScrollImmediately(this.touch.origin)
+      }
       this.touch = undefined
       return
     }
 
     const touch = input.touches[0]
     this.touch = {
+      blocked: this.animationActive || Boolean(this.wheel?.committed),
       claimed: false,
       committed: false,
       origin: this.dependencies.getScrollY(),
@@ -228,7 +260,9 @@ export class NarrativeGestureDirector {
     if (this.destroyed || !session) return false
 
     if (input.touches.length !== 1) {
-      if (session.claimed) this.dependencies.writeScroll(session.origin)
+      if (session.claimed && !session.blocked) {
+        this.dependencies.writeScrollImmediately(session.origin)
+      }
       this.touch = undefined
       return false
     }
@@ -250,17 +284,23 @@ export class NarrativeGestureDirector {
     }
 
     const direction: Direction = verticalTravel >= 0 ? 1 : -1
+    if (session.blocked) {
+      if (!this.dependencies.canClaim(direction)) {
+        this.touch = undefined
+        return false
+      }
+      input.preventDefault()
+      session.claimed = true
+      return true
+    }
+
     if (!session.claimed || session.direction !== direction) {
       if (!this.dependencies.canClaim(direction)) {
         this.touch = undefined
         return false
       }
 
-      const target = findDirectionalWaypoint(
-        this.dependencies.getWaypoints(),
-        session.origin,
-        direction,
-      )
+      const target = this.findGestureWaypoint(session.origin, direction)
       if (!target) {
         this.touch = undefined
         return false
@@ -270,6 +310,7 @@ export class NarrativeGestureDirector {
       session.committed = false
       session.direction = direction
       session.target = target.y
+      session.targetId = target.id
     }
 
     input.preventDefault()
@@ -285,30 +326,102 @@ export class NarrativeGestureDirector {
 
   handleTouchEnd() {
     const session = this.touch
+    if (session?.blocked) {
+      this.touch = undefined
+      return session.claimed
+    }
     if (!session?.claimed || session.target === undefined) {
       this.touch = undefined
       return false
     }
 
     const destination = session.committed ? session.target : session.origin
+    const destinationId = session.committed ? session.targetId : undefined
     this.touch = undefined
-    this.animateTo(destination)
+    this.animateTo(destination, undefined, destinationId)
     return true
   }
 
   handleTouchCancel() {
-    const origin = this.touch?.claimed ? this.touch.origin : undefined
+    const origin = this.touch?.claimed && !this.touch.blocked ? this.touch.origin : undefined
     this.touch = undefined
     if (origin !== undefined) this.animateTo(origin)
   }
 
+  reconcileWaypoints() {
+    if (this.destroyed) return
+    const points = this.dependencies.getWaypoints()
+    const currentY = this.dependencies.getScrollY()
+    if (points.length === 0) return
+
+    const hasActiveInteraction =
+      this.animationActive || Boolean(this.wheel) || Boolean(this.touch?.claimed)
+    if (!hasActiveInteraction) {
+      const settled = this.lastSettledWaypoint
+      if (!settled || Math.abs(currentY - settled.y) > WAYPOINT_DEDUPE_EPSILON) return
+      const refreshed = points.find((point) => point.id === settled.id)
+      if (!refreshed) {
+        this.lastSettledWaypoint = undefined
+        return
+      }
+      if (Math.abs(currentY - refreshed.y) > 0.5) this.dependencies.writeScroll(refreshed.y)
+      this.lastSettledWaypoint = { ...refreshed }
+      return
+    }
+
+    const preferredId =
+      this.activeTargetId ??
+      (this.wheel?.committed ? this.wheel.targetId : undefined) ??
+      (this.touch?.committed ? this.touch.targetId : undefined)
+    const anchorY =
+      this.wheel && !this.wheel.committed
+        ? this.wheel.settleOrigin
+        : this.touch?.claimed && !this.touch.committed
+          ? this.touch.origin
+          : currentY
+    const destination =
+      points.find((point) => point.id === preferredId) ??
+      points.reduce((closest, point) =>
+        Math.abs(point.y - anchorY) < Math.abs(closest.y - anchorY) ? point : closest,
+      )
+    const committedWheel = this.wheel?.committed ? this.wheel : undefined
+    const heldTouch = this.touch && (this.touch.blocked || this.touch.claimed)
+      ? { ...this.touch, blocked: true, committed: false, target: undefined, targetId: undefined }
+      : undefined
+    const preserveWheelDisarm = this.wheelDisarmed
+
+    if (committedWheel) {
+      committedWheel.target = destination.y
+      committedWheel.targetId = destination.id
+    } else {
+      this.clearQuietTimer()
+      this.wheel = undefined
+    }
+    this.touch = heldTouch
+    this.cancelActiveAnimation()
+
+    if (Math.abs(currentY - destination.y) <= 0.5) {
+      this.dependencies.writeScroll(destination.y)
+      this.lastSettledWaypoint = { ...destination }
+      if (preserveWheelDisarm) this.scheduleWheelQuiet()
+      return
+    }
+    this.animateTo(destination.y, undefined, destination.id)
+    if (preserveWheelDisarm) this.scheduleWheelQuiet()
+  }
+
   goTo(y: number) {
     if (this.destroyed || !Number.isFinite(y)) return
+    const preserveWheelDisarm = this.wheelDisarmed
     this.clearQuietTimer()
     this.wheel = undefined
     this.touch = undefined
     this.cancelActiveAnimation()
-    this.animateTo(y)
+    const targetId = this.dependencies
+      .getWaypoints()
+      .find((point) => Math.abs(point.y - y) <= WAYPOINT_DEDUPE_EPSILON)?.id
+    this.animateTo(y, undefined, targetId)
+    if (preserveWheelDisarm) this.scheduleWheelQuiet()
   }
 
   destroy() {
@@ -317,11 +430,15 @@ export class NarrativeGestureDirector {
     this.cancelActiveAnimation()
     this.wheel = undefined
     this.touch = undefined
+    this.lastSettledWaypoint = undefined
+    this.wheelDisarmed = false
+    this.rearmAfterAnimation = false
   }
 
-  private animateTo(target: number, afterComplete?: () => void) {
+  private animateTo(target: number, afterComplete?: () => void, targetId?: string) {
     this.cancelActiveAnimation()
     this.animationActive = true
+    this.activeTargetId = targetId
     let completedSynchronously = false
     const cancellation = this.dependencies.animate({
       to: target,
@@ -329,12 +446,15 @@ export class NarrativeGestureDirector {
       onComplete: () => {
         completedSynchronously = true
         this.animationActive = false
+        this.activeTargetId = undefined
         this.cancelAnimation = undefined
         this.dependencies.writeScroll(target)
+        if (targetId) this.lastSettledWaypoint = { id: targetId, y: target }
         afterComplete?.()
         if (this.rearmAfterAnimation) {
           this.rearmAfterAnimation = false
           this.wheel = undefined
+          this.wheelDisarmed = false
         }
       },
     })
@@ -344,8 +464,28 @@ export class NarrativeGestureDirector {
 
   private cancelActiveAnimation() {
     this.cancelAnimation?.()
+    this.activeTargetId = undefined
     this.cancelAnimation = undefined
     this.animationActive = false
+  }
+
+  private findGestureWaypoint(currentY: number, direction: Direction) {
+    const points = this.dependencies.getWaypoints()
+    const settled = this.lastSettledWaypoint
+    if (!settled || Math.abs(currentY - settled.y) > SETTLED_LAYOUT_DRIFT_TOLERANCE) {
+      this.lastSettledWaypoint = undefined
+      return findDirectionalWaypoint(points, currentY, direction)
+    }
+
+    const refreshed = points.find((point) => point.id === settled.id)
+    if (!refreshed || Math.abs(currentY - refreshed.y) > SETTLED_LAYOUT_DRIFT_TOLERANCE) {
+      return findDirectionalWaypoint(points, currentY, direction)
+    }
+    return findDirectionalWaypoint(
+      points.filter((point) => point.id !== settled.id),
+      currentY,
+      direction,
+    )
   }
 
   private scheduleWheelQuiet() {
@@ -353,16 +493,17 @@ export class NarrativeGestureDirector {
     this.quietTimer = this.dependencies.setTimer(() => {
       this.quietTimer = undefined
       const session = this.wheel
-      if (!session) return
       if (this.animationActive) {
         this.rearmAfterAnimation = true
         return
       }
+      this.wheelDisarmed = false
+      if (!session) return
       if (session.committed) {
         this.wheel = undefined
         return
       }
-      this.animateTo(session.origin, () => {
+      this.animateTo(session.settleOrigin, () => {
         this.wheel = undefined
       })
     }, WHEEL_QUIET_MS)

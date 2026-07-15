@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { expect, it } from 'vitest'
+import { expect, it, vi } from 'vitest'
 import { SystemsShowcase } from './SystemsShowcase'
 
 it('frames four representative systems without presenting them as client case studies', () => {
@@ -25,4 +25,30 @@ it('frames four representative systems without presenting them as client case st
   )
   expect(container.querySelectorAll('[data-scroll-track-waypoint]')).toHaveLength(5)
   expect(container.querySelectorAll('[data-scroll-waypoint-mobile]')).toHaveLength(5)
+})
+
+it('rebuilds its pinned scene when the desktop/mobile breakpoint changes', () => {
+  const originalMatchMedia = window.matchMedia
+  const addEventListener = vi.fn()
+  const removeEventListener = vi.fn()
+  window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addEventListener,
+    removeEventListener,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }))
+
+  try {
+    const { unmount } = render(<SystemsShowcase />)
+    expect(window.matchMedia).toHaveBeenCalledWith('(max-width: 900px)')
+    expect(addEventListener).toHaveBeenCalledWith('change', expect.any(Function))
+    unmount()
+    expect(removeEventListener).toHaveBeenCalledWith('change', expect.any(Function))
+  } finally {
+    window.matchMedia = originalMatchMedia
+  }
 })

@@ -5,7 +5,12 @@ export function Faq() {
   const [openId, setOpenId] = useState<string | null>(null)
 
   return (
-    <section id="faq" className="faq-section" aria-labelledby="faq-title">
+    <section
+      id="faq"
+      className="faq-section"
+      aria-labelledby="faq-title"
+      data-scroll-scene="faq"
+    >
       <header className="faq-header" data-scroll-waypoint="faq-heading">
         <p className="eyebrow">// Common questions</p>
         <h2 id="faq-title">Common<br /><span>questions.</span></h2>

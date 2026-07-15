@@ -3,14 +3,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NarrativeScroll } from './NarrativeScroll'
 import {
   collectNarrativeWaypoints,
+  resolveDirectScrollTarget,
   shouldYieldToNativeScroll,
   type NarrativeTrigger,
 } from '../narrativeScrollDom'
 
-function setRect(element: Element, top: number) {
+function setRect(element: Element, top: number, bottom = top) {
   vi.spyOn(element, 'getBoundingClientRect').mockReturnValue({
-    bottom: top,
-    height: 0,
+    bottom,
+    height: bottom - top,
     left: 0,
     right: 0,
     top,
@@ -93,12 +94,63 @@ describe('collectNarrativeWaypoints', () => {
       ]),
     )
   })
+
+  it('gives generated continuations stable ownership inside a declared scene', () => {
+    document.body.innerHTML = `
+      <section data-scroll-scene="chapter" data-scroll-waypoint="chapter-start">
+        <h2 data-scroll-waypoint="chapter-end"></h2>
+      </section>
+    `
+    const scene = document.querySelector('[data-scroll-scene]') as HTMLElement
+    const end = document.querySelector('[data-scroll-waypoint="chapter-end"]') as HTMLElement
+    setRect(scene, 0, 1_800)
+    setRect(end, 1_800)
+
+    const points = collectNarrativeWaypoints({
+      getTrigger: () => undefined,
+      maxScrollY: 2_000,
+      navHeight: 0,
+      scrollY: 0,
+      viewportHeight: 1_000,
+      viewportWidth: 1_200,
+    })
+
+    expect(points.map(({ id }) => id)).toEqual([
+      'chapter-start',
+      'chapter--chapter-start--continuation-1',
+      'chapter--chapter-start--continuation-2',
+      'chapter-end',
+    ])
+  })
+})
+
+it('resolves section anchors to their authored headline destination', () => {
+  document.body.innerHTML = `
+    <section id="process"><header data-scroll-waypoint="process-heading"></header></section>
+  `
+  const section = document.querySelector('#process') as HTMLElement
+  setRect(section, 1_500)
+
+  expect(
+    resolveDirectScrollTarget(section, [{ id: 'process-heading', y: 1_200 }], {
+      navHeight: 60,
+      scrollY: 0,
+      viewportWidth: 1_200,
+    }),
+  ).toBe(1_200)
 })
 
 describe('shouldYieldToNativeScroll', () => {
   it('preserves form controls and independently scrollable regions', () => {
     const input = document.createElement('input')
     expect(shouldYieldToNativeScroll(input, 1)).toBe(true)
+
+    const editor = document.createElement('div')
+    editor.setAttribute('contenteditable', '')
+    const editorChild = document.createElement('span')
+    editor.append(editorChild)
+    document.body.append(editor)
+    expect(shouldYieldToNativeScroll(editorChild, 1)).toBe(true)
 
     const scroller = document.createElement('div')
     scroller.style.overflowY = 'auto'
@@ -143,6 +195,16 @@ it('observes the responsive nav height with the narrative content roots', () => 
   } finally {
     globalThis.ResizeObserver = OriginalResizeObserver
   }
+})
+
+it('registers and cleans up delegated direct-navigation clicks', () => {
+  const addEventListener = vi.spyOn(document, 'addEventListener')
+  const removeEventListener = vi.spyOn(document, 'removeEventListener')
+  const { unmount } = render(<NarrativeScroll />)
+
+  expect(addEventListener).toHaveBeenCalledWith('click', expect.any(Function))
+  unmount()
+  expect(removeEventListener).toHaveBeenCalledWith('click', expect.any(Function))
 })
 
 it('leaves scrolling fully native when reduced motion is requested', () => {

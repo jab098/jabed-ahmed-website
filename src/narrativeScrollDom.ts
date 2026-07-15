@@ -1,4 +1,9 @@
-import { buildWaypointMap, type Direction, type ScrollWaypoint } from './narrativeScroll'
+import {
+  buildWaypointMap,
+  type Direction,
+  type ScrollSceneSpan,
+  type ScrollWaypoint,
+} from './narrativeScroll'
 import { ScrollTrigger } from './motion'
 
 const MOBILE_BREAKPOINT = 900
@@ -49,6 +54,7 @@ export function collectNarrativeWaypoints(options: CollectOptions = {}) {
     })
   const isMobile = viewportWidth <= MOBILE_BREAKPOINT
   const points: ScrollWaypoint[] = []
+  const scenes: ScrollSceneSpan[] = []
 
   const addPhysical = (selector: string, attribute: string) => {
     root.querySelectorAll(selector).forEach((element) => {
@@ -67,6 +73,17 @@ export function collectNarrativeWaypoints(options: CollectOptions = {}) {
     isMobile ? '[data-scroll-waypoint-mobile]' : '[data-scroll-waypoint-desktop]',
     isMobile ? 'data-scroll-waypoint-mobile' : 'data-scroll-waypoint-desktop',
   )
+
+  root.querySelectorAll<HTMLElement>('[data-scroll-scene]').forEach((element) => {
+    const id = readWaypoint(element, 'data-scroll-scene')
+    if (!id) return
+    const bounds = element.getBoundingClientRect()
+    scenes.push({
+      id,
+      start: bounds.top + scrollY - navHeight,
+      end: bounds.bottom + scrollY - navHeight,
+    })
+  })
 
   if (!isMobile) {
     root.querySelectorAll<HTMLElement>('[data-scroll-virtual]').forEach((element) => {
@@ -102,13 +119,52 @@ export function collectNarrativeWaypoints(options: CollectOptions = {}) {
     })
   }
 
-  return buildWaypointMap(points, viewportHeight, maxScrollY)
+  return buildWaypointMap(points, viewportHeight, maxScrollY, scenes)
+}
+
+type DirectScrollOptions = {
+  navHeight?: number
+  scrollY?: number
+  viewportWidth?: number
+}
+
+export function resolveDirectScrollTarget(
+  target: Element,
+  points: ScrollWaypoint[],
+  options: DirectScrollOptions = {},
+) {
+  const viewportWidth = options.viewportWidth ?? window.innerWidth
+  const responsiveAttribute =
+    viewportWidth <= MOBILE_BREAKPOINT
+      ? 'data-scroll-waypoint-mobile'
+      : 'data-scroll-waypoint-desktop'
+  const selectors = `[data-scroll-waypoint], [${responsiveAttribute}]`
+  const candidates = [target, ...target.querySelectorAll(selectors)]
+
+  for (const candidate of candidates) {
+    const id =
+      readWaypoint(candidate, 'data-scroll-waypoint') ??
+      readWaypoint(candidate, responsiveAttribute)
+    const point = id ? points.find((waypoint) => waypoint.id === id) : undefined
+    if (point) return point.y
+  }
+
+  const navHeight =
+    options.navHeight ??
+    document.querySelector<HTMLElement>('.site-nav')?.getBoundingClientRect().height ??
+    0
+  return Math.max(
+    0,
+    target.getBoundingClientRect().top + (options.scrollY ?? window.scrollY) - navHeight,
+  )
 }
 
 export function shouldYieldToNativeScroll(target: EventTarget | null, direction: Direction) {
   const node = target instanceof Element ? target : null
   if (!node) return false
-  if (node.closest('input, textarea, select, [contenteditable="true"]')) return true
+  if (node.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) {
+    return true
+  }
 
   let element: Element | null = node
   while (element && element !== document.body && element !== document.documentElement) {

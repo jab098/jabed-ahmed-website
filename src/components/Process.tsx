@@ -156,7 +156,13 @@ export function Process() {
   }, [isMobile])
 
   return (
-    <section ref={rootRef} id="process" className="process-section" aria-labelledby="process-title">
+    <section
+      ref={rootRef}
+      id="process"
+      className="process-section"
+      aria-labelledby="process-title"
+      data-scroll-scene="process"
+    >
       <header className="process-intro" data-scroll-waypoint="process-heading">
         <p className="eyebrow">// How I work</p>
         <h2 id="process-title" aria-label="How I turn uncertainty into a working data system.">

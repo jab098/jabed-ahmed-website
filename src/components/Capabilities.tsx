@@ -33,7 +33,13 @@ export function Capabilities() {
   }, [])
 
   return (
-    <section ref={rootRef} id="capabilities" className="capabilities-section" aria-labelledby="capabilities-title">
+    <section
+      ref={rootRef}
+      id="capabilities"
+      className="capabilities-section"
+      aria-labelledby="capabilities-title"
+      data-scroll-scene="capabilities"
+    >
       <header className="capabilities-header" data-scroll-waypoint="capabilities-heading">
         <p className="eyebrow">// Inside the system</p>
         <h2 id="capabilities-title" aria-label="What's in a reliable measurement system?">

@@ -106,7 +106,13 @@ export function Hero() {
   }, [])
 
   return (
-    <section ref={rootRef} id="home" className="hero-section" data-scroll-waypoint="home">
+    <section
+      ref={rootRef}
+      id="home"
+      className="hero-section"
+      data-scroll-scene="home"
+      data-scroll-waypoint="home"
+    >
       <div className="hero-copy">
         <p className="hero-copy__meta">DATA SYSTEMS / EXPERIMENTATION / DECISION DESIGN</p>
         <h1 aria-label="Build data systems that make the next decision obvious.">
