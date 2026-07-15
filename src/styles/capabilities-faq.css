@@ -127,6 +127,25 @@
   .faq-section { align-content: center; }
 }
 
+@media (min-width: 901px) and (max-height: 760px) {
+  .faq-section {
+    padding-block: clamp(1.5rem, 4vh, 2.25rem);
+    gap: clamp(2rem, 4vw, 4rem);
+  }
+
+  .faq-header > .eyebrow { margin-bottom: 1.5rem; }
+  .faq-header h2 { font-size: clamp(3.5rem, 6vw, 6rem); line-height: 0.78; }
+  .faq-header > p:last-child { margin-top: 1.5rem; }
+  .faq-list button {
+    min-height: clamp(4rem, 10.4vh, 5rem);
+    grid-template-columns: 2.75rem 1fr 2rem;
+  }
+  .faq-question__label {
+    font-size: clamp(1.1rem, 1.8vw, 1.65rem);
+    line-height: 1.04;
+  }
+}
+
 @media (max-width: 900px) {
   .capabilities-header { min-height: 60svh; padding-inline: 1.2rem; }
   .capabilities-header > .eyebrow { left: 1.2rem; }

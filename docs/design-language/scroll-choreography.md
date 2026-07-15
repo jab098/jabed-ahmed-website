@@ -9,7 +9,7 @@ One physical gesture may reach only the immediately adjacent authored waypoint i
 - A restrained amount of direct movement is shown first, then the site completes the handoff.
 - A very large wheel delta, fast swipe, or momentum tail cannot skip a headline, card, or scene.
 - Continuous input from the gesture that started a handoff is absorbed as momentum.
-- After wheel input has been quiet for at least `180ms`, a new stream is a fresh gesture and may reserve exactly one adjacent move even if the current handoff is still finishing.
+- After wheel input has been quiet for at least `180ms`, a new stream is a fresh gesture. A clearly separated or rebounding physical impulse may also be recognised before the old momentum tail becomes fully quiet. Either form may reserve exactly one adjacent move even if the current handoff is still finishing.
 - A new committed single-touch swipe may likewise reserve one adjacent move after the current landing. A short second swipe reserves nothing.
 - Full headline, card, state, bridge, Contact, and Footer compositions are destinations—not content to pass over.
 - Geometry never invents a destination between two authored compositions.
@@ -132,15 +132,16 @@ When a section changes from a row to a stack, mark each complete stacked item as
 
 Above `900px`, the shared frame rule supplies `min-height: calc(100svh - var(--nav-height))`. It is a layout contract, not a waypoint: the element still needs an authored physical declaration, and content may grow beyond the minimum when it genuinely needs more room. At `900px` and below, content returns to its natural stacked height and its mobile waypoints define the story.
 
-Proof and FAQ are the current viewport-framed chapters. Their desktop landings must read as isolated, complete compositions without a strip of the following section showing. FAQ owns `faq-heading` at the section boundary so its sticky heading and question list arrive as one frame; Proof uses one stretching grid row so all evidence tiles share the available height.
+Proof and FAQ are the current viewport-framed chapters. Their desktop landings must read as isolated, complete compositions without a strip of the following section showing. FAQ owns `faq-heading` at the section boundary so its sticky heading and question list arrive as one frame; Proof uses one stretching grid row so all evidence tiles share the available height. Short desktop viewports at or below `760px` compact FAQ padding, row height and type scale so all six closed questions remain inside the authored frame; opening an answer may then grow the section naturally.
 
 ## Gesture epochs
 
-A wheel gesture epoch begins with the first eligible pixel-, line-, or page-mode event after verified quiet. That epoch owns one landing token.
+A wheel gesture epoch begins with the first eligible pixel-, line-, or page-mode event after verified quiet, or with a measured fresh physical impulse that can be distinguished from the decaying tail. That epoch owns one landing token.
 
 - Committing consumes the token for the immediately adjacent authored waypoint.
 - Every later event in the same continuous stream is absorbed through the final approach and after landing. Each event moves the `180ms` quiet boundary; animation progress or proximity to the landing never promotes it into another gesture.
-- Once the quiet callback has actually fired, the next eligible event begins a fresh epoch. If the current handoff is still active, that fresh epoch may occupy the one-slot semantic queue.
+- The fresh-impulse classifier applies only to pixel-mode input, where the event stream exposes useful timing and magnitude shape. A pause of at least `72ms` starts a new impulse. A shorter pause of at least `24ms` may also start one only after the prior stream has decayed below `55%` of its peak and the new event rebounds to at least `1.8x` the previous magnitude, `32%` of that peak and `8px`. A meaningful reverse impulse follows the same minimum pause and magnitude floor. Line- and page-mode streams still require actual `180ms` quiet, so a long or spaced mouse-wheel roll cannot gain another landing token.
+- Once the quiet callback has actually fired, the next eligible event begins a fresh epoch without needing impulse classification. If the current handoff is still active, either kind of fresh epoch may occupy the one-slot semantic queue.
 - The queue stores direction and accumulated raw intent, never a pixel coordinate. It resolves one adjacent waypoint from the semantic landing, so repeated events within the queued epoch cannot reserve a second follow-on destination.
 - Changing delta mode or sending an extreme delta does not create another token. A dense line-mode burst and a long pixel stream still produce one landing.
 
@@ -181,7 +182,7 @@ Spatial motion belongs to the scroll handoff. Local component motion supports th
 
 ## Gesture ownership and safety
 
-Wheel input from the active epoch remains disarmed until the stream has been quiet for `180ms`. Accepted events reset that deadline even when the visual handoff is nearly complete or has already landed, so a long physical stream cannot become a second landing by crossing an animation-position threshold. After actual quiet, a fresh epoch may queue one adjacent semantic move while the current handoff finishes. Rearming depends only on input timing—never pointer movement, hover, or a click.
+Wheel input from the active epoch remains disarmed until the stream has been quiet for `180ms` or the timestamp-and-magnitude classifier identifies a fresh physical impulse. Accepted tail events reset the quiet deadline even when the visual handoff is nearly complete or has already landed, so a long physical stream cannot become a second landing by crossing an animation-position threshold. A fresh epoch may queue one adjacent semantic move while the current handoff finishes, or begin that move immediately when the previous landing has completed. Rearming depends only on wheel input evidence—never pointer movement, hover, or a click.
 
 If wheel direction reverses before commitment, the reversed preview may start from the current partial position, but its quiet rollback still resolves to the gesture's original composition. A reversal must never strand the page between stops.
 

@@ -14,12 +14,13 @@ import {
   type HandoffMode,
 } from './narrativeScroll'
 
-const wheelInput = (deltaY: number, deltaMode = 0) => ({
+const wheelInput = (deltaY: number, deltaMode = 0, timeStamp = 0) => ({
   ctrlKey: false,
   deltaMode,
   deltaX: 0,
   deltaY,
   preventDefault: vi.fn(),
+  timeStamp,
 })
 
 const touchInput = (clientX: number, clientY: number) => ({
@@ -202,12 +203,65 @@ describe('NarrativeGestureDirector', () => {
   it('absorbs one long wheel epoch through the final approach and landing', () => {
     const harness = createDirectorHarness([0, 600, 1200, 1800], 0, false)
 
-    harness.director.handleWheel(wheelInput(140))
+    harness.director.handleWheel(wheelInput(140, 0, 0))
     harness.setRenderedScroll(570)
-    harness.director.handleWheel(wheelInput(80))
+    harness.director.handleWheel(wheelInput(80, 0, 16))
     harness.completeAnimation()
-    harness.director.handleWheel(wheelInput(80))
-    harness.director.handleWheel(wheelInput(80))
+    harness.director.handleWheel(wheelInput(80, 0, 32))
+    harness.director.handleWheel(wheelInput(80, 0, 48))
+    harness.runQuietTimer()
+
+    expect(harness.animations).toEqual([600])
+  })
+
+  it('queues a deliberate second wheel impulse before the first handoff ends', () => {
+    const harness = createDirectorHarness([0, 600, 1200], 0, false)
+
+    harness.director.handleWheel(wheelInput(110, 0, 0))
+    harness.director.handleWheel(wheelInput(44, 0, 16))
+    harness.director.handleWheel(wheelInput(18, 0, 32))
+    harness.director.handleWheel(wheelInput(90, 0, 72))
+    harness.director.handleWheel(wheelInput(20, 0, 88))
+    harness.completeAnimation()
+
+    expect(harness.animations).toEqual([600, 1200])
+  })
+
+  it('queues a second wheel impulse after a short intra-animation pause', () => {
+    const harness = createDirectorHarness([0, 600, 1200], 0, false)
+
+    harness.director.handleWheel(wheelInput(110, 0, 0))
+    harness.director.handleWheel(wheelInput(20, 0, 16))
+    harness.director.handleWheel(wheelInput(42, 0, 104))
+    harness.director.handleWheel(wheelInput(60, 0, 120))
+    harness.completeAnimation()
+
+    expect(harness.animations).toEqual([600, 1200])
+  })
+
+  it('accepts a fresh impulse immediately after landing without pointer activity', () => {
+    const harness = createDirectorHarness([0, 600, 1200], 0, false)
+
+    harness.director.handleWheel(wheelInput(110, 0, 0))
+    harness.director.handleWheel(wheelInput(24, 0, 16))
+    harness.completeAnimation()
+    harness.director.handleWheel(wheelInput(12, 0, 32))
+    harness.director.handleWheel(wheelInput(90, 0, 80))
+    harness.director.handleWheel(wheelInput(20, 0, 96))
+
+    expect(harness.animations).toEqual([600, 1200])
+  })
+
+  it('keeps a decaying momentum tail inside the original landing token', () => {
+    const harness = createDirectorHarness([0, 600, 1200], 0, false)
+
+    harness.director.handleWheel(wheelInput(110, 0, 0))
+    harness.director.handleWheel(wheelInput(70, 0, 16))
+    harness.director.handleWheel(wheelInput(42, 0, 32))
+    harness.director.handleWheel(wheelInput(24, 0, 48))
+    harness.director.handleWheel(wheelInput(16, 0, 64))
+    harness.director.handleWheel(wheelInput(20, 0, 80))
+    harness.completeAnimation()
     harness.runQuietTimer()
 
     expect(harness.animations).toEqual([600])
@@ -217,8 +271,20 @@ describe('NarrativeGestureDirector', () => {
     const harness = createDirectorHarness([0, 600, 1200], 0, false)
 
     for (let index = 0; index < 12; index += 1) {
-      harness.director.handleWheel(wheelInput(3, 1))
+      harness.director.handleWheel(wheelInput(3, 1, index * 24))
       if (index === 8) harness.setRenderedScroll(570)
+    }
+    harness.completeAnimation()
+    harness.runQuietTimer()
+
+    expect(harness.animations).toEqual([600])
+  })
+
+  it('keeps a spaced line-wheel roll inside one landing token', () => {
+    const harness = createDirectorHarness([0, 600, 1200], 0, false)
+
+    for (let index = 0; index < 6; index += 1) {
+      harness.director.handleWheel(wheelInput(3, 1, index * 100))
     }
     harness.completeAnimation()
     harness.runQuietTimer()

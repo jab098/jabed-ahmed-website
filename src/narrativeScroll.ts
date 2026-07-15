@@ -14,6 +14,7 @@ export type WheelInput = {
   deltaX: number
   deltaY: number
   preventDefault: () => void
+  timeStamp: number
 }
 
 export type TouchPoint = {
@@ -55,6 +56,12 @@ const SETTLED_LAYOUT_DRIFT_TOLERANCE = 12
 const TOUCH_CLASSIFICATION_DISTANCE = 8
 const TOUCH_VERTICAL_DOMINANCE = 1.25
 const WHEEL_QUIET_MS = 180
+const WHEEL_IMPULSE_GAP_MS = 72
+const WHEEL_REBOUND_GAP_MS = 24
+const WHEEL_DECAY_RATIO = 0.55
+const WHEEL_REBOUND_RATIO = 1.8
+const WHEEL_REBOUND_PEAK_RATIO = 0.32
+const WHEEL_REBOUND_MINIMUM = 8
 const PREVIEW_TIME_CONSTANT_MS = 55
 
 function clamp(minimum: number, value: number, maximum: number) {
@@ -144,6 +151,15 @@ type QueuedWheelIntent = {
   quiet: boolean
 }
 
+type WheelStreamSample = {
+  decayed: boolean
+  deltaMode: number
+  direction: Direction
+  magnitude: number
+  peakMagnitude: number
+  timeStamp: number
+}
+
 type FollowOnOwner = 'touch' | 'wheel'
 
 type TouchSession = {
@@ -173,6 +189,7 @@ export class NarrativeGestureDirector {
   private touch?: TouchSession
   private wheel?: WheelSession
   private wheelDisarmed = false
+  private wheelSample?: WheelStreamSample
   private wheelStreamQuiet = false
   private readonly dependencies: DirectorDependencies
 
@@ -195,10 +212,30 @@ export class NarrativeGestureDirector {
     const direction: Direction = delta > 0 ? 1 : -1
     if (!this.dependencies.canClaim(direction)) return false
 
+    const magnitude = Math.abs(delta)
+    const freshImpulse = this.observeWheelImpulse(
+      direction,
+      magnitude,
+      input.deltaMode,
+      input.timeStamp,
+    )
+
+    if (!this.animationActive && freshImpulse && (this.wheel?.committed || this.wheelDisarmed)) {
+      this.clearQuietTimer()
+      this.wheel = undefined
+      this.queuedWheel = undefined
+      this.followOnOwner = undefined
+      this.wheelDisarmed = false
+      this.wheelStreamQuiet = false
+    }
+
     if (this.animationActive || this.wheel?.committed || this.wheelDisarmed) {
       input.preventDefault()
-      if (this.animationActive && (this.queuedWheel || this.wheelStreamQuiet)) {
-        this.captureQueuedWheel(direction, Math.abs(delta))
+      if (
+        this.animationActive &&
+        (freshImpulse || this.queuedWheel || this.wheelStreamQuiet)
+      ) {
+        this.captureQueuedWheel(direction, magnitude)
       }
       this.wheelDisarmed = true
       this.scheduleWheelQuiet()
@@ -474,6 +511,7 @@ export class NarrativeGestureDirector {
     this.queuedWheel = undefined
     this.queuedTouchDirection = undefined
     this.followOnOwner = undefined
+    this.wheelSample = undefined
     this.wheelStreamQuiet = false
     this.lastSettledViewportDetached = false
     this.touch = undefined
@@ -497,6 +535,7 @@ export class NarrativeGestureDirector {
     this.lastSettledWaypoint = undefined
     this.lastSettledViewportDetached = false
     this.wheelDisarmed = false
+    this.wheelSample = undefined
     this.wheelStreamQuiet = false
   }
 
@@ -779,7 +818,71 @@ export class NarrativeGestureDirector {
     this.queuedTouchDirection = undefined
     if (!preserveFollowOnOwner) this.followOnOwner = undefined
     this.wheelDisarmed = false
+    this.wheelSample = undefined
     this.wheelStreamQuiet = false
+  }
+
+  private observeWheelImpulse(
+    direction: Direction,
+    magnitude: number,
+    deltaMode: number,
+    timeStamp: number,
+  ) {
+    const previous = this.wheelSample
+    const at = Number.isFinite(timeStamp) ? timeStamp : previous?.timeStamp ?? 0
+
+    if (!previous || at < previous.timeStamp) {
+      this.wheelSample = {
+        decayed: false,
+        deltaMode,
+        direction,
+        magnitude,
+        peakMagnitude: magnitude,
+        timeStamp: at,
+      }
+      return false
+    }
+
+    const gap = at - previous.timeStamp
+    const canClassifyEarly = deltaMode === 0 && previous.deltaMode === 0
+    const paused = canClassifyEarly && gap >= WHEEL_IMPULSE_GAP_MS
+    const rebounded =
+      canClassifyEarly &&
+      gap >= WHEEL_REBOUND_GAP_MS &&
+      previous.decayed &&
+      magnitude >= WHEEL_REBOUND_MINIMUM &&
+      magnitude >= previous.magnitude * WHEEL_REBOUND_RATIO &&
+      magnitude >= previous.peakMagnitude * WHEEL_REBOUND_PEAK_RATIO
+    const reversed =
+      canClassifyEarly &&
+      gap >= WHEEL_REBOUND_GAP_MS &&
+      direction !== previous.direction &&
+      magnitude >= Math.max(WHEEL_REBOUND_MINIMUM, previous.magnitude)
+    const fresh = paused || rebounded || reversed
+
+    if (fresh) {
+      this.wheelSample = {
+        decayed: false,
+        deltaMode,
+        direction,
+        magnitude,
+        peakMagnitude: magnitude,
+        timeStamp: at,
+      }
+      return true
+    }
+
+    this.wheelSample = {
+      decayed:
+        previous.decayed ||
+        magnitude <= previous.peakMagnitude * WHEEL_DECAY_RATIO,
+      deltaMode,
+      direction,
+      magnitude,
+      peakMagnitude: Math.max(previous.peakMagnitude, magnitude),
+      timeStamp: at,
+    }
+    return false
   }
 
   private scheduleWheelQuiet() {
@@ -790,6 +893,7 @@ export class NarrativeGestureDirector {
       if (this.animationActive) {
         if (this.queuedWheel) this.queuedWheel.quiet = true
         else this.wheelStreamQuiet = true
+        this.wheelSample = undefined
         return
       }
       const queuedWheel = this.queuedWheel
