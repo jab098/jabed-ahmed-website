@@ -33,6 +33,10 @@ export type AnimationRequest = {
   onComplete: () => void
 }
 
+export type ReconcileOptions = {
+  preserveViewport?: boolean
+}
+
 export type DirectorDependencies = {
   getScrollY: () => number
   getViewportHeight: () => number
@@ -157,6 +161,7 @@ export class NarrativeGestureDirector {
   private cancelAnimation?: () => void
   private destroyed = false
   private lastSettledWaypoint?: ScrollWaypoint
+  private lastSettledViewportDetached = false
   private quietTimer?: unknown
   private queuedTouchDirection?: Direction
   private queuedWheel?: QueuedWheelIntent
@@ -204,7 +209,10 @@ export class NarrativeGestureDirector {
 
     if (!this.wheel) {
       const origin = this.dependencies.getScrollY()
-      const target = this.findGestureWaypoint(origin, direction)
+      const semanticOrigin = this.lastSettledViewportDetached && settleOrigin !== undefined
+        ? settleOrigin
+        : origin
+      const target = this.findGestureWaypoint(semanticOrigin, direction)
       if (!target) return false
 
       this.wheel = {
@@ -368,7 +376,7 @@ export class NarrativeGestureDirector {
     if (origin !== undefined) this.animateTo(origin, undefined, undefined, 'return')
   }
 
-  reconcileWaypoints() {
+  reconcileWaypoints({ preserveViewport = false }: ReconcileOptions = {}) {
     if (this.destroyed) return
     const points = this.dependencies.getWaypoints()
     const currentY = this.dependencies.getScrollY()
@@ -378,16 +386,31 @@ export class NarrativeGestureDirector {
       this.animationActive || Boolean(this.wheel) || Boolean(this.touch?.claimed)
     if (!hasActiveInteraction) {
       const settled = this.lastSettledWaypoint
-      if (!settled || Math.abs(currentY - settled.y) > WAYPOINT_DEDUPE_EPSILON) return
+      if (!settled || Math.abs(currentY - settled.y) > WAYPOINT_DEDUPE_EPSILON) {
+        this.lastSettledViewportDetached = false
+        return
+      }
       const refreshed = points.find((point) => point.id === settled.id)
       if (!refreshed) {
         this.lastSettledWaypoint = undefined
+        this.lastSettledViewportDetached = false
+        return
+      }
+      if (preserveViewport || this.lastSettledViewportDetached) {
+        this.lastSettledWaypoint = { ...refreshed, y: currentY }
+        this.lastSettledViewportDetached = true
         return
       }
       if (Math.abs(currentY - refreshed.y) > 0.5) this.dependencies.writeScroll(refreshed.y)
       this.lastSettledWaypoint = { ...refreshed }
+      this.lastSettledViewportDetached = false
       return
     }
+
+    if (
+      (preserveViewport || this.lastSettledViewportDetached) &&
+      this.preservePendingPreview(points)
+    ) return
 
     const preferredId =
       this.activeTargetId ??
@@ -423,7 +446,9 @@ export class NarrativeGestureDirector {
     if (Math.abs(currentY - destination.y) <= 0.5) {
       this.dependencies.writeScroll(destination.y)
       this.lastSettledWaypoint = { ...destination }
-      if (preserveWheelDisarm) this.scheduleWheelQuiet()
+      this.lastSettledViewportDetached = false
+      const continuedAfterLanding = this.continueAfterLanding(destination.y)
+      if (preserveWheelDisarm && !continuedAfterLanding) this.scheduleWheelQuiet()
       return
     }
     this.animateTo(destination.y, undefined, destination.id)
@@ -438,6 +463,7 @@ export class NarrativeGestureDirector {
     this.queuedWheel = undefined
     this.queuedTouchDirection = undefined
     this.wheelStreamQuiet = false
+    this.lastSettledViewportDetached = false
     this.touch = undefined
     this.cancelActiveAnimation()
     const targetId = this.dependencies
@@ -456,6 +482,7 @@ export class NarrativeGestureDirector {
     this.queuedTouchDirection = undefined
     this.touch = undefined
     this.lastSettledWaypoint = undefined
+    this.lastSettledViewportDetached = false
     this.wheelDisarmed = false
     this.wheelStreamQuiet = false
   }
@@ -481,29 +508,12 @@ export class NarrativeGestureDirector {
         this.activeTargetId = undefined
         this.cancelAnimation = undefined
         this.dependencies.writeScroll(target)
-        if (targetId) this.lastSettledWaypoint = { id: targetId, y: target }
+        if (targetId) {
+          this.lastSettledWaypoint = { id: targetId, y: target }
+          this.lastSettledViewportDetached = false
+        }
         afterComplete?.()
-
-        const queuedTouchDirection = this.queuedTouchDirection
-        if (queuedTouchDirection) {
-          this.resetWheelState()
-          this.startAdjacentHandoff(target, queuedTouchDirection)
-          return
-        }
-
-        const queuedWheel = this.queuedWheel
-        if (queuedWheel) {
-          this.queuedWheel = undefined
-          this.wheel = undefined
-          this.wheelDisarmed = false
-          this.wheelStreamQuiet = false
-          this.startQueuedWheel(target, queuedWheel)
-          return
-        }
-
-        if (this.wheelStreamQuiet) {
-          this.resetWheelState()
-        }
+        this.continueAfterLanding(target)
       },
     })
 
@@ -522,16 +532,95 @@ export class NarrativeGestureDirector {
     const settled = this.lastSettledWaypoint
     if (!settled || Math.abs(currentY - settled.y) > SETTLED_LAYOUT_DRIFT_TOLERANCE) {
       this.lastSettledWaypoint = undefined
+      this.lastSettledViewportDetached = false
       return findDirectionalWaypoint(points, currentY, direction)
     }
 
     const refreshed = points.find((point) => point.id === settled.id)
-    if (!refreshed || Math.abs(currentY - refreshed.y) > SETTLED_LAYOUT_DRIFT_TOLERANCE) {
+    if (!refreshed) {
+      this.lastSettledWaypoint = undefined
+      this.lastSettledViewportDetached = false
+      return findDirectionalWaypoint(points, currentY, direction)
+    }
+    if (this.lastSettledViewportDetached) {
+      return findDirectionalWaypoint(
+        points.filter((point) => point.id !== settled.id),
+        currentY,
+        direction,
+      )
+    }
+    if (Math.abs(currentY - refreshed.y) > SETTLED_LAYOUT_DRIFT_TOLERANCE) {
       return findDirectionalWaypoint(points, currentY, direction)
     }
     return findDirectionalWaypoint(
       points.filter((point) => point.id !== settled.id),
       currentY,
+      direction,
+    )
+  }
+
+  private preservePendingPreview(points: ScrollWaypoint[]) {
+    if (this.activeTargetId) return false
+
+    const wheel = this.wheel
+    if (wheel && !wheel.committed) {
+      const target = this.refreshPendingTarget(
+        points,
+        wheel.settleOrigin,
+        wheel.direction,
+        wheel.targetId,
+      )
+      if (target) {
+        wheel.target = target.y
+        wheel.targetId = target.id
+      }
+      return true
+    }
+
+    const touch = this.touch
+    if (touch?.claimed && !touch.blocked && !touch.committed && touch.direction) {
+      const target = this.refreshPendingTarget(
+        points,
+        touch.origin,
+        touch.direction,
+        touch.targetId,
+      )
+      if (target) {
+        touch.target = target.y
+        touch.targetId = target.id
+      }
+      return true
+    }
+
+    return this.animationActive
+  }
+
+  private refreshPendingTarget(
+    points: ScrollWaypoint[],
+    origin: number,
+    direction: Direction,
+    targetId?: string,
+  ) {
+    const settled = this.lastSettledWaypoint
+    if (settled && Math.abs(origin - settled.y) <= SETTLED_LAYOUT_DRIFT_TOLERANCE) {
+      const refreshedSettled = points.find((point) => point.id === settled.id)
+      if (refreshedSettled) {
+        this.lastSettledWaypoint = { ...refreshedSettled, y: origin }
+        this.lastSettledViewportDetached = true
+      }
+    }
+
+    const settledId = this.lastSettledViewportDetached
+      ? this.lastSettledWaypoint?.id
+      : undefined
+    const existingTarget = targetId === settledId
+      ? undefined
+      : points.find((point) => point.id === targetId)
+    if (existingTarget) return existingTarget
+
+    return findDirectionalWaypoint(
+      settledId ? points.filter((point) => point.id !== settledId) : points,
+      origin,
       direction,
     )
   }
@@ -549,6 +638,32 @@ export class NarrativeGestureDirector {
       queued.quiet = false
     }
     this.wheelStreamQuiet = false
+  }
+
+  private continueAfterLanding(target: number) {
+    const queuedTouchDirection = this.queuedTouchDirection
+    if (queuedTouchDirection) {
+      this.resetWheelState()
+      this.startAdjacentHandoff(target, queuedTouchDirection)
+      return true
+    }
+
+    const queuedWheel = this.queuedWheel
+    if (queuedWheel) {
+      this.queuedWheel = undefined
+      this.wheel = undefined
+      this.wheelDisarmed = false
+      this.wheelStreamQuiet = false
+      this.startQueuedWheel(target, queuedWheel)
+      return true
+    }
+
+    if (this.wheelStreamQuiet) {
+      this.resetWheelState()
+      return true
+    }
+
+    return false
   }
 
   private startQueuedWheel(origin: number, queued: QueuedWheelIntent) {
@@ -623,6 +738,7 @@ export class NarrativeGestureDirector {
         this.wheel = undefined
         return
       }
+      this.wheelStreamQuiet = true
       this.animateTo(
         session.settleOrigin,
         () => {

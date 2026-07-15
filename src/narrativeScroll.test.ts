@@ -233,6 +233,17 @@ describe('NarrativeGestureDirector', () => {
     expect(harness.animations).toEqual([1200, 600])
   })
 
+  it('drains a fresh queued wheel stream when a layout rebuild settles the landing', () => {
+    const harness = createDirectorHarness([0, 600, 1200], 0, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.runQuietTimer()
+    harness.director.handleWheel(wheelInput(10000))
+    harness.director.reconcileWaypoints()
+
+    expect(harness.animations).toEqual([600, 1200])
+  })
+
   it('keeps wheel momentum disarmed past a direct handoff until it is actually quiet', () => {
     const harness = createDirectorHarness([0, 600, 1200], 0, false)
 
@@ -276,6 +287,151 @@ describe('NarrativeGestureDirector', () => {
     expect(harness.animations).toEqual([500, 900])
   })
 
+  it('preserves the viewport through passive content reflow without revisiting the settled stop', () => {
+    const positions = [0, 600, 1200]
+    const harness = createDirectorHarness(positions)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.runQuietTimer()
+    positions[1] = 780
+    harness.director.reconcileWaypoints({ preserveViewport: true })
+    harness.director.reconcileWaypoints()
+
+    expect(harness.scrollWrites.at(-1)).toBe(600)
+
+    harness.director.handleWheel(wheelInput(10000))
+    expect(harness.animations).toEqual([600, 1200])
+  })
+
+  it('keeps passive wheel detachment through a short preview and return', () => {
+    const positions = [0, 600, 1200]
+    const harness = createDirectorHarness(positions)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.runQuietTimer()
+    positions[1] = 780
+    harness.director.reconcileWaypoints({ preserveViewport: true })
+
+    harness.director.handleWheel(wheelInput(20))
+    harness.director.reconcileWaypoints({ preserveViewport: true })
+    expect(harness.animations).toEqual([600])
+    expect(harness.scrollWrites.at(-1)).toBe(611)
+
+    harness.runQuietTimer()
+    harness.director.reconcileWaypoints()
+    expect(harness.animations).toEqual([600, 600])
+    expect(harness.scrollWrites.at(-1)).toBe(600)
+
+    harness.director.handleWheel(wheelInput(10000))
+    expect(harness.animations).toEqual([600, 600, 1200])
+  })
+
+  it('keeps passive wheel detachment when a short preview reverses', () => {
+    const positions = [0, 600, 1200]
+    const harness = createDirectorHarness(positions)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.runQuietTimer()
+    positions[1] = 780
+    harness.director.reconcileWaypoints({ preserveViewport: true })
+
+    harness.director.handleWheel(wheelInput(40))
+    harness.director.handleWheel(wheelInput(-20))
+    harness.runQuietTimer()
+    harness.director.reconcileWaypoints()
+    expect(harness.scrollWrites.at(-1)).toBe(600)
+
+    harness.director.handleWheel(wheelInput(10000))
+    expect(harness.animations).toEqual([600, 600, 1200])
+  })
+
+  it('keeps passive wheel detachment through an ordinary rebuild during return', () => {
+    const positions = [0, 600, 1200]
+    const harness = createDirectorHarness(positions, 0, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.completeAnimation()
+    harness.runQuietTimer()
+    positions[1] = 780
+    harness.director.reconcileWaypoints({ preserveViewport: true })
+
+    harness.director.handleWheel(wheelInput(20))
+    harness.runQuietTimer()
+    harness.director.reconcileWaypoints()
+    expect(harness.animations).toEqual([600, 600])
+
+    harness.completeAnimation()
+    harness.director.reconcileWaypoints()
+    expect(harness.scrollWrites.at(-1)).toBe(600)
+
+    harness.director.handleWheel(wheelInput(10000))
+    expect(harness.animations).toEqual([600, 600, 1200])
+  })
+
+  it('keeps passive touch detachment through a short preview and return', () => {
+    const positions = [0, 600, 1200]
+    const harness = createDirectorHarness(positions)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.runQuietTimer()
+    positions[1] = 780
+    harness.director.reconcileWaypoints({ preserveViewport: true })
+
+    harness.director.handleTouchStart(touchInput(100, 700))
+    harness.director.handleTouchMove(touchInput(100, 670))
+    harness.director.reconcileWaypoints({ preserveViewport: true })
+    expect(harness.animations).toEqual([600])
+    expect(harness.scrollWrites.at(-1)).toBeCloseTo(621.6)
+
+    harness.director.handleTouchEnd()
+    harness.director.reconcileWaypoints()
+    expect(harness.animations).toEqual([600, 600])
+    expect(harness.scrollWrites.at(-1)).toBe(600)
+
+    harness.director.handleTouchStart(touchInput(100, 700))
+    harness.director.handleTouchMove(touchInput(100, 500))
+    harness.director.handleTouchEnd()
+    expect(harness.animations).toEqual([600, 600, 1200])
+  })
+
+  it('keeps passive touch detachment through an ordinary rebuild during cancel return', () => {
+    const positions = [0, 600, 1200]
+    const harness = createDirectorHarness(positions, 0, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.completeAnimation()
+    harness.runQuietTimer()
+    positions[1] = 780
+    harness.director.reconcileWaypoints({ preserveViewport: true })
+
+    harness.director.handleTouchStart(touchInput(100, 700))
+    harness.director.handleTouchMove(touchInput(100, 640))
+    harness.director.handleTouchCancel()
+    harness.director.reconcileWaypoints()
+    expect(harness.animations).toEqual([600, 600])
+
+    harness.completeAnimation()
+    harness.director.reconcileWaypoints()
+    expect(harness.scrollWrites.at(-1)).toBe(600)
+
+    harness.director.handleTouchStart(touchInput(100, 700))
+    harness.director.handleTouchMove(touchInput(100, 500))
+    harness.director.handleTouchEnd()
+    expect(harness.animations).toEqual([600, 600, 1200])
+  })
+
+  it('still follows a refreshed settled waypoint during an active layout correction', () => {
+    const positions = [0, 600, 1200]
+    const harness = createDirectorHarness(positions)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.runQuietTimer()
+    positions[1] = 607
+    harness.director.reconcileWaypoints()
+
+    expect(harness.scrollWrites.at(-1)).toBe(607)
+  })
+
   it('re-resolves an active semantic target when waypoint geometry rebuilds', () => {
     const positions = [0, 600]
     const harness = createDirectorHarness(positions, 0, false)
@@ -308,6 +464,18 @@ describe('NarrativeGestureDirector', () => {
     harness.runQuietTimer()
     expect(harness.animations).toEqual([0])
     expect(harness.animationModes).toEqual(['return'])
+  })
+
+  it('queues a fresh wheel gesture that arrives during a return animation', () => {
+    const harness = createDirectorHarness([0, 600], 0, false)
+
+    harness.director.handleWheel(wheelInput(20))
+    harness.runQuietTimer()
+    harness.director.handleWheel(wheelInput(10000))
+    harness.completeAnimation()
+
+    expect(harness.animations).toEqual([0, 600])
+    expect(harness.animationModes).toEqual(['return', 'continue'])
   })
 
   it('reverses toward the closest waypoint without crossing it', () => {
@@ -388,6 +556,18 @@ describe('NarrativeGestureDirector', () => {
     harness.director.handleTouchMove(touchInput(100, 500))
     harness.director.handleTouchEnd()
     harness.completeAnimation()
+
+    expect(harness.animations).toEqual([600, 1200])
+  })
+
+  it('drains a queued touch swipe when a layout rebuild settles the landing', () => {
+    const harness = createDirectorHarness([0, 600, 1200], 0, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.director.handleTouchStart(touchInput(100, 700))
+    harness.director.handleTouchMove(touchInput(100, 500))
+    harness.director.handleTouchEnd()
+    harness.director.reconcileWaypoints()
 
     expect(harness.animations).toEqual([600, 1200])
   })

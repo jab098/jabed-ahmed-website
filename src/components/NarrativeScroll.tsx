@@ -27,8 +27,12 @@ export function NarrativeScroll() {
     registerMotion()
     let activeTarget: EventTarget | null = null
     let disposed = false
+    let faqLayoutChanging = false
+    let faqLayoutFallbackTimer = 0
     let rebuildFrame = 0
+    let preserveViewportOnRebuild = false
     let waypoints: ScrollWaypoint[] = []
+    const activeFaqTransitions = new Set<Element>()
 
     const previewFollower = createPreviewFollower({
       cancelFrame: (id) => window.cancelAnimationFrame(id),
@@ -43,13 +47,17 @@ export function NarrativeScroll() {
 
     const rebuild = () => {
       rebuildFrame = 0
+      const preserveViewport = preserveViewportOnRebuild
+      preserveViewportOnRebuild = false
       waypoints = collectNarrativeWaypoints()
-      director.reconcileWaypoints()
+      director.reconcileWaypoints({ preserveViewport })
     }
-    const scheduleRebuild = () => {
+    const scheduleRebuild = (preserveViewport = false) => {
       if (disposed) return
+      preserveViewportOnRebuild ||= preserveViewport
       if (!rebuildFrame) rebuildFrame = window.requestAnimationFrame(rebuild)
     }
+    const scheduleStandardRebuild = () => scheduleRebuild()
 
     const director = new NarrativeGestureDirector({
       animate: ({ to, duration, mode, onComplete }) => {
@@ -96,14 +104,33 @@ export function NarrativeScroll() {
       ScrollTrigger.refresh()
       scheduleRebuild()
     }
-    const onTransitionEnd = (event: TransitionEvent) => {
-      if (
-        event.target instanceof Element &&
-        event.target.matches('.faq-answer-shell') &&
-        event.propertyName === 'grid-template-rows'
-      ) {
-        scheduleRebuild()
-      }
+    const isFaqLayoutTransition = (event: TransitionEvent) =>
+      event.target instanceof Element &&
+      event.target.matches('.faq-answer-shell') &&
+      event.propertyName === 'grid-template-rows'
+    const markFaqLayoutChanging = () => {
+      faqLayoutChanging = true
+      window.clearTimeout(faqLayoutFallbackTimer)
+      faqLayoutFallbackTimer = window.setTimeout(() => {
+        scheduleRebuild(true)
+        faqLayoutChanging = false
+        activeFaqTransitions.clear()
+      }, 800)
+    }
+    const onTransitionRun = (event: TransitionEvent) => {
+      if (!isFaqLayoutTransition(event)) return
+      activeFaqTransitions.add(event.target as Element)
+      markFaqLayoutChanging()
+    }
+    const onTransitionComplete = (event: TransitionEvent) => {
+      if (!isFaqLayoutTransition(event)) return
+      activeFaqTransitions.delete(event.target as Element)
+      scheduleRebuild(true)
+      if (activeFaqTransitions.size > 0) return
+      window.clearTimeout(faqLayoutFallbackTimer)
+      window.requestAnimationFrame(() => {
+        faqLayoutChanging = false
+      })
     }
     const onDirectNavigation = (event: MouseEvent) => {
       if (
@@ -143,13 +170,27 @@ export function NarrativeScroll() {
       window.history.pushState(null, '', href)
     }
 
-    const resizeObserver = new ResizeObserver(scheduleRebuild)
+    const resizeObserver = new ResizeObserver(() => scheduleRebuild(faqLayoutChanging))
     const nav = document.querySelector('.site-nav')
     const main = document.querySelector('main')
     const footer = document.querySelector('footer')
     if (nav) resizeObserver.observe(nav)
     if (main) resizeObserver.observe(main)
     if (footer) resizeObserver.observe(footer)
+    const faqMutationObserver = new MutationObserver((mutations) => {
+      if (mutations.some((mutation) => mutation.target instanceof Element && mutation.target.matches('.faq-item'))) {
+        markFaqLayoutChanging()
+        scheduleRebuild(true)
+      }
+    })
+    const faqList = document.querySelector('.faq-list')
+    if (faqList) {
+      faqMutationObserver.observe(faqList, {
+        attributeFilter: ['class'],
+        attributes: true,
+        subtree: true,
+      })
+    }
 
     document.documentElement.classList.add('narrative-scroll-active')
     window.addEventListener('wheel', onWheel, { passive: false })
@@ -157,33 +198,39 @@ export function NarrativeScroll() {
     window.addEventListener('touchmove', onTouchMove, { passive: false })
     window.addEventListener('touchend', onTouchEnd, { passive: true })
     window.addEventListener('touchcancel', onTouchCancel, { passive: true })
-    window.addEventListener('resize', scheduleRebuild, { passive: true })
-    window.addEventListener('orientationchange', scheduleRebuild, { passive: true })
+    window.addEventListener('resize', scheduleStandardRebuild, { passive: true })
+    window.addEventListener('orientationchange', scheduleStandardRebuild, { passive: true })
     window.addEventListener('site:loader-complete', onLoaderComplete)
-    document.addEventListener('transitionend', onTransitionEnd)
+    document.addEventListener('transitionrun', onTransitionRun)
+    document.addEventListener('transitionend', onTransitionComplete)
+    document.addEventListener('transitioncancel', onTransitionComplete)
     document.addEventListener('click', onDirectNavigation)
-    ScrollTrigger.addEventListener('refresh', scheduleRebuild)
-    void document.fonts?.ready.then(scheduleRebuild)
+    ScrollTrigger.addEventListener('refresh', scheduleStandardRebuild)
+    void document.fonts?.ready.then(scheduleStandardRebuild)
     scheduleRebuild()
 
     return () => {
       disposed = true
       director.destroy()
       window.cancelAnimationFrame(rebuildFrame)
+      window.clearTimeout(faqLayoutFallbackTimer)
       previewFollower.cancel()
       resizeObserver.disconnect()
+      faqMutationObserver.disconnect()
       document.documentElement.classList.remove('narrative-scroll-active')
       window.removeEventListener('wheel', onWheel)
       window.removeEventListener('touchstart', onTouchStart)
       window.removeEventListener('touchmove', onTouchMove)
       window.removeEventListener('touchend', onTouchEnd)
       window.removeEventListener('touchcancel', onTouchCancel)
-      window.removeEventListener('resize', scheduleRebuild)
-      window.removeEventListener('orientationchange', scheduleRebuild)
+      window.removeEventListener('resize', scheduleStandardRebuild)
+      window.removeEventListener('orientationchange', scheduleStandardRebuild)
       window.removeEventListener('site:loader-complete', onLoaderComplete)
-      document.removeEventListener('transitionend', onTransitionEnd)
+      document.removeEventListener('transitionrun', onTransitionRun)
+      document.removeEventListener('transitionend', onTransitionComplete)
+      document.removeEventListener('transitioncancel', onTransitionComplete)
       document.removeEventListener('click', onDirectNavigation)
-      ScrollTrigger.removeEventListener('refresh', scheduleRebuild)
+      ScrollTrigger.removeEventListener('refresh', scheduleStandardRebuild)
     }
   }, [])
 
