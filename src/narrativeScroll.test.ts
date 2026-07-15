@@ -5,8 +5,13 @@ import {
   handoffDuration,
   NarrativeGestureDirector,
   normalizeWheelDelta,
+  previewFollowPosition,
+  returnDuration,
+  touchPreviewDistance,
   touchIntentThreshold,
+  wheelPreviewDistance,
   wheelIntentThreshold,
+  type HandoffMode,
 } from './narrativeScroll'
 
 const wheelInput = (deltaY: number, deltaX = 0) => ({
@@ -32,6 +37,7 @@ function createDirectorHarness(
   let animationCancellationCount = 0
   let pendingAnimationCompletion = () => {}
   const animations: number[] = []
+  const animationModes: HandoffMode[] = []
   const immediateScrollWrites: number[] = []
   const scrollWrites: number[] = []
   const director = new NarrativeGestureDirector({
@@ -47,8 +53,9 @@ function createDirectorHarness(
       scrollY = y
       immediateScrollWrites.push(y)
     },
-    animate: ({ to, onComplete }) => {
+    animate: ({ to, mode, onComplete }) => {
       animations.push(to)
+      animationModes.push(mode)
       scrollY = to
       pendingAnimationCompletion = onComplete
       if (completeAnimationsSynchronously) {
@@ -67,6 +74,7 @@ function createDirectorHarness(
   })
 
   return {
+    animationModes,
     animations,
     completeAnimation: () => {
       pendingAnimationCompletion()
@@ -143,6 +151,21 @@ describe('narrative waypoint model', () => {
     expect(wheelIntentThreshold(800)).toBe(96)
     expect(touchIntentThreshold(800)).toBe(80)
     expect(handoffDuration(2000)).toBe(980)
+    expect(returnDuration(0)).toBe(380)
+    expect(returnDuration(200)).toBe(580)
+  })
+
+  it('dampens visible previews without dampening the raw commitment signal', () => {
+    expect(wheelPreviewDistance(80, 600)).toBe(44)
+    expect(touchPreviewDistance(80, 600)).toBeCloseTo(57.6)
+  })
+
+  it('follows preview targets consistently across display refresh rates', () => {
+    const oneFrame = previewFollowPosition(0, 100, 16)
+    const firstHalfFrame = previewFollowPosition(0, 100, 8)
+    const twoHalfFrames = previewFollowPosition(firstHalfFrame, 100, 8)
+
+    expect(twoHalfFrames).toBeCloseTo(oneFrame, 10)
   })
 })
 
@@ -154,6 +177,7 @@ describe('NarrativeGestureDirector', () => {
     expect(harness.director.handleWheel(input)).toBe(true)
     expect(input.preventDefault).toHaveBeenCalledOnce()
     expect(harness.animations).toEqual([600])
+    expect(harness.animationModes).toEqual(['continue'])
     expect(harness.scrollWrites.every((value) => value <= 600)).toBe(true)
   })
 
@@ -173,6 +197,7 @@ describe('NarrativeGestureDirector', () => {
     const harness = createDirectorHarness([0, 600, 1200], 0, false)
 
     harness.director.goTo(600)
+    expect(harness.animationModes).toEqual(['direct'])
     expect(harness.director.handleWheel(wheelInput(10000))).toBe(true)
     harness.completeAnimation()
     expect(harness.director.handleWheel(wheelInput(10000))).toBe(true)
@@ -221,6 +246,17 @@ describe('NarrativeGestureDirector', () => {
 
     expect(harness.animationCancellationCount).toBe(1)
     expect(harness.animations).toEqual([600, 650])
+    expect(harness.animationModes).toEqual(['continue', 'direct'])
+  })
+
+  it('commits from raw wheel intent even when the visible preview is damped', () => {
+    const harness = createDirectorHarness([0, 80])
+
+    harness.director.handleWheel(wheelInput(80))
+
+    expect(harness.scrollWrites[0]).toBe(44)
+    expect(harness.animations).toEqual([80])
+    expect(harness.animationModes).toEqual(['continue'])
   })
 
   it('settles a sub-threshold wheel gesture back to its origin', () => {
@@ -231,6 +267,7 @@ describe('NarrativeGestureDirector', () => {
 
     harness.runQuietTimer()
     expect(harness.animations).toEqual([0])
+    expect(harness.animationModes).toEqual(['return'])
   })
 
   it('reverses toward the closest waypoint without crossing it', () => {
@@ -263,7 +300,20 @@ describe('NarrativeGestureDirector', () => {
     harness.director.handleTouchEnd()
 
     expect(harness.animations).toEqual([600])
+    expect(harness.animationModes).toEqual(['continue'])
     expect(harness.scrollWrites.every((value) => value <= 600)).toBe(true)
+  })
+
+  it('commits from raw touch travel even when the visible preview is damped', () => {
+    const harness = createDirectorHarness([0, 80])
+
+    harness.director.handleTouchStart(touchInput(100, 700))
+    harness.director.handleTouchMove(touchInput(100, 620))
+    harness.director.handleTouchEnd()
+
+    expect(harness.scrollWrites[0]).toBeCloseTo(57.6)
+    expect(harness.animations).toEqual([80])
+    expect(harness.animationModes).toEqual(['continue'])
   })
 
   it('absorbs a new vertical touch while a handoff is still active', () => {
@@ -286,6 +336,7 @@ describe('NarrativeGestureDirector', () => {
     harness.director.handleTouchEnd()
 
     expect(harness.animations).toEqual([0])
+    expect(harness.animationModes).toEqual(['return'])
   })
 
   it('settles a claimed touch cancellation back to its origin', () => {
@@ -296,6 +347,7 @@ describe('NarrativeGestureDirector', () => {
     harness.director.handleTouchCancel()
 
     expect(harness.animations).toEqual([0])
+    expect(harness.animationModes).toEqual(['return'])
   })
 
   it('leaves horizontal and multi-touch gestures native', () => {

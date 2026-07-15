@@ -1,5 +1,7 @@
 export type Direction = -1 | 1
 
+export type HandoffMode = 'continue' | 'return' | 'direct'
+
 export type ScrollWaypoint = {
   id: string
   y: number
@@ -27,6 +29,7 @@ export type TouchInput = {
 export type AnimationRequest = {
   to: number
   duration: number
+  mode: HandoffMode
   onComplete: () => void
 }
 
@@ -48,6 +51,7 @@ const SETTLED_LAYOUT_DRIFT_TOLERANCE = 12
 const TOUCH_CLASSIFICATION_DISTANCE = 8
 const TOUCH_VERTICAL_DOMINANCE = 1.25
 const WHEEL_QUIET_MS = 180
+const PREVIEW_TIME_CONSTANT_MS = 55
 
 function clamp(minimum: number, value: number, maximum: number) {
   return Math.min(maximum, Math.max(minimum, value))
@@ -69,6 +73,27 @@ export function touchIntentThreshold(viewportHeight: number) {
 
 export function handoffDuration(distance: number) {
   return clamp(520, 520 + Math.abs(distance) * 0.32, 980)
+}
+
+export function returnDuration(distance: number) {
+  return clamp(380, 340 + Math.abs(distance) * 1.6, 580)
+}
+
+export function wheelPreviewDistance(rawIntent: number, targetDistance: number) {
+  return Math.min(Math.max(0, rawIntent) * 0.55, Math.max(0, targetDistance))
+}
+
+export function touchPreviewDistance(rawTravel: number, targetDistance: number) {
+  return Math.min(Math.max(0, rawTravel) * 0.72, Math.max(0, targetDistance))
+}
+
+export function previewFollowPosition(
+  current: number,
+  target: number,
+  elapsedMs: number,
+) {
+  const progress = 1 - Math.exp(-Math.max(0, elapsedMs) / PREVIEW_TIME_CONSTANT_MS)
+  return current + (target - current) * progress
 }
 
 export function findDirectionalWaypoint(
@@ -188,12 +213,12 @@ export class NarrativeGestureDirector {
     session.accumulatedIntent += Math.abs(delta)
     const threshold = wheelIntentThreshold(this.dependencies.getViewportHeight())
     const targetDistance = Math.abs(session.target - session.origin)
-    const previewDistance = Math.min(session.accumulatedIntent, threshold, targetDistance)
+    const previewDistance = wheelPreviewDistance(session.accumulatedIntent, targetDistance)
     this.dependencies.writeScroll(session.origin + session.direction * previewDistance)
 
-    if (session.accumulatedIntent >= threshold || previewDistance >= targetDistance) {
+    if (session.accumulatedIntent >= threshold || session.accumulatedIntent >= targetDistance) {
       session.committed = true
-      this.animateTo(session.target, undefined, session.targetId)
+      this.animateTo(session.target, undefined, session.targetId, 'continue')
     }
 
     this.scheduleWheelQuiet()
@@ -285,11 +310,11 @@ export class NarrativeGestureDirector {
     input.preventDefault()
     const target = session.target as number
     const targetDistance = Math.abs(target - session.origin)
-    const previewDistance = Math.min(absoluteVertical, targetDistance)
+    const previewDistance = touchPreviewDistance(absoluteVertical, targetDistance)
     this.dependencies.writeScroll(session.origin + direction * previewDistance)
     session.committed =
       absoluteVertical >= touchIntentThreshold(this.dependencies.getViewportHeight()) ||
-      previewDistance >= targetDistance
+      absoluteVertical >= targetDistance
     return true
   }
 
@@ -306,15 +331,16 @@ export class NarrativeGestureDirector {
 
     const destination = session.committed ? session.target : session.origin
     const destinationId = session.committed ? session.targetId : undefined
+    const mode: HandoffMode = session.committed ? 'continue' : 'return'
     this.touch = undefined
-    this.animateTo(destination, undefined, destinationId)
+    this.animateTo(destination, undefined, destinationId, mode)
     return true
   }
 
   handleTouchCancel() {
     const origin = this.touch?.claimed && !this.touch.blocked ? this.touch.origin : undefined
     this.touch = undefined
-    if (origin !== undefined) this.animateTo(origin)
+    if (origin !== undefined) this.animateTo(origin, undefined, undefined, 'return')
   }
 
   reconcileWaypoints() {
@@ -404,14 +430,21 @@ export class NarrativeGestureDirector {
     this.rearmAfterAnimation = false
   }
 
-  private animateTo(target: number, afterComplete?: () => void, targetId?: string) {
+  private animateTo(
+    target: number,
+    afterComplete?: () => void,
+    targetId?: string,
+    mode: HandoffMode = 'direct',
+  ) {
     this.cancelActiveAnimation()
     this.animationActive = true
     this.activeTargetId = targetId
     let completedSynchronously = false
+    const distance = target - this.dependencies.getScrollY()
     const cancellation = this.dependencies.animate({
       to: target,
-      duration: handoffDuration(target - this.dependencies.getScrollY()),
+      duration: mode === 'return' ? returnDuration(distance) : handoffDuration(distance),
+      mode,
       onComplete: () => {
         completedSynchronously = true
         this.animationActive = false
@@ -472,9 +505,14 @@ export class NarrativeGestureDirector {
         this.wheel = undefined
         return
       }
-      this.animateTo(session.settleOrigin, () => {
-        this.wheel = undefined
-      })
+      this.animateTo(
+        session.settleOrigin,
+        () => {
+          this.wheel = undefined
+        },
+        undefined,
+        'return',
+      )
     }, WHEEL_QUIET_MS)
   }
 
