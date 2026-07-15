@@ -1,4 +1,4 @@
-import { useEffect, useRef, type CSSProperties } from 'react'
+import { useEffect, useRef } from 'react'
 import { ArrowUpRight } from 'lucide-react'
 import { CAPABILITIES } from '../data'
 
@@ -22,19 +22,37 @@ export function Capabilities() {
   useEffect(() => {
     const root = rootRef.current
     if (!root) return
-    const observer = new IntersectionObserver(([entry]) => {
+    const headerObserver = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) {
         root.classList.add('is-visible')
-        observer.disconnect()
+        headerObserver.disconnect()
       }
     }, { threshold: 0.1 })
-    observer.observe(root)
-    return () => observer.disconnect()
+    const cardObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return
+        entry.target.classList.add('is-visible')
+        cardObserver.unobserve(entry.target)
+      })
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.16 })
+
+    headerObserver.observe(root)
+    root.querySelectorAll('.capabilities-grid article').forEach((card) => cardObserver.observe(card))
+    return () => {
+      headerObserver.disconnect()
+      cardObserver.disconnect()
+    }
   }, [])
 
   return (
-    <section ref={rootRef} id="capabilities" className="capabilities-section" aria-labelledby="capabilities-title">
-      <header className="capabilities-header">
+    <section
+      ref={rootRef}
+      id="capabilities"
+      className="capabilities-section"
+      aria-labelledby="capabilities-title"
+      data-scroll-scene="capabilities"
+    >
+      <header className="capabilities-header" data-scroll-waypoint="capabilities-heading">
         <p className="eyebrow">// Inside the system</p>
         <h2 id="capabilities-title" aria-label="What's in a reliable measurement system?">
           <span>What’s in a reliable</span>
@@ -44,7 +62,13 @@ export function Capabilities() {
       </header>
       <div className="capabilities-grid">
         {CAPABILITIES.map((capability, index) => (
-          <article key={capability.number} tabIndex={0} style={{ '--delay': `${index * 80}ms` } as CSSProperties}>
+          <article
+            className="capability-card"
+            key={capability.number}
+            tabIndex={0}
+            data-scroll-waypoint-desktop={`capability-0${index + 1}`}
+            data-scroll-waypoint-mobile={`capability-0${index + 1}`}
+          >
             <CapabilityMotif index={index} />
             <div className="capability-card__top">
               <span>{capability.number}</span>

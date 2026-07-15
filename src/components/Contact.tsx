@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef } from 'react'
 import { ArrowUpRight } from 'lucide-react'
 import { CALENDLY_URL, EMAIL, LINKEDIN_URL } from '../data'
-import { gsap } from '../motion'
+import { gsap, navigationEdgeScrollPosition } from '../motion'
 import { FooterGlyphStream } from './FooterGlyphStream'
 
 export function Contact() {
@@ -15,7 +15,13 @@ export function Contact() {
         yPercent: 0,
         stagger: 0.08,
         ease: 'power4.out',
-        scrollTrigger: { trigger: root, start: 'top 68%', end: 'center 54%', scrub: 0.7 },
+        scrollTrigger: {
+          trigger: root,
+          start: 'top 68%',
+          end: navigationEdgeScrollPosition,
+          scrub: 0.7,
+          invalidateOnRefresh: true,
+        },
       })
       gsap.fromTo('.contact-actions-new', { opacity: 0, y: 34 }, {
         opacity: 1,
@@ -35,7 +41,14 @@ export function Contact() {
 
   return (
     <>
-      <section ref={rootRef} id="contact" className="contact-section" aria-labelledby="contact-title">
+      <section
+        ref={rootRef}
+        id="contact"
+        className="contact-section"
+        aria-labelledby="contact-title"
+        data-scroll-scene="contact"
+        data-scroll-waypoint="contact"
+      >
         <div className="contact-topline-new">
           <span>// Start a conversation</span>
           <span>Independent consulting · London / worldwide</span>
@@ -55,7 +68,12 @@ export function Contact() {
         </div>
       </section>
 
-      <footer className="signal-footer">
+      <footer
+        className="signal-footer"
+        data-scroll-align="viewport"
+        data-scroll-scene="footer"
+        data-scroll-waypoint="footer"
+      >
         <FooterGlyphStream />
         <div className="signal-footer__top">
           <span>JA / DATA</span>

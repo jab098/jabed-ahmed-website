@@ -19,6 +19,17 @@ html {
   background: var(--ink);
 }
 
+html.narrative-scroll-active {
+  scroll-behavior: auto;
+  overflow-anchor: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 body {
   width: 100%;
   margin: 0;

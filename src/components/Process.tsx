@@ -1,6 +1,8 @@
-import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { PROCESS_STEPS } from '../data'
-import { gsap, ScrollTrigger } from '../motion'
+import { gsap, navigationEdgeScrollPosition, ScrollTrigger } from '../motion'
+
+const PROCESS_SCROLL_PROGRESS = [0.08, 0.34, 0.6, 0.86] as const
 
 function ProcessVisual({ index }: { index: number }) {
   const step = PROCESS_STEPS[index]
@@ -102,13 +104,24 @@ function ProcessVisual({ index }: { index: number }) {
 
 export function Process() {
   const [activeStep, setActiveStep] = useState(0)
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches,
+  )
   const rootRef = useRef<HTMLElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 900px)')
+    const update = () => setIsMobile(query.matches)
+    update()
+    query.addEventListener('change', update)
+    return () => query.removeEventListener('change', update)
+  }, [])
 
   useLayoutEffect(() => {
     const root = rootRef.current
     const stage = stageRef.current
-    if (!root || !stage || navigator.userAgent.includes('jsdom')) return
+    if (!root || navigator.userAgent.includes('jsdom')) return
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const context = gsap.context(() => {
@@ -119,12 +132,19 @@ export function Process() {
           yPercent: 0,
           stagger: 0.08,
           ease: 'power4.out',
-          scrollTrigger: { trigger: '.process-intro', start: 'top 68%', end: 'bottom 60%', scrub: 0.7 },
+          scrollTrigger: {
+            trigger: '.process-intro',
+            start: 'top 68%',
+            end: navigationEdgeScrollPosition,
+            scrub: 0.7,
+            invalidateOnRefresh: true,
+          },
         },
       )
 
-      if (!reduced && window.matchMedia('(min-width: 901px)').matches) {
+      if (stage && !reduced && !isMobile) {
         ScrollTrigger.create({
+          id: 'process-pin',
           trigger: stage,
           start: 'top top',
           end: '+=300%',
@@ -139,11 +159,17 @@ export function Process() {
     }, root)
 
     return () => context.revert()
-  }, [])
+  }, [isMobile])
 
   return (
-    <section ref={rootRef} id="process" className="process-section" aria-labelledby="process-title">
-      <header className="process-intro">
+    <section
+      ref={rootRef}
+      id="process"
+      className="process-section"
+      aria-labelledby="process-title"
+      data-scroll-scene="process"
+    >
+      <header className="process-intro" data-scroll-waypoint="process-heading">
         <p className="eyebrow">// How I work</p>
         <h2 id="process-title" aria-label="How I turn uncertainty into a working data system.">
           <span className="process-intro__line"><span>How I turn</span></span>
@@ -153,35 +179,59 @@ export function Process() {
         <p className="process-intro__aside">Four disciplined moves. One system your team can trust, use and improve.</p>
       </header>
 
-      <div ref={stageRef} className="process-stage">
-        <div className="process-stage__rail">
-          <p className="eyebrow">// The method</p>
-          <div className="process-tabs" role="group" aria-label="Process stages">
-            {PROCESS_STEPS.map((step, index) => (
-              <button
-                type="button"
-                key={step.number}
-                className={activeStep === index ? 'is-active' : ''}
-                aria-pressed={activeStep === index}
-                aria-label={`${step.number} ${step.title}`}
-                onClick={() => setActiveStep(index)}
-              >
-                <span>{step.number}</span>
-                <strong>{step.title}</strong>
-                <i aria-hidden="true" />
-              </button>
-            ))}
-          </div>
-          <div className="process-stage__copy" key={`copy-${activeStep}`}>
-            <span>{PROCESS_STEPS[activeStep].number} / 04</span>
-            <p>{PROCESS_STEPS[activeStep].copy}</p>
-          </div>
+      {isMobile ? (
+        <div className="process-mobile" aria-label="Process stages">
+          {PROCESS_STEPS.map((step, index) => (
+            <article
+              className="process-mobile__scene"
+              data-scroll-waypoint-mobile={`process-0${index + 1}`}
+              key={step.number}
+            >
+              <div className="process-mobile__copy">
+                <span>{step.number} / 04</span>
+                <h3>{step.title}</h3>
+                <p>{step.copy}</p>
+              </div>
+              <div className="process-mobile__display">
+                <ProcessVisual index={index} />
+              </div>
+            </article>
+          ))}
         </div>
-        <div className="process-stage__display" key={`visual-${activeStep}`}>
-          <ProcessVisual index={activeStep} />
+      ) : (
+        <div ref={stageRef} className="process-stage process-stage--desktop">
+          <div className="process-stage__rail">
+            <p className="eyebrow">// The method</p>
+            <div className="process-tabs" role="group" aria-label="Process stages">
+              {PROCESS_STEPS.map((step, index) => (
+                <button
+                  type="button"
+                  key={step.number}
+                  className={activeStep === index ? 'is-active' : ''}
+                  aria-pressed={activeStep === index}
+                  aria-label={`${step.number} ${step.title}`}
+                  data-scroll-virtual={`process-0${index + 1}`}
+                  data-scroll-trigger="process-pin"
+                  data-scroll-progress={PROCESS_SCROLL_PROGRESS[index]}
+                  onClick={() => setActiveStep(index)}
+                >
+                  <span>{step.number}</span>
+                  <strong>{step.title}</strong>
+                  <i aria-hidden="true" />
+                </button>
+              ))}
+            </div>
+            <div className="process-stage__copy" key={`copy-${activeStep}`}>
+              <span>{PROCESS_STEPS[activeStep].number} / 04</span>
+              <p>{PROCESS_STEPS[activeStep].copy}</p>
+            </div>
+          </div>
+          <div className="process-stage__display" key={`visual-${activeStep}`}>
+            <ProcessVisual index={activeStep} />
+          </div>
+          <div className="process-stage__progress" aria-hidden="true"><i style={{ transform: `scaleX(${(activeStep + 1) / 4})` }} /></div>
         </div>
-        <div className="process-stage__progress" aria-hidden="true"><i style={{ transform: `scaleX(${(activeStep + 1) / 4})` }} /></div>
-      </div>
+      )}
     </section>
   )
 }

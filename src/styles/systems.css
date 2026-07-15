@@ -59,9 +59,11 @@
   color: var(--ink);
   background: var(--paper);
   grid-template-columns: 58% 42%;
-  transition: color 400ms ease, background 400ms ease;
+  opacity: 0;
+  transition: color 400ms ease, background 400ms ease, opacity 650ms ease;
 }
 
+.system-card.is-visible { opacity: 1; }
 .system-card:nth-child(even) { color: var(--ink); background: var(--signal); }
 .system-card:focus-visible { outline: 2px solid var(--signal); outline-offset: 4px; }
 .system-card__visual { position: relative; overflow: hidden; border-right: 1px solid currentColor; }
@@ -204,6 +206,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .system-card { opacity: 1 !important; }
   .systems-heading__line > span,
   .measurement-map__routes path { opacity: 1 !important; transform: none !important; }
   .pipeline-graphic path { animation: none; }

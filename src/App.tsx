@@ -7,6 +7,7 @@ import { Capabilities } from './components/Capabilities'
 import { Faq } from './components/Faq'
 import { Contact } from './components/Contact'
 import { PageLoader } from './components/PageLoader'
+import { NarrativeScroll } from './components/NarrativeScroll'
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
         <Faq />
         <Contact />
       </main>
+      <NarrativeScroll />
     </div>
   )
 }

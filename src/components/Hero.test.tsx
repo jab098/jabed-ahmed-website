@@ -3,13 +3,18 @@ import { expect, it } from 'vitest'
 import { Hero } from './Hero'
 
 it('presents the approved data consultancy proposition and next action', () => {
-  render(<Hero />)
+  const { container } = render(<Hero />)
 
   expect(
     screen.getByRole('heading', { name: 'Build data systems that make the next decision obvious.' }),
   ).toBeInTheDocument()
   expect(screen.getByText('I build tracking and data-collection systems.')).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'See how I work' })).toHaveAttribute('href', '#process')
+  expect(container.querySelector('#home')).toHaveAttribute('data-scroll-waypoint', 'home')
+  expect(container.querySelector('.hero-visual')).toHaveAttribute(
+    'data-scroll-waypoint-mobile',
+    'hero-report',
+  )
 })
 
 it('keeps the glyph interaction on the report and cycles its colour palette', () => {

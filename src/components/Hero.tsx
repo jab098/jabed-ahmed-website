@@ -106,7 +106,13 @@ export function Hero() {
   }, [])
 
   return (
-    <section ref={rootRef} id="home" className="hero-section">
+    <section
+      ref={rootRef}
+      id="home"
+      className="hero-section"
+      data-scroll-scene="home"
+      data-scroll-waypoint="home"
+    >
       <div className="hero-copy">
         <p className="hero-copy__meta">DATA SYSTEMS / EXPERIMENTATION / DECISION DESIGN</p>
         <h1 aria-label="Build data systems that make the next decision obvious.">
@@ -136,7 +142,11 @@ export function Hero() {
           <span>London / Worldwide</span>
         </div>
       </div>
-      <div className="hero-visual" data-hero-visual-entrance="soft">
+      <div
+        className="hero-visual"
+        data-hero-visual-entrance="soft"
+        data-scroll-waypoint-mobile="hero-report"
+      >
         <GlyphReport active={reportActive} />
       </div>
       <a className="hero-scroll" href="#proof" aria-label="Scroll to proof">

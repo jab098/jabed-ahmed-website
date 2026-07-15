@@ -3,7 +3,7 @@ import { expect, it } from 'vitest'
 import { Metrics } from './Metrics'
 
 it('renders the evidence tile and accessible rolling metric values', () => {
-  render(<Metrics />)
+  const { container } = render(<Metrics />)
 
   expect(screen.getByRole('heading', { name: 'Proof in the system.' })).toBeInTheDocument()
   expect(screen.getByLabelText('8+ Years of experience')).toBeInTheDocument()
@@ -15,4 +15,6 @@ it('renders the evidence tile and accessible rolling metric values', () => {
   expect(screen.getByLabelText('8+ Years of experience').querySelectorAll('[data-digit-reel]')).toHaveLength(0)
   expect(screen.getByLabelText('16 Global markets').querySelectorAll('[data-digit-reel]')).toHaveLength(0)
   expect(document.querySelectorAll('[data-digit-reel]')).toHaveLength(0)
+  expect(container.querySelector('#proof')).toHaveAttribute('data-scroll-waypoint', 'proof')
+  expect(container.querySelectorAll('[data-scroll-waypoint-mobile^="proof-metric-"]')).toHaveLength(3)
 })

@@ -1,7 +1,7 @@
-import { useLayoutEffect, useRef, type CSSProperties } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { ArrowUpRight } from 'lucide-react'
 import { SYSTEMS } from '../data'
-import { gsap } from '../motion'
+import { gsap, navigationEdgeScrollPosition } from '../motion'
 
 function SystemGraphic({ index }: { index: number }) {
   if (index === 0) {
@@ -79,9 +79,35 @@ function SystemGraphic({ index }: { index: number }) {
 }
 
 export function SystemsShowcase() {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches,
+  )
   const rootRef = useRef<HTMLElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 900px)')
+    const update = () => setIsMobile(query.matches)
+    update()
+    query.addEventListener('change', update)
+    return () => query.removeEventListener('change', update)
+  }, [])
+
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return
+        entry.target.classList.add('is-visible')
+        observer.unobserve(entry.target)
+      })
+    }, { rootMargin: '0px -6% 0px -6%', threshold: 0.18 })
+
+    root.querySelectorAll('.system-card').forEach((card) => observer.observe(card))
+    return () => observer.disconnect()
+  }, [])
 
   useLayoutEffect(() => {
     const root = rootRef.current
@@ -94,17 +120,24 @@ export function SystemsShowcase() {
         yPercent: 0,
         stagger: 0.08,
         ease: 'power4.out',
-        scrollTrigger: { trigger: '.systems-header', start: 'top 70%', end: 'bottom 50%', scrub: 0.7 },
+        scrollTrigger: {
+          trigger: '.systems-header',
+          start: 'top 70%',
+          end: navigationEdgeScrollPosition,
+          scrub: 0.7,
+          invalidateOnRefresh: true,
+        },
       })
 
       const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
       const endWord = root.querySelector<HTMLElement>('.systems-track__end em')
 
-      if (!reduced && window.matchMedia('(min-width: 901px)').matches) {
+      if (!reduced && !isMobile) {
         const horizontalTween = gsap.to(track, {
           x: () => -(track.scrollWidth - window.innerWidth + window.innerWidth * 0.04),
           ease: 'none',
           scrollTrigger: {
+            id: 'systems-pin',
             trigger: stage,
             start: 'top top',
             end: () => `+=${Math.max(track.scrollWidth - window.innerWidth, window.innerHeight * 2.8)}`,
@@ -140,11 +173,17 @@ export function SystemsShowcase() {
     }, root)
 
     return () => context.revert()
-  }, [])
+  }, [isMobile])
 
   return (
-    <section ref={rootRef} id="systems" className="systems-section" aria-labelledby="systems-title">
-      <header className="systems-header">
+    <section
+      ref={rootRef}
+      id="systems"
+      className="systems-section"
+      aria-labelledby="systems-title"
+      data-scroll-scene="systems"
+    >
+      <header className="systems-header" data-scroll-waypoint="systems-heading">
         <p className="eyebrow">// Working systems</p>
         <h2 id="systems-title" aria-label="Selected systems.">
           <span className="systems-heading__line"><span>Selected</span></span>
@@ -158,9 +197,20 @@ export function SystemsShowcase() {
           <span>SCROLL TO EXPLORE</span>
           <span>01—04</span>
         </div>
-        <div ref={trackRef} className="systems-track">
+        <div
+          ref={trackRef}
+          className="systems-track"
+          data-scroll-track
+          data-scroll-trigger="systems-pin"
+        >
           {SYSTEMS.map((system, index) => (
-            <article className="system-card" key={system.number} tabIndex={0}>
+            <article
+              className="system-card"
+              data-scroll-track-waypoint={`system-0${index + 1}`}
+              data-scroll-waypoint-mobile={`system-0${index + 1}`}
+              key={system.number}
+              tabIndex={0}
+            >
               <div className="system-card__visual"><SystemGraphic index={index} /></div>
               <div className="system-card__body">
                 <span className="system-card__number">{system.number}</span>
@@ -172,7 +222,11 @@ export function SystemsShowcase() {
               </div>
             </article>
           ))}
-          <div className="systems-track__end" aria-hidden="true"><span>NEXT</span><strong>Build <em data-scroll-flash="early-tight">yours.</em></strong></div>
+          <div
+            className="systems-track__end"
+            data-scroll-track-waypoint="systems-bridge"
+            data-scroll-waypoint-mobile="systems-bridge"
+          ><span>NEXT</span><strong>Build <em data-scroll-flash="early-tight">yours.</em></strong></div>
         </div>
       </div>
     </section>

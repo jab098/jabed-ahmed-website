@@ -27,7 +27,7 @@ class ObserverStub {
 vi.stubGlobal('IntersectionObserver', ObserverStub)
 vi.stubGlobal('ResizeObserver', ObserverStub)
 vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) =>
-  window.setTimeout(() => callback(performance.now()), 0),
+  globalThis.setTimeout(() => callback(performance.now()), 0),
 )
-vi.stubGlobal('cancelAnimationFrame', (id: number) => window.clearTimeout(id))
+vi.stubGlobal('cancelAnimationFrame', (id: number) => globalThis.clearTimeout(id))
 vi.stubGlobal('scrollTo', vi.fn())
