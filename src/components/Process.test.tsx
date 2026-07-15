@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { expect, it, vi } from 'vitest'
 import { Process } from './Process'
@@ -59,11 +59,30 @@ it('renders all four process scenes as physical mobile stops instead of a hidden
   }
 })
 
-it('keeps the audit denominator separate and connects each architecture node in sequence', async () => {
+it('replaces the aggregate score with a reverse evidence diagnosis', () => {
+  const { container } = render(<Process />)
+  const trace = container.querySelector('[data-diagnosis-trace]')
+  const summary = container.querySelector('[data-diagnosis-summary]')
+
+  expect(trace).toBeInTheDocument()
+  expect(container).not.toHaveTextContent('TRUST SCORE')
+  expect(container).not.toHaveTextContent('/100')
+  expect(container).toHaveTextContent('Can we trust the lift?')
+  expect(container).toHaveTextContent('Identity join')
+  expect(container).toHaveTextContent('Consent loss')
+  expect(trace?.querySelectorAll('.diagnosis-visual__row')).toHaveLength(4)
+  expect(trace?.querySelectorAll('.diagnosis-visual__connectors path')).toHaveLength(4)
+  expect(trace?.querySelectorAll('.diagnosis-visual__fault')).toHaveLength(2)
+  expect(summary?.children).toHaveLength(3)
+  expect(summary).toHaveTextContent('Signals checked')
+  expect(summary).toHaveTextContent('Blockers found')
+  expect(summary).toHaveTextContent('Next action /')
+  expect(summary).toHaveTextContent('Fix identity joins')
+})
+
+it('connects each architecture node in sequence', async () => {
   const user = userEvent.setup()
   const { container } = render(<Process />)
-
-  expect(container.querySelector('.audit-visual__denominator')).toHaveTextContent('/100')
 
   await user.click(screen.getByRole('button', { name: '02 Architect the system.' }))
   const connectors = container.querySelector('[data-event-connectors]')
@@ -71,13 +90,48 @@ it('keeps the audit denominator separate and connects each architecture node in 
   expect(connectors?.querySelectorAll('path')).toHaveLength(4)
 })
 
-it('uses the empty audit space for one clear diagnostic summary', () => {
+it('crossfades outgoing and incoming copy and visual layers before cleanup', async () => {
+  const user = userEvent.setup()
   const { container } = render(<Process />)
-  const summary = container.querySelector('[data-audit-summary]')
 
-  expect(summary).toBeInTheDocument()
-  expect(summary?.children).toHaveLength(3)
-  expect(summary).toHaveTextContent('Signals checked')
-  expect(summary).toHaveTextContent('Blockers')
-  expect(summary).toHaveTextContent('Next action')
+  expect(container.querySelectorAll('[data-process-copy-layer]')).toHaveLength(1)
+  expect(container.querySelectorAll('[data-process-visual-layer]')).toHaveLength(1)
+
+  await user.click(screen.getByRole('button', { name: '02 Architect the system.' }))
+
+  expect(container.querySelectorAll('[data-process-copy-layer]')).toHaveLength(2)
+  expect(container.querySelector('[data-process-copy-layer="leaving"]')).toBeInTheDocument()
+  expect(container.querySelector('[data-process-copy-layer="entering"]')).toBeInTheDocument()
+  expect(container.querySelectorAll('[data-process-visual-layer]')).toHaveLength(2)
+  expect(container.querySelector('[data-process-visual-layer="leaving"]')).toBeInTheDocument()
+  expect(container.querySelector('[data-process-visual-layer="entering"]')).toBeInTheDocument()
+
+  await waitFor(() => {
+    expect(container.querySelectorAll('[data-process-copy-layer]')).toHaveLength(1)
+    expect(container.querySelectorAll('[data-process-visual-layer]')).toHaveLength(1)
+  })
+})
+
+it('cancels stale layer cleanup when the active state changes rapidly', () => {
+  vi.useFakeTimers()
+
+  try {
+    const { container } = render(<Process />)
+
+    fireEvent.click(screen.getByRole('button', { name: '02 Architect the system.' }))
+    act(() => vi.advanceTimersByTime(300))
+    fireEvent.click(screen.getByRole('button', { name: '03 Build and validate.' }))
+    act(() => vi.advanceTimersByTime(180))
+
+    const leaving = container.querySelector('[data-process-visual-layer="leaving"]')
+    const entering = container.querySelector('[data-process-visual-layer="entering"]')
+    expect(container.querySelectorAll('[data-process-visual-layer]')).toHaveLength(2)
+    expect(leaving).toHaveTextContent('Event architecture')
+    expect(entering).toHaveTextContent('Quality assurance matrix')
+
+    act(() => vi.advanceTimersByTime(300))
+    expect(container.querySelectorAll('[data-process-visual-layer]')).toHaveLength(1)
+  } finally {
+    vi.useRealTimers()
+  }
 })

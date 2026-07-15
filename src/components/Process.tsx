@@ -1,8 +1,16 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { PROCESS_STEPS } from '../data'
 import { gsap, navigationEdgeScrollPosition, ScrollTrigger } from '../motion'
 
 const PROCESS_SCROLL_PROGRESS = [0.08, 0.34, 0.6, 0.86] as const
+const PROCESS_CROSSFADE_MS = 480
+
+const DIAGNOSIS_EVIDENCE = [
+  { number: '01', lane: 'Exposure', signal: 'Experiment viewed', fault: null },
+  { number: '02', lane: 'Conversion', signal: 'Purchase completed', fault: null },
+  { number: '03', lane: 'Identity', signal: 'User stitching', fault: 'Identity join' },
+  { number: '04', lane: 'Consent', signal: 'Measurement permission', fault: 'Consent loss' },
+] as const
 
 function ProcessVisual({ index }: { index: number }) {
   const step = PROCESS_STEPS[index]
@@ -11,22 +19,38 @@ function ProcessVisual({ index }: { index: number }) {
     <figure className={`process-visual process-visual--${index + 1}`} aria-label={step.visual}>
       <figcaption>{step.visual}</figcaption>
       {index === 0 && (
-        <div className="audit-visual" aria-hidden="true">
-          <div className="audit-visual__score">
-            <span>TRUST SCORE</span>
-            <div className="audit-visual__value">
-              <strong>62</strong><i className="audit-visual__denominator">/100</i>
-            </div>
+        <div className="diagnosis-visual" data-diagnosis-trace aria-hidden="true">
+          <svg
+            className="diagnosis-visual__connectors"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+          >
+            <path d="M 88 50 C 74 50 67 13 54 13" />
+            <path d="M 88 50 C 74 50 67 38 54 38" />
+            <path d="M 88 50 C 74 50 67 63 54 63" />
+            <path d="M 88 50 C 74 50 67 88 54 88" />
+          </svg>
+          <div className="diagnosis-visual__decision">
+            <span>Decision / 01</span>
+            <strong>Can we trust <br />the lift?</strong>
           </div>
-          {['Identity coverage', 'Event consistency', 'Consent integrity', 'Decision readiness'].map((label, row) => (
-            <div className="audit-visual__row" key={label}>
-              <span>{`0${row + 1}`}</span><b>{label}</b><i style={{ '--score': `${46 + row * 13}%` } as CSSProperties} />
-            </div>
-          ))}
-          <div className="audit-visual__summary" data-audit-summary>
+          <div className="diagnosis-visual__evidence">
+            {DIAGNOSIS_EVIDENCE.map(({ number, lane, signal, fault }) => (
+              <div className="diagnosis-visual__row" key={lane}>
+                <span>{number}</span>
+                <div><b>{lane}</b><small>{signal}</small></div>
+                {fault ? (
+                  <i className="diagnosis-visual__fault">{fault}</i>
+                ) : (
+                  <i className="diagnosis-visual__clear">Verified</i>
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="diagnosis-visual__summary" data-diagnosis-summary>
             <div><span>Signals checked</span><strong>04</strong></div>
-            <div><span>Blockers</span><strong>02</strong></div>
-            <div><span>Next action</span><strong>Fix identity joins</strong></div>
+            <div><span>Blockers found</span><strong>02</strong></div>
+            <div><span>Next action /</span><strong>Fix identity joins</strong></div>
           </div>
         </div>
       )}
@@ -103,7 +127,10 @@ function ProcessVisual({ index }: { index: number }) {
 }
 
 export function Process() {
-  const [activeStep, setActiveStep] = useState(0)
+  const [{ current: activeStep, previous: previousStep }, setProcessState] = useState<{
+    current: number
+    previous: number | null
+  }>({ current: 0, previous: null })
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches,
   )
@@ -116,6 +143,28 @@ export function Process() {
     update()
     query.addEventListener('change', update)
     return () => query.removeEventListener('change', update)
+  }, [])
+
+  useEffect(() => {
+    if (previousStep === null) return
+
+    const cleanupTimer = window.setTimeout(() => {
+      setProcessState((state) => (
+        state.current === activeStep
+          ? { current: state.current, previous: null }
+          : state
+      ))
+    }, PROCESS_CROSSFADE_MS)
+
+    return () => window.clearTimeout(cleanupTimer)
+  }, [activeStep, previousStep])
+
+  const setActiveStep = useCallback((nextStep: number) => {
+    setProcessState((state) => (
+      state.current === nextStep
+        ? state
+        : { current: nextStep, previous: state.current }
+    ))
   }, [])
 
   useLayoutEffect(() => {
@@ -159,7 +208,14 @@ export function Process() {
     }, root)
 
     return () => context.revert()
-  }, [isMobile])
+  }, [isMobile, setActiveStep])
+
+  const processLayers = previousStep === null
+    ? [{ index: activeStep, state: 'current' as const }]
+    : [
+        { index: previousStep, state: 'leaving' as const },
+        { index: activeStep, state: 'entering' as const },
+      ]
 
   return (
     <section
@@ -221,13 +277,31 @@ export function Process() {
                 </button>
               ))}
             </div>
-            <div className="process-stage__copy" key={`copy-${activeStep}`}>
-              <span>{PROCESS_STEPS[activeStep].number} / 04</span>
-              <p>{PROCESS_STEPS[activeStep].copy}</p>
+            <div className="process-stage__copy-stack">
+              {processLayers.map(({ index, state }) => (
+                <div
+                  className="process-stage__copy"
+                  data-process-copy-layer={state}
+                  aria-hidden={state === 'leaving' ? true : undefined}
+                  key={`copy-${index}`}
+                >
+                  <span>{PROCESS_STEPS[index].number} / 04</span>
+                  <p>{PROCESS_STEPS[index].copy}</p>
+                </div>
+              ))}
             </div>
           </div>
-          <div className="process-stage__display" key={`visual-${activeStep}`}>
-            <ProcessVisual index={activeStep} />
+          <div className="process-stage__display-stack">
+            {processLayers.map(({ index, state }) => (
+              <div
+                className="process-stage__display"
+                data-process-visual-layer={state}
+                aria-hidden={state === 'leaving' ? true : undefined}
+                key={`visual-${index}`}
+              >
+                <ProcessVisual index={index} />
+              </div>
+            ))}
           </div>
           <div className="process-stage__progress" aria-hidden="true"><i style={{ transform: `scaleX(${(activeStep + 1) / 4})` }} /></div>
         </div>
