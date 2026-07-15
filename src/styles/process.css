@@ -370,5 +370,8 @@
   .brief-visual__winner,
   .brief-visual__winner-dot,
   .brief-visual__metrics > div,
-  .brief-visual__handoff > div { animation-duration: 1ms !important; }
+  .brief-visual__handoff > div {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+  }
 }
