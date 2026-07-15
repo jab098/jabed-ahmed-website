@@ -695,6 +695,18 @@ describe('NarrativeGestureDirector', () => {
     expect(harness.animations).toEqual([600, 650])
   })
 
+  it('commits a short blocked touch after landing but before wheel quiet', () => {
+    const harness = createDirectorHarness([0, 600, 650], 0, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.completeAnimation()
+    harness.director.handleTouchStart(touchInput(100, 700))
+    harness.director.handleTouchMove(touchInput(100, 650))
+    harness.director.handleTouchEnd()
+
+    expect(harness.animations).toEqual([600, 650])
+  })
+
   it('does not let a later touch replace a committed touch follow-on', () => {
     const harness = createDirectorHarness([0, 600, 1200], 0, false)
 

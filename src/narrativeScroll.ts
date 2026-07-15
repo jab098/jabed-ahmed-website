@@ -677,8 +677,15 @@ export class NarrativeGestureDirector {
     intent: number,
     threshold: number,
   ) {
-    const origin = this.activeTargetY
-    if (intent >= threshold || origin === undefined) return intent >= threshold
+    if (intent >= threshold) return true
+
+    const currentY = this.dependencies.getScrollY()
+    const settled = this.lastSettledWaypoint
+    const origin = this.activeTargetY ?? (
+      settled && Math.abs(currentY - settled.y) <= SETTLED_LAYOUT_DRIFT_TOLERANCE
+        ? settled.y
+        : currentY
+    )
 
     const target = findDirectionalWaypoint(this.dependencies.getWaypoints(), origin, direction)
     return Boolean(target && intent >= Math.abs(target.y - origin))
