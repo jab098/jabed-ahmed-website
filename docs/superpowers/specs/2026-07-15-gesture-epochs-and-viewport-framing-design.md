@@ -63,7 +63,7 @@ This is an authored presentation rule, not a new waypoint type. The collector st
 
 ### Proof
 
-On desktop, the complete four-column Proof grid becomes the viewport frame. Its existing section-level `proof` waypoint remains at the frame boundary. All four tiles stretch through the usable viewport, retaining the established bottom-aligned editorial layout. At the landing, only Proof is visible beneath the navigation; neither the Process surface nor the `// How I work` label may appear.
+On desktop, the complete four-column Proof grid becomes the viewport frame. Its existing section-level `proof` waypoint remains at the frame boundary. All four tiles stretch through the usable viewport. The later approved Proof content-band refinement centres the title and metric blocks on a shared line at `60%` of the frame rather than pinning them to the bottom. At the landing, only Proof is visible beneath the navigation; neither the Process surface nor the `// How I work` label may appear.
 
 At `900px` and below, the existing stacked Proof destinations remain physical per-card stops. The desktop full-grid frame must not turn each mobile card into an unnecessarily oversized desktop-like panel.
 
