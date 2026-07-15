@@ -263,6 +263,32 @@ describe('NarrativeGestureDirector', () => {
     expect(harness.animations).toEqual([600, 1200])
   })
 
+  it('commits a queued wheel epoch that reaches the projected adjacent distance', () => {
+    const harness = createDirectorHarness([0, 600, 650], 0, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.runQuietTimer()
+    harness.director.handleWheel(wheelInput(50))
+    harness.director.handleWheel(wheelInput(-10))
+    harness.completeAnimation()
+
+    expect(harness.animations).toEqual([600, 650])
+  })
+
+  it('does not let a reverse touch replace a committed queued wheel follow-on', () => {
+    const harness = createDirectorHarness([0, 600, 1200], 0, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.runQuietTimer()
+    harness.director.handleWheel(wheelInput(100))
+    harness.director.handleTouchStart(touchInput(100, 700))
+    harness.director.handleTouchMove(touchInput(100, 900))
+    harness.director.handleTouchEnd()
+    harness.completeAnimation()
+
+    expect(harness.animations).toEqual([600, 1200])
+  })
+
   it('keeps a committed one-slot follow-on when a third epoch arrives', () => {
     const harness = createDirectorHarness([0, 600, 1200, 1800], 0, false)
 
@@ -651,6 +677,33 @@ describe('NarrativeGestureDirector', () => {
     harness.director.handleWheel(wheelInput(10000))
     harness.director.handleTouchStart(touchInput(100, 700))
     harness.director.handleTouchMove(touchInput(100, 500))
+    harness.director.handleTouchEnd()
+    harness.completeAnimation()
+
+    expect(harness.animations).toEqual([600, 1200])
+  })
+
+  it('commits a blocked touch that reaches the projected adjacent distance', () => {
+    const harness = createDirectorHarness([0, 600, 650], 0, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.director.handleTouchStart(touchInput(100, 700))
+    harness.director.handleTouchMove(touchInput(100, 650))
+    harness.director.handleTouchEnd()
+    harness.completeAnimation()
+
+    expect(harness.animations).toEqual([600, 650])
+  })
+
+  it('does not let a later touch replace a committed touch follow-on', () => {
+    const harness = createDirectorHarness([0, 600, 1200], 0, false)
+
+    harness.director.handleWheel(wheelInput(10000))
+    harness.director.handleTouchStart(touchInput(100, 700))
+    harness.director.handleTouchMove(touchInput(100, 500))
+    harness.director.handleTouchEnd()
+    harness.director.handleTouchStart(touchInput(100, 700))
+    harness.director.handleTouchMove(touchInput(100, 900))
     harness.director.handleTouchEnd()
     harness.completeAnimation()
 

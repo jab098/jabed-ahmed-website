@@ -144,6 +144,8 @@ type QueuedWheelIntent = {
   quiet: boolean
 }
 
+type FollowOnOwner = 'touch' | 'wheel'
+
 type TouchSession = {
   blocked: boolean
   claimed: boolean
@@ -159,8 +161,10 @@ type TouchSession = {
 export class NarrativeGestureDirector {
   private animationActive = false
   private activeTargetId?: string
+  private activeTargetY?: number
   private cancelAnimation?: () => void
   private destroyed = false
+  private followOnOwner?: FollowOnOwner
   private lastSettledWaypoint?: ScrollWaypoint
   private lastSettledViewportDetached = false
   private quietTimer?: unknown
@@ -306,8 +310,11 @@ export class NarrativeGestureDirector {
       input.preventDefault()
       session.claimed = true
       session.direction = direction
-      session.committed =
-        absoluteVertical >= touchIntentThreshold(this.dependencies.getViewportHeight())
+      session.committed = this.commitsProjectedFollowOn(
+        direction,
+        absoluteVertical,
+        touchIntentThreshold(this.dependencies.getViewportHeight()),
+      )
       return true
     }
 
@@ -347,10 +354,13 @@ export class NarrativeGestureDirector {
       this.touch = undefined
       if (session.claimed && session.committed && session.direction) {
         if (this.animationActive) {
-          this.clearQuietTimer()
-          this.queuedWheel = undefined
-          this.queuedTouchDirection = session.direction
-          this.wheelStreamQuiet = false
+          if (!this.followOnOwner) {
+            this.clearQuietTimer()
+            this.queuedWheel = undefined
+            this.queuedTouchDirection = session.direction
+            this.followOnOwner = 'touch'
+            this.wheelStreamQuiet = false
+          }
         } else {
           this.resetWheelState()
           this.startAdjacentHandoff(this.dependencies.getScrollY(), session.direction)
@@ -463,6 +473,7 @@ export class NarrativeGestureDirector {
     this.wheel = undefined
     this.queuedWheel = undefined
     this.queuedTouchDirection = undefined
+    this.followOnOwner = undefined
     this.wheelStreamQuiet = false
     this.lastSettledViewportDetached = false
     this.touch = undefined
@@ -481,6 +492,7 @@ export class NarrativeGestureDirector {
     this.wheel = undefined
     this.queuedWheel = undefined
     this.queuedTouchDirection = undefined
+    this.followOnOwner = undefined
     this.touch = undefined
     this.lastSettledWaypoint = undefined
     this.lastSettledViewportDetached = false
@@ -497,6 +509,7 @@ export class NarrativeGestureDirector {
     this.cancelActiveAnimation()
     this.animationActive = true
     this.activeTargetId = targetId
+    this.activeTargetY = target
     let completedSynchronously = false
     const distance = target - this.dependencies.getScrollY()
     const cancellation = this.dependencies.animate({
@@ -507,6 +520,7 @@ export class NarrativeGestureDirector {
         completedSynchronously = true
         this.animationActive = false
         this.activeTargetId = undefined
+        this.activeTargetY = undefined
         this.cancelAnimation = undefined
         this.dependencies.writeScroll(target)
         if (targetId) {
@@ -524,6 +538,7 @@ export class NarrativeGestureDirector {
   private cancelActiveAnimation() {
     this.cancelAnimation?.()
     this.activeTargetId = undefined
+    this.activeTargetY = undefined
     this.cancelAnimation = undefined
     this.animationActive = false
   }
@@ -628,29 +643,54 @@ export class NarrativeGestureDirector {
 
   private captureQueuedWheel(direction: Direction, intent: number) {
     const queued = this.queuedWheel
-    if (queued?.committed) {
+    if (this.followOnOwner) {
+      if (this.followOnOwner === 'wheel' && queued) queued.quiet = false
+    } else if (queued?.committed) {
+      this.followOnOwner = 'wheel'
       queued.quiet = false
     } else if (!queued || queued.quiet || queued.direction !== direction) {
       this.queuedWheel = {
         accumulatedIntent: intent,
-        committed: intent >= wheelIntentThreshold(this.dependencies.getViewportHeight()),
+        committed: this.commitsProjectedFollowOn(
+          direction,
+          intent,
+          wheelIntentThreshold(this.dependencies.getViewportHeight()),
+        ),
         direction,
         quiet: false,
       }
     } else {
       queued.accumulatedIntent += intent
-      queued.committed =
-        queued.accumulatedIntent >= wheelIntentThreshold(this.dependencies.getViewportHeight())
+      queued.committed = this.commitsProjectedFollowOn(
+        direction,
+        queued.accumulatedIntent,
+        wheelIntentThreshold(this.dependencies.getViewportHeight()),
+      )
       queued.quiet = false
     }
+    if (this.queuedWheel?.committed) this.followOnOwner = 'wheel'
     this.wheelStreamQuiet = false
+  }
+
+  private commitsProjectedFollowOn(
+    direction: Direction,
+    intent: number,
+    threshold: number,
+  ) {
+    const origin = this.activeTargetY
+    if (intent >= threshold || origin === undefined) return intent >= threshold
+
+    const target = findDirectionalWaypoint(this.dependencies.getWaypoints(), origin, direction)
+    return Boolean(target && intent >= Math.abs(target.y - origin))
   }
 
   private continueAfterLanding(target: number) {
     const queuedTouchDirection = this.queuedTouchDirection
     if (queuedTouchDirection) {
-      this.resetWheelState()
-      this.startAdjacentHandoff(target, queuedTouchDirection)
+      this.resetWheelState(true)
+      if (!this.startAdjacentHandoff(target, queuedTouchDirection)) {
+        this.followOnOwner = undefined
+      }
       return true
     }
 
@@ -661,6 +701,11 @@ export class NarrativeGestureDirector {
       this.wheelDisarmed = false
       this.wheelStreamQuiet = false
       this.startQueuedWheel(target, queuedWheel)
+      return true
+    }
+
+    if (this.followOnOwner === 'touch') {
+      this.resetWheelState()
       return true
     }
 
@@ -695,6 +740,7 @@ export class NarrativeGestureDirector {
     }
 
     if (committed) {
+      this.followOnOwner = 'wheel'
       this.wheel = session
       this.wheelDisarmed = true
       this.wheelStreamQuiet = queued.quiet
@@ -719,11 +765,12 @@ export class NarrativeGestureDirector {
     return true
   }
 
-  private resetWheelState() {
+  private resetWheelState(preserveFollowOnOwner = false) {
     this.clearQuietTimer()
     this.wheel = undefined
     this.queuedWheel = undefined
     this.queuedTouchDirection = undefined
+    if (!preserveFollowOnOwner) this.followOnOwner = undefined
     this.wheelDisarmed = false
     this.wheelStreamQuiet = false
   }
@@ -752,7 +799,7 @@ export class NarrativeGestureDirector {
       this.wheelStreamQuiet = false
       if (!session) return
       if (session.committed) {
-        this.wheel = undefined
+        this.resetWheelState()
         return
       }
       this.wheelStreamQuiet = true
