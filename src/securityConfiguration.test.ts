@@ -25,12 +25,15 @@ describe('production security configuration', () => {
     expect(headers).toContain('Cross-Origin-Resource-Policy: same-origin')
     const scriptPolicy = headers.match(/script-src\s+([^;]+)/)?.[1]
     expect(scriptPolicy).toBeDefined()
-    expect(scriptPolicy).not.toContain("'unsafe-inline'")
-    expect(scriptPolicy).toContain('https://static.cloudflareinsights.com/beacon.min.js')
-    expect(scriptPolicy).not.toMatch(/https:\/\/static\.cloudflareinsights\.com(?:\s|$)/)
+    expect(scriptPolicy?.trim().split(/\s+/)).toEqual([
+      "'self'",
+      'https://static.cloudflareinsights.com/beacon.min.js',
+    ])
     const connectPolicy = headers.match(/connect-src\s+([^;]+)/)?.[1]
-    expect(connectPolicy).toContain('https://cloudflareinsights.com/cdn-cgi/rum')
-    expect(connectPolicy).not.toMatch(/https:\/\/cloudflareinsights\.com(?:\s|$)/)
+    expect(connectPolicy?.trim().split(/\s+/)).toEqual([
+      "'self'",
+      'https://cloudflareinsights.com/cdn-cgi/rum',
+    ])
   })
 
   it('keeps executable code and page CSS out of inline HTML blocks', () => {
