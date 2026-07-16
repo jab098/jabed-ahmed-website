@@ -47,7 +47,7 @@ describe('production security configuration', () => {
       expect(actionRef).toMatch(/@[a-f0-9]{40}$/)
     }
     expect(workflow).not.toContain('softprops/action-gh-release')
-    expect(workflow).toMatch(/^permissions:\s*\n\s+contents:\s+read/m)
+    expect(workflow).toMatch(/^permissions:\s*\n\s+contents:\s+read\n\s+pull-requests:\s+read/m)
     expect(workflow).toMatch(/uses: actions\/checkout@[a-f0-9]{40}[\s\S]*?persist-credentials: false/)
     expect(workflow).toMatch(/uses: gitleaks\/gitleaks-action@[a-f0-9]{40}[\s\S]*?GITHUB_TOKEN: \$\{\{ github\.token \}\}/)
     expect(workflow).toMatch(/release:[\s\S]*?permissions:\s*\n\s+contents:\s+write/)
