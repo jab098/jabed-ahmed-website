@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { getCanvasBackingStore } from '../canvasBudget'
 
 const GLYPHS = ['0', '1', '+', '/', ':', '=', '%', '·', '#']
 const COLOURS = ['#ff5a1f', '#f1f0ec', '#11100f']
@@ -37,20 +38,43 @@ export function FooterGlyphStream() {
     let width = 0
     let height = 0
     let frame = 0
+    let resizeFrame = 0
+    let intersecting = true
 
     const resize = () => {
       const bounds = host.getBoundingClientRect()
-      const ratio = Math.min(window.devicePixelRatio || 1, 2)
       width = Math.max(bounds.width, 1)
       height = Math.max(bounds.height, 1)
-      canvas.width = Math.round(width * ratio)
-      canvas.height = Math.round(height * ratio)
+      const backingStore = getCanvasBackingStore(width, height, window.devicePixelRatio || 1)
+      canvas.width = backingStore.pixelWidth
+      canvas.height = backingStore.pixelHeight
       canvas.style.width = `${width}px`
       canvas.style.height = `${height}px`
-      context.setTransform(ratio, 0, 0, ratio, 0, 0)
+      context.setTransform(backingStore.scaleX, 0, 0, backingStore.scaleY, 0, 0)
+    }
+
+    const scheduleResize = () => {
+      if (resizeFrame) return
+      resizeFrame = window.requestAnimationFrame(() => {
+        resizeFrame = 0
+        resize()
+      })
+    }
+
+    const shouldAnimate = () => intersecting && !document.hidden
+    const stop = () => {
+      if (!frame) return
+      window.cancelAnimationFrame(frame)
+      frame = 0
+    }
+
+    const start = () => {
+      if (!frame && shouldAnimate()) frame = window.requestAnimationFrame(draw)
     }
 
     const draw = (time: number) => {
+      frame = 0
+      if (!shouldAnimate()) return
       context.clearRect(0, 0, width, height)
       context.font = `600 ${Math.max(8, Math.min(12, width / 130))}px "JetBrains Mono", monospace`
       context.textAlign = 'center'
@@ -86,11 +110,27 @@ export function FooterGlyphStream() {
     }
 
     resize()
-    frame = window.requestAnimationFrame(draw)
-    const observer = new ResizeObserver(resize)
+    start()
+    const observer = new ResizeObserver(scheduleResize)
     observer.observe(host)
+    const intersectionObserver = typeof IntersectionObserver === 'undefined'
+      ? undefined
+      : new IntersectionObserver(([entry]) => {
+        intersecting = entry?.isIntersecting ?? false
+        if (shouldAnimate()) start()
+        else stop()
+      })
+    intersectionObserver?.observe(host)
+    const onVisibilityChange = () => {
+      if (shouldAnimate()) start()
+      else stop()
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
     return () => {
       observer.disconnect()
+      intersectionObserver?.disconnect()
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      window.cancelAnimationFrame(resizeFrame)
       window.cancelAnimationFrame(frame)
     }
   }, [])

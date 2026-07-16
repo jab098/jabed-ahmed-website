@@ -134,7 +134,7 @@ export function SiteNav() {
         <span /> Independent data consultancy
       </div>
 
-      <a className="site-nav__call" href={CALENDLY_URL} target="_blank" rel="noreferrer">
+      <a className="site-nav__call" href={CALENDLY_URL} target="_blank" rel="noopener noreferrer">
         <span>Schedule a call</span>
         <ArrowUpRight size={17} strokeWidth={1.6} />
       </a>

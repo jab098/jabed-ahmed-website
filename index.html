@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="is-loading">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/src/assets/favicon.svg" />
@@ -16,27 +16,8 @@
       content="Tag management, server-side tracking, CRO and privacy-compliant data pipelines for global digital products."
     />
     <title>Jabed Ahmed</title>
-    <style>
-      html.is-loading,
-      html.is-loading body,
-      html.is-loading #root {
-        min-height: 100%;
-        background: #ff5a1f;
-        overflow: hidden;
-      }
-    </style>
-    <script>
-      history.scrollRestoration = 'manual'
-      if (location.hash) history.replaceState(null, '', location.pathname + location.search)
-      document.documentElement.classList.add('is-loading')
-      scrollTo(0, 0)
-      addEventListener('beforeunload', () => scrollTo(0, 0))
-      addEventListener('pageshow', () => scrollTo(0, 0))
-      window.__loaderFallback = setTimeout(() => {
-        document.documentElement.classList.remove('is-loading')
-        document.documentElement.classList.add('loader-complete')
-      }, 7000)
-    </script>
+    <link rel="stylesheet" href="/src/styles/loader.css" />
+    <script type="module" src="/src/loader.ts"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

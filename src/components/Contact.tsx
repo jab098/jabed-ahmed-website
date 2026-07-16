@@ -68,7 +68,7 @@ export function Contact() {
         </h2>
         <div className="contact-actions-new">
           <p>Bring the measurement problem. We’ll clarify the decision, the evidence required and the most useful next move.</p>
-          <a className="contact-primary" href={CALENDLY_URL} target="_blank" rel="noreferrer">
+          <a className="contact-primary" href={CALENDLY_URL} target="_blank" rel="noopener noreferrer">
             <span>Schedule a call</span><ArrowUpRight aria-hidden="true" />
           </a>
           <a className="contact-email-new" href={`mailto:${EMAIL}`} aria-label={EMAIL}>
@@ -92,7 +92,7 @@ export function Contact() {
         <div className="signal-footer__bottom">
           <p>© {new Date().getFullYear()} Jabed Ahmed</p>
           <nav aria-label="Footer navigation">
-            <a href={LINKEDIN_URL} target="_blank" rel="noreferrer">LinkedIn</a>
+            <a href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer">LinkedIn</a>
             <a href={`mailto:${EMAIL}`}>Email</a>
             <a href="/privacy.html">Privacy</a>
             <a href="#home">Back to top</a>

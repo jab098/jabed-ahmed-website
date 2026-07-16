@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
+import { getCanvasBackingStore, getCappedGlyphGrid } from '../canvasBudget'
 
 const GLYPHS = ['+', '/', '0', '1', '=', ':', '%', '#', '·']
 const GLYPH_FIELD_CONFIG = Object.freeze({
@@ -106,22 +107,23 @@ export function GlyphReport({ active = true }: { active?: boolean }) {
     let lastTime = performance.now()
     let parallaxX = 0
     let parallaxY = 0
+    let resizeFrame = 0
+    let intersecting = true
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
     const rebuild = () => {
       const bounds = host.getBoundingClientRect()
-      const ratio = Math.min(window.devicePixelRatio || 1, 2)
       width = Math.max(bounds.width, 1)
       height = Math.max(bounds.height, 1)
-      canvas.width = Math.round(width * ratio)
-      canvas.height = Math.round(height * ratio)
+      const backingStore = getCanvasBackingStore(width, height, window.devicePixelRatio || 1)
+      canvas.width = backingStore.pixelWidth
+      canvas.height = backingStore.pixelHeight
       canvas.style.width = `${width}px`
       canvas.style.height = `${height}px`
-      context.setTransform(ratio, 0, 0, ratio, 0, 0)
+      context.setTransform(backingStore.scaleX, 0, 0, backingStore.scaleY, 0, 0)
 
-      const spacing = Math.max(7, Math.min(GLYPH_FIELD_CONFIG.spacing, width / 68))
-      const columns = Math.ceil(width / spacing) + 2
-      const rows = Math.ceil(height / spacing) + 2
+      const requestedSpacing = Math.max(7, Math.min(GLYPH_FIELD_CONFIG.spacing, width / 68))
+      const { spacing, columns, rows } = getCappedGlyphGrid(width, height, requestedSpacing)
       points = []
       for (let row = 0; row < rows; row += 1) {
         for (let column = 0; column < columns; column += 1) {
@@ -155,7 +157,28 @@ export function GlyphReport({ active = true }: { active?: boolean }) {
       host.dataset.glyphPoints = String(points.length)
     }
 
+    const scheduleRebuild = () => {
+      if (resizeFrame) return
+      resizeFrame = window.requestAnimationFrame(() => {
+        resizeFrame = 0
+        rebuild()
+      })
+    }
+
+    const shouldAnimate = () => intersecting && !document.hidden
+    const stop = () => {
+      if (!frame) return
+      window.cancelAnimationFrame(frame)
+      frame = 0
+    }
+
+    const start = () => {
+      if (!frame && shouldAnimate()) frame = window.requestAnimationFrame(draw)
+    }
+
     const draw = (time: number) => {
+      frame = 0
+      if (!shouldAnimate()) return
       const elapsed = Math.min((time - lastTime) / 16.67, 2)
       lastTime = time
       const transition = paletteTransitionRef.current
@@ -223,11 +246,27 @@ export function GlyphReport({ active = true }: { active?: boolean }) {
     }
 
     rebuild()
-    frame = window.requestAnimationFrame(draw)
-    const observer = new ResizeObserver(rebuild)
+    start()
+    const observer = new ResizeObserver(scheduleRebuild)
     observer.observe(host)
+    const intersectionObserver = typeof IntersectionObserver === 'undefined'
+      ? undefined
+      : new IntersectionObserver(([entry]) => {
+        intersecting = entry?.isIntersecting ?? false
+        if (shouldAnimate()) start()
+        else stop()
+      })
+    intersectionObserver?.observe(host)
+    const onVisibilityChange = () => {
+      if (shouldAnimate()) start()
+      else stop()
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
     return () => {
       observer.disconnect()
+      intersectionObserver?.disconnect()
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      window.cancelAnimationFrame(resizeFrame)
       window.cancelAnimationFrame(frame)
     }
   }, [active])

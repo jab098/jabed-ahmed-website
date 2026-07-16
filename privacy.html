@@ -14,64 +14,7 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
     />
-    <style>
-      :root {
-        --bg: #11100f;
-        --fg: #f4f1ec;
-        --muted: #a8a29a;
-        --accent: #ff5a1f;
-        --line: rgba(244, 241, 236, 0.14);
-      }
-      * { box-sizing: border-box; }
-      body {
-        margin: 0;
-        background: var(--bg);
-        color: var(--fg);
-        font-family: 'Inter', system-ui, sans-serif;
-        line-height: 1.65;
-        -webkit-font-smoothing: antialiased;
-      }
-      .wrap {
-        max-width: 720px;
-        margin: 0 auto;
-        padding: clamp(3rem, 8vw, 6rem) 1.5rem 5rem;
-      }
-      a { color: var(--accent); }
-      .back {
-        display: inline-block;
-        margin-bottom: 2.5rem;
-        font-size: 0.85rem;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-      }
-      h1 {
-        font-size: clamp(2rem, 6vw, 3rem);
-        line-height: 1.05;
-        margin: 0 0 0.75rem;
-        letter-spacing: -0.02em;
-      }
-      .updated {
-        color: var(--muted);
-        font-size: 0.9rem;
-        margin: 0 0 2.5rem;
-      }
-      h2 {
-        font-size: 1.15rem;
-        margin: 2.5rem 0 0.5rem;
-        letter-spacing: -0.01em;
-      }
-      p { margin: 0 0 1rem; }
-      ul { margin: 0 0 1rem; padding-left: 1.2rem; }
-      li { margin-bottom: 0.4rem; }
-      .muted { color: var(--muted); }
-      footer {
-        margin-top: 3.5rem;
-        padding-top: 1.5rem;
-        border-top: 1px solid var(--line);
-        color: var(--muted);
-        font-size: 0.85rem;
-      }
-    </style>
+    <link rel="stylesheet" href="/src/styles/privacy.css" />
   </head>
   <body>
     <main class="wrap">
@@ -134,8 +77,6 @@
 
       <footer>&copy; <span id="year"></span> Jabed Ahmed</footer>
     </main>
-    <script>
-      document.getElementById('year').textContent = new Date().getFullYear()
-    </script>
+    <script type="module" src="/src/privacy.ts"></script>
   </body>
 </html>

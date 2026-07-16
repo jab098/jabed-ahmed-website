@@ -130,7 +130,7 @@ export function Hero() {
           use with confidence.
         </p>
         <div className="hero-actions">
-          <a className="rect-cta rect-cta--signal" href={CALENDLY_URL} target="_blank" rel="noreferrer">
+          <a className="rect-cta rect-cta--signal" href={CALENDLY_URL} target="_blank" rel="noopener noreferrer">
             <span>Schedule a call</span><ArrowUpRight aria-hidden="true" />
           </a>
           <a className="rect-cta rect-cta--ghost" href="#process">

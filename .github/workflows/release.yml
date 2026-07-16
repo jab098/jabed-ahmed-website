@@ -1,31 +1,118 @@
-name: Trigger Deploy and Release
+name: Verify, Deploy, and Release
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
-      - main # Triggers whenever you push or merge code to the main branch
+      - main
+  workflow_dispatch:
 
 permissions:
-  contents: write # Allows GitHub to automatically create the Release UI
+  contents: read
+
+concurrency:
+  group: production-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  release-and-trigger:
+  verify:
+    name: Verify source and dependencies
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      # This triggers your Cloudflare Pages build using your secret hook
-      - name: Trigger Cloudflare Pages Deployment
-        run: |
-          curl -d "" "${{ secrets.CLOUDFLARE_DEPLOY_HOOK }}"
-
-      # Creates a new release using the unique GitHub run number as the tag
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+      - name: Checkout repository
+        # actions/checkout v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
-          tag_name: r${{ github.run_number }}
-          name: Release Build #${{ github.run_number }}
-          generate_release_notes: true
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Node.js
+        # actions/setup-node v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Scan Git history for exposed secrets
+        # gitleaks/gitleaks-action v3
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e
+
+      - name: Install locked dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Verify package signatures and attestations
+        run: npm audit signatures
+
+      - name: Reject known high-severity dependency vulnerabilities
+        run: npm audit --audit-level=high
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test -- --run
+
+      - name: Build
+        run: npm run build
+
+  deploy:
+    name: Trigger Cloudflare Pages deployment
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Trigger production deployment
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CLOUDFLARE_DEPLOY_HOOK: ${{ secrets.CLOUDFLARE_DEPLOY_HOOK }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CLOUDFLARE_DEPLOY_HOOK:-}" ]; then
+            echo "::error::CLOUDFLARE_DEPLOY_HOOK is not configured"
+            exit 1
+          fi
+          case "$CLOUDFLARE_DEPLOY_HOOK" in
+            https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/*) ;;
+            *)
+              echo "::error::CLOUDFLARE_DEPLOY_HOOK must be a Cloudflare Pages deployment hook"
+              exit 1
+              ;;
+          esac
+          curl --fail-with-body --silent --show-error \
+            --retry 3 --retry-all-errors \
+            --proto '=https' --tlsv1.2 \
+            --max-time 30 \
+            --request POST --data '' \
+            "$CLOUDFLARE_DEPLOY_HOOK"
+
+  release:
+    name: Create GitHub release
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs:
+      - verify
+      - deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Create an idempotent release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: r${{ github.run_number }}
+          RELEASE_TARGET: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG already exists"
+            exit 0
+          fi
+          gh release create "$RELEASE_TAG" \
+            --target "$RELEASE_TARGET" \
+            --title "Release Build #${GITHUB_RUN_NUMBER}" \
+            --generate-notes

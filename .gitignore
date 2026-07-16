@@ -13,6 +13,29 @@ dist-ssr
 *.local
 .worktrees/
 
+# Secrets and local credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.mobileprovision
+.secrets*
+service-account*.json
+credentials*.json
+.npmrc
+.netrc
+id_rsa*
+id_ed25519*
+
+# Local AI project notes (intentionally never committed)
+AGENTS.local.md
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

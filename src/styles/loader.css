@@ -1,0 +1,7 @@
+html.is-loading,
+html.is-loading body,
+html.is-loading #root {
+  min-height: 100%;
+  background: #ff5a1f;
+  overflow: hidden;
+}
