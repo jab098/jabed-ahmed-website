@@ -13,9 +13,9 @@ it('renders the approved v2 chapter order', () => {
   expect([...container.querySelectorAll('main > section')].map((node) => node.id)).toEqual([
     'home',
     'proof',
+    'capabilities',
     'process',
     'systems',
-    'capabilities',
     'faq',
     'contact',
   ])

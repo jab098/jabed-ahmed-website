@@ -67,6 +67,8 @@
 
 html.loader-complete .page-loader {
   pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
 }
 
 @media (prefers-reduced-motion: reduce) {

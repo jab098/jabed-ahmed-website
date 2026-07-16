@@ -1,9 +1,9 @@
 export const NAV_LINKS = [
   { label: 'Home', href: '#home', number: '01' },
-  { label: 'Process', href: '#process', number: '02' },
-  { label: 'Systems', href: '#systems', number: '03' },
-  { label: 'Capabilities', href: '#capabilities', number: '04' },
-  { label: 'Questions', href: '#faq', number: '05' },
+  { label: 'Expertise', href: '#capabilities', number: '02' },
+  { label: 'Approach', href: '#process', number: '03' },
+  { label: 'Examples', href: '#systems', number: '04' },
+  { label: 'FAQ', href: '#faq', number: '05' },
   { label: 'Contact', href: '#contact', number: '06' },
 ] as const
 

@@ -126,8 +126,8 @@ export function Hero() {
         </h1>
         <p className="hero-copy__body">
           <strong>I build tracking and data-collection systems.</strong>{' '}
-          Then I turn every critical signal into evidence product, growth and leadership teams can
-          use with confidence.
+          Then I turn every critical signal into evidence that product, growth and leadership teams
+          can use with confidence.
         </p>
         <div className="hero-actions">
           <a className="rect-cta rect-cta--signal" href={CALENDLY_URL} target="_blank" rel="noopener noreferrer">

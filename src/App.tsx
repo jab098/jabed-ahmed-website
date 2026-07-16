@@ -20,9 +20,9 @@ export default function App() {
       <main id="main-content">
         <Hero />
         <Metrics />
+        <Capabilities />
         <Process />
         <SystemsShowcase />
-        <Capabilities />
         <Faq />
         <Contact />
       </main>
