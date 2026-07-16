@@ -215,7 +215,8 @@ export function SystemsShowcase() {
         >
           {SYSTEMS.map((system, index) => (
             <article
-              className={`system-card${openCard === index ? ' is-open' : ''}`}
+              className="system-card"
+              data-open={openCard === index ? 'true' : undefined}
               data-scroll-track-waypoint={`system-0${index + 1}`}
               data-scroll-waypoint-mobile={`system-0${index + 1}`}
               key={system.number}

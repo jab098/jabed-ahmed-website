@@ -64,7 +64,8 @@ export function Capabilities() {
       <div className="capabilities-grid">
         {CAPABILITIES.map((capability, index) => (
           <article
-            className={`capability-card${openCard === index ? ' is-open' : ''}`}
+            className="capability-card"
+            data-open={openCard === index ? 'true' : undefined}
             key={capability.number}
             tabIndex={0}
             data-scroll-waypoint-desktop={`capability-0${index + 1}`}

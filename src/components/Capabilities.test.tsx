@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { expect, it, vi } from 'vitest'
 import { Capabilities } from './Capabilities'
 
@@ -35,4 +36,21 @@ it('observes every capability card for its own fade entrance', () => {
   } finally {
     vi.stubGlobal('IntersectionObserver', OriginalIntersectionObserver)
   }
+})
+
+it('keeps observer-applied visibility when a card is expanded on mobile', async () => {
+  const user = userEvent.setup()
+  render(<Capabilities />)
+
+  const card = screen.getByRole('heading', { name: 'Front-End Instrumentation' }).closest('article')!
+  card.classList.add('is-visible')
+  const toggle = screen.getByRole('button', { name: 'Front-End Instrumentation — details' })
+
+  await user.click(toggle)
+  expect(card).toHaveAttribute('data-open')
+  expect(card).toHaveClass('is-visible')
+
+  await user.click(toggle)
+  expect(card).not.toHaveAttribute('data-open')
+  expect(card).toHaveClass('is-visible')
 })

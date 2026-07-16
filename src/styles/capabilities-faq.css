@@ -153,15 +153,15 @@
   .capabilities-header > p:last-child { right: 1.2rem; bottom: 2rem; }
   .capabilities-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .capabilities-grid article { min-height: 0; }
-  .capabilities-grid article.is-open { min-height: 52vw; }
+  .capabilities-grid article[data-open] { min-height: 52vw; }
   .capabilities-grid article:nth-child(3n) { border-right: 1px solid var(--ink); }
   .capabilities-grid article:nth-child(2n) { border-right: 0; }
   .capability-card__top { padding-right: 1.9rem; }
   .capability-card__arrow { display: none; }
-  .capabilities-grid article:not(.is-open) h3 { margin: 1rem 0 0; font-size: 1.35rem; }
-  .capabilities-grid article:not(.is-open) > p,
-  .capabilities-grid article:not(.is-open) .capability-card__stack,
-  .capabilities-grid article:not(.is-open) .capability-motif { display: none; }
+  .capabilities-grid article:not([data-open]) h3 { margin: 1rem 0 0; font-size: 1.35rem; }
+  .capabilities-grid article:not([data-open]) > p,
+  .capabilities-grid article:not([data-open]) .capability-card__stack,
+  .capabilities-grid article:not([data-open]) .capability-motif { display: none; }
   .faq-section { display: block; min-height: auto; padding-inline: 1.2rem; }
   .faq-header { position: static; margin-bottom: 5rem; }
 }
@@ -170,7 +170,7 @@
   .capabilities-header h2 { font-size: clamp(3.25rem, 14vw, 5rem); }
   .capabilities-grid { grid-template-columns: 1fr; }
   .capabilities-grid article { border-right: 0 !important; }
-  .capabilities-grid article.is-open { min-height: 125vw; }
+  .capabilities-grid article[data-open] { min-height: 125vw; }
   .capability-motif { opacity: 0.1; }
   .capabilities-grid article > p { font-size: 0.8rem; }
   .faq-section { padding-block: 6rem; }

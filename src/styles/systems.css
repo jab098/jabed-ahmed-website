@@ -181,22 +181,22 @@
   .systems-stage__topline { padding-inline: 1.2rem; }
   .systems-track { width: auto; height: auto; padding: 1.2rem; flex-direction: column; }
   .system-card { position: relative; width: 100%; min-width: 0; height: auto; grid-template-columns: 1fr; grid-template-rows: auto; }
-  .system-card.is-open { min-height: 68rem; grid-template-rows: minmax(32rem, 55svh) auto; }
+  .system-card[data-open] { min-height: 68rem; grid-template-rows: minmax(32rem, 55svh) auto; }
   .system-card__visual { border-right: 0; border-bottom: 1px solid currentColor; }
-  .system-card.is-open .system-card__body { min-height: 30rem; }
-  .system-card:not(.is-open) .system-card__visual,
-  .system-card:not(.is-open) .system-card__body > p,
-  .system-card:not(.is-open) .system-card__tags,
-  .system-card:not(.is-open) .system-card__arrow { display: none; }
-  .system-card:not(.is-open) h3 { margin: 0.9rem 0 1rem; padding-right: 1.9rem; font-size: 1.5rem; }
-  .system-card:not(.is-open) .system-card__metric { margin-bottom: 0; }
+  .system-card[data-open] .system-card__body { min-height: 30rem; }
+  .system-card:not([data-open]) .system-card__visual,
+  .system-card:not([data-open]) .system-card__body > p,
+  .system-card:not([data-open]) .system-card__tags,
+  .system-card:not([data-open]) .system-card__arrow { display: none; }
+  .system-card:not([data-open]) h3 { margin: 0.9rem 0 1rem; padding-right: 1.9rem; font-size: 1.5rem; }
+  .system-card:not([data-open]) .system-card__metric { margin-bottom: 0; }
   .dashboard-graphic__bars i { transform: scaleY(1); }
   .systems-track__end { width: 100%; min-width: 0; min-height: 25rem; }
 }
 
 @media (max-width: 560px) {
-  .system-card.is-open { min-height: 56rem; grid-template-rows: 27rem auto; }
-  .system-card.is-open h3 { font-size: 2.6rem; }
+  .system-card[data-open] { min-height: 56rem; grid-template-rows: 27rem auto; }
+  .system-card[data-open] h3 { font-size: 2.6rem; }
   .measurement-map__node { width: 4.4rem; height: 3.6rem; padding: 0.4rem; }
   .measurement-map__contract { width: 5.5rem; height: 4.6rem; }
   .measurement-map__node b,
