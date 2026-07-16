@@ -361,7 +361,8 @@
   .hero-visual { min-height: 76svh; }
   .hero-scroll { display: none; }
   .proof-section { min-height: auto; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .proof-art, .proof-metric { min-height: 50vw; }
+  .proof-art { min-height: 50vw; }
+  .proof-metric { min-height: 0; padding-top: 3rem; }
 }
 
 @media (max-width: 560px) {
@@ -370,8 +371,10 @@
   .rect-cta--ghost { border-top: 0; border-left: 1px solid rgba(241, 240, 236, 0.3); }
   .hero-copy__foot { gap: 1rem; }
   .proof-section { grid-template-columns: 1fr; }
-  .proof-art, .proof-metric { min-height: 82vw; border-right: 0; }
-  .static-value { font-size: 24vw; }
+  .proof-art, .proof-metric { border-right: 0; }
+  .proof-art { min-height: 60vw; }
+  .static-value { font-size: 15vw; }
+  .proof-metric p { margin-top: 0.7rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

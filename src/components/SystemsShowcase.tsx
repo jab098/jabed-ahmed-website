@@ -87,6 +87,7 @@ export function SystemsShowcase() {
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches,
   )
+  const [openCard, setOpenCard] = useState<number | null>(null)
   const rootRef = useRef<HTMLElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
@@ -214,12 +215,21 @@ export function SystemsShowcase() {
         >
           {SYSTEMS.map((system, index) => (
             <article
-              className="system-card"
+              className={`system-card${openCard === index ? ' is-open' : ''}`}
               data-scroll-track-waypoint={`system-0${index + 1}`}
               data-scroll-waypoint-mobile={`system-0${index + 1}`}
               key={system.number}
               tabIndex={0}
             >
+              <button
+                type="button"
+                className="card-toggle"
+                aria-expanded={openCard === index}
+                aria-label={`${system.title} — details`}
+                onClick={() => setOpenCard(openCard === index ? null : index)}
+              >
+                <i aria-hidden="true"><b /><b /></i>
+              </button>
               <div className="system-card__visual"><SystemGraphic index={index} /></div>
               <div className="system-card__body">
                 <span className="system-card__number">{system.number}</span>

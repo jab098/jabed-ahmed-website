@@ -327,8 +327,14 @@
   .process-intro__aside { position: static; width: min(32rem, 90%); margin-top: 2rem; }
   .process-stage--desktop { display: none; }
   .process-mobile { display: block; }
-  .process-mobile__scene { min-height: 100svh; padding: 4.25rem 1.2rem 1.2rem; border-bottom: 1px solid var(--ink); }
-  .process-mobile__copy { display: grid; min-height: 16rem; align-content: start; padding: 2rem 0 2.5rem; grid-template-columns: 3.2rem 1fr; }
+  .process-mobile__scene { padding: 2rem 1.2rem 1.2rem; border-bottom: 1px solid var(--ink); }
+  .process-mobile__copy { display: grid; align-content: start; padding: 1rem 0 1.5rem; grid-template-columns: 3.2rem 1fr; }
+  .process-diagram-toggle { display: flex; width: 100%; min-height: 3.6rem; align-items: center; margin-bottom: 1.2rem; padding: 0 1rem; border: 1px solid var(--ink); color: inherit; background: transparent; cursor: pointer; gap: 1rem; font: 600 0.6rem 'JetBrains Mono', monospace; letter-spacing: 0.07em; text-transform: uppercase; }
+  .process-diagram-toggle strong { margin-right: auto; font-weight: 600; }
+  .process-diagram-toggle > i { position: relative; width: 0.9rem; height: 0.9rem; }
+  .process-diagram-toggle b { position: absolute; top: 50%; left: 0; width: 100%; height: 1px; background: currentColor; transition: transform 400ms ease; }
+  .process-diagram-toggle b:last-child { transform: rotate(90deg); }
+  .process-diagram-toggle[aria-expanded='true'] b:last-child { transform: rotate(0deg); }
   .process-mobile__copy > span { padding-top: 0.4rem; font: 600 0.58rem 'JetBrains Mono', monospace; }
   .process-mobile__copy h3 { max-width: 12ch; margin: 0; font-size: clamp(2.5rem, 9vw, 4.5rem); font-weight: 500; letter-spacing: -0.06em; line-height: 0.92; }
   .process-mobile__copy p { max-width: 34rem; margin: 1.5rem 0 0; grid-column: 2; font-size: 1rem; line-height: 1.5; }

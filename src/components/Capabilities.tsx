@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ArrowUpRight } from 'lucide-react'
 import { CAPABILITIES } from '../data'
 
@@ -18,6 +18,7 @@ function CapabilityMotif({ index }: { index: number }) {
 
 export function Capabilities() {
   const rootRef = useRef<HTMLElement>(null)
+  const [openCard, setOpenCard] = useState<number | null>(null)
 
   useEffect(() => {
     const root = rootRef.current
@@ -63,12 +64,21 @@ export function Capabilities() {
       <div className="capabilities-grid">
         {CAPABILITIES.map((capability, index) => (
           <article
-            className="capability-card"
+            className={`capability-card${openCard === index ? ' is-open' : ''}`}
             key={capability.number}
             tabIndex={0}
             data-scroll-waypoint-desktop={`capability-0${index + 1}`}
             data-scroll-waypoint-mobile={`capability-0${index + 1}`}
           >
+            <button
+              type="button"
+              className="card-toggle"
+              aria-expanded={openCard === index}
+              aria-label={`${capability.title} — details`}
+              onClick={() => setOpenCard(openCard === index ? null : index)}
+            >
+              <i aria-hidden="true"><b /><b /></i>
+            </button>
             <CapabilityMotif index={index} />
             <div className="capability-card__top">
               <span>{capability.number}</span>

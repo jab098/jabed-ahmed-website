@@ -140,6 +140,7 @@ export function Process() {
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches,
   )
+  const [openDiagram, setOpenDiagram] = useState<number | null>(null)
   const rootRef = useRef<HTMLElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
 
@@ -258,9 +259,21 @@ export function Process() {
                 <h3>{step.title}</h3>
                 <p>{step.copy}</p>
               </div>
-              <div className="process-mobile__display">
-                <ProcessVisual index={index} />
-              </div>
+              <button
+                type="button"
+                className="process-diagram-toggle"
+                aria-expanded={openDiagram === index}
+                onClick={() => setOpenDiagram(openDiagram === index ? null : index)}
+              >
+                <span>{step.number} / 04</span>
+                <strong>{openDiagram === index ? 'Hide diagram' : 'View diagram'}</strong>
+                <i aria-hidden="true"><b /><b /></i>
+              </button>
+              {openDiagram === index && (
+                <div className="process-mobile__display">
+                  <ProcessVisual index={index} />
+                </div>
+              )}
             </article>
           ))}
         </div>
