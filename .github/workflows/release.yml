@@ -39,6 +39,8 @@ jobs:
       - name: Scan Git history for exposed secrets
         # gitleaks/gitleaks-action v3
         uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Install locked dependencies without lifecycle scripts
         run: npm ci --ignore-scripts
