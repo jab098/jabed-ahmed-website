@@ -28,6 +28,9 @@ describe('production security configuration', () => {
     expect(scriptPolicy).not.toContain("'unsafe-inline'")
     expect(scriptPolicy).toContain('https://static.cloudflareinsights.com/beacon.min.js')
     expect(scriptPolicy).not.toMatch(/https:\/\/static\.cloudflareinsights\.com(?:\s|$)/)
+    const connectPolicy = headers.match(/connect-src\s+([^;]+)/)?.[1]
+    expect(connectPolicy).toContain('https://cloudflareinsights.com/cdn-cgi/rum')
+    expect(connectPolicy).not.toMatch(/https:\/\/cloudflareinsights\.com(?:\s|$)/)
   })
 
   it('keeps executable code and page CSS out of inline HTML blocks', () => {
