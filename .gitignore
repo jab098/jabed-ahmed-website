@@ -46,3 +46,14 @@ AGENTS.local.md
 *.njsproj
 *.sln
 *.sw?
+.claude-flow/daemon-state.json
+.claude-flow/daemon.pid
+.claude-flow/metrics/backup.json
+.claude-flow/metrics/codebase-map.json
+.claude-flow/metrics/consolidation.json
+.claude-flow/metrics/harness-loop.json
+.claude-flow/metrics/performance.json
+.claude-flow/metrics/security-audit.json
+.claude-flow/metrics/test-gaps.json
+.claude-flow/neural/stats.json
+.claude/launch.json
