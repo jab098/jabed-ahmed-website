@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { ArrowUpRight } from 'lucide-react'
 import { SYSTEMS } from '../data'
 import {
@@ -7,6 +7,11 @@ import {
   navigationEdgeScrollPosition,
   settleHeadlineReveal,
 } from '../motion'
+import { useAutoAdvance } from '../useAutoAdvance'
+
+/** Four cards plus the `Build yours.` bridge, which stays in the rotation. */
+const SLIDE_COUNT = SYSTEMS.length + 1
+const TRACK_INSET_RATIO = 0.04
 
 function SystemGraphic({ index }: { index: number }) {
   if (index === 0) {
@@ -84,21 +89,38 @@ function SystemGraphic({ index }: { index: number }) {
 }
 
 export function SystemsShowcase() {
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches,
-  )
-  const [openCard, setOpenCard] = useState<number | null>(null)
+  const [activeSlide, setActiveSlide] = useState(0)
+  const [trackOffset, setTrackOffset] = useState(0)
   const rootRef = useRef<HTMLElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    const query = window.matchMedia('(max-width: 900px)')
-    const update = () => setIsMobile(query.matches)
-    update()
-    query.addEventListener('change', update)
-    return () => query.removeEventListener('change', update)
-  }, [])
+  const deferAutoAdvance = useAutoAdvance(
+    stageRef,
+    useCallback(() => setActiveSlide((slide) => (slide + 1) % SLIDE_COUNT), []),
+  )
+
+  const selectSlide = (slide: number) => {
+    setActiveSlide(slide)
+    deferAutoAdvance()
+  }
+
+  useLayoutEffect(() => {
+    const track = trackRef.current
+    if (!track) return
+
+    const measure = () => {
+      const slide = track.children[activeSlide] as HTMLElement | undefined
+      if (!slide) return
+      const inset = window.innerWidth * TRACK_INSET_RATIO
+      const travel = Math.max(0, track.scrollWidth - window.innerWidth + inset)
+      setTrackOffset(Math.min(Math.max(0, slide.offsetLeft - inset), travel))
+    }
+
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [activeSlide])
 
   useEffect(() => {
     const root = rootRef.current
@@ -109,7 +131,7 @@ export function SystemsShowcase() {
         entry.target.classList.add('is-visible')
         observer.unobserve(entry.target)
       })
-    }, { rootMargin: '0px -6% 0px -6%', threshold: 0.18 })
+    }, { threshold: 0.05 })
 
     root.querySelectorAll('.system-card').forEach((card) => observer.observe(card))
     return () => observer.disconnect()
@@ -117,9 +139,7 @@ export function SystemsShowcase() {
 
   useLayoutEffect(() => {
     const root = rootRef.current
-    const stage = stageRef.current
-    const track = trackRef.current
-    if (!root || !stage || !track || navigator.userAgent.includes('jsdom')) return
+    if (!root || navigator.userAgent.includes('jsdom')) return
 
     const headlineLines = root.querySelectorAll<HTMLElement>('.systems-heading__line > span')
     const context = gsap.context(() => {
@@ -138,52 +158,10 @@ export function SystemsShowcase() {
           },
         },
       })
-
-      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      const endWord = root.querySelector<HTMLElement>('.systems-track__end em')
-
-      if (!reduced && !isMobile) {
-        const horizontalTween = gsap.to(track, {
-          x: () => -(track.scrollWidth - window.innerWidth + window.innerWidth * 0.04),
-          ease: 'none',
-          scrollTrigger: {
-            id: 'systems-pin',
-            trigger: stage,
-            start: 'top top',
-            end: () => `+=${Math.max(track.scrollWidth - window.innerWidth, window.innerHeight * 2.8)}`,
-            pin: true,
-            scrub: 0.8,
-            invalidateOnRefresh: true,
-            anticipatePin: 1,
-          },
-        })
-
-        if (endWord) {
-          gsap.to(endWord, {
-            color: '#ff5a1f',
-            ease: 'none',
-            scrollTrigger: {
-              trigger: endWord,
-              containerAnimation: horizontalTween,
-              start: 'left 108%',
-              end: 'left 94%',
-              scrub: 0.15,
-            },
-          })
-        }
-      } else if (!reduced && endWord) {
-        gsap.to(endWord, {
-          color: '#ff5a1f',
-          ease: 'none',
-          scrollTrigger: { trigger: endWord, start: 'top 99%', end: 'top 88%', scrub: 0.15 },
-        })
-      } else if (endWord) {
-        gsap.set(endWord, { color: '#ff5a1f' })
-      }
     }, root)
 
     return () => context.revert()
-  }, [isMobile])
+  }, [])
 
   return (
     <section
@@ -202,35 +180,35 @@ export function SystemsShowcase() {
         <p>Representative system / not client work</p>
       </header>
 
-      <div ref={stageRef} className="systems-stage">
+      <div
+        ref={stageRef}
+        className="systems-stage"
+        data-scroll-frame="viewport"
+        data-scroll-waypoint="systems-stage"
+      >
         <div className="systems-stage__topline">
-          <span>SCROLL TO EXPLORE</span>
-          <span>01—04</span>
+          <span>AUTO-ADVANCING — SELECT ANY CARD</span>
+          <span>0{activeSlide + 1} / 0{SLIDE_COUNT}</span>
         </div>
         <div
           ref={trackRef}
           className="systems-track"
-          data-scroll-track
-          data-scroll-trigger="systems-pin"
+          style={{ transform: `translate3d(${-trackOffset}px, 0, 0)` }}
         >
           {SYSTEMS.map((system, index) => (
             <article
               className="system-card"
-              data-open={openCard === index ? 'true' : undefined}
-              data-scroll-track-waypoint={`system-0${index + 1}`}
-              data-scroll-waypoint-mobile={`system-0${index + 1}`}
+              data-active={activeSlide === index ? 'true' : undefined}
+              aria-current={activeSlide === index ? 'true' : undefined}
               key={system.number}
               tabIndex={0}
+              onClick={() => selectSlide(index)}
+              onKeyDown={(event) => {
+                if (event.key !== 'Enter' && event.key !== ' ') return
+                event.preventDefault()
+                selectSlide(index)
+              }}
             >
-              <button
-                type="button"
-                className="card-toggle"
-                aria-expanded={openCard === index}
-                aria-label={`${system.title} — details`}
-                onClick={() => setOpenCard(openCard === index ? null : index)}
-              >
-                <i aria-hidden="true"><b /><b /></i>
-              </button>
               <div className="system-card__visual"><SystemGraphic index={index} /></div>
               <div className="system-card__body">
                 <span className="system-card__number">{system.number}</span>
@@ -244,8 +222,8 @@ export function SystemsShowcase() {
           ))}
           <div
             className="systems-track__end"
-            data-scroll-track-waypoint="systems-bridge"
-            data-scroll-waypoint-mobile="systems-bridge"
+            data-active={activeSlide === SYSTEMS.length ? 'true' : undefined}
+            onClick={() => selectSlide(SYSTEMS.length)}
           ><span>NEXT</span><strong>Build <em data-scroll-flash="early-tight">yours.</em></strong></div>
         </div>
       </div>

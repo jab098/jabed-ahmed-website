@@ -75,6 +75,13 @@
 .capability-motif--5 { border-radius: 50%; transform: scale(0.86); }
 .capability-motif--6 { transform: skewX(-18deg) scale(1.2); }
 
+/* Desktop: all six pillars share one nav-adjusted viewport frame — two equal rows, one stop. */
+@media (min-width: 901px) {
+  .capabilities-grid { grid-auto-rows: minmax(0, 1fr); }
+  .capabilities-grid article { min-height: 0; }
+  .capabilities-grid h3 { margin-bottom: 1rem; font-size: clamp(1.9rem, min(12cqi, 8vh), 4.9rem); }
+}
+
 .faq-section {
   display: grid;
   padding: clamp(7rem, 10vw, 11rem) 3vw;

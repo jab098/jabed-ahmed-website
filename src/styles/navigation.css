@@ -151,20 +151,27 @@
   min-height: 100dvh;
   padding: 7rem 3rem 2rem;
   color: var(--paper);
-  background: var(--signal);
   grid-template-rows: auto 1fr auto;
   opacity: 0;
   pointer-events: none;
-  transition: visibility 0s 800ms, opacity 1ms 800ms;
+  transition: visibility 0s 880ms, opacity 1ms 880ms;
 }
 
+/*
+ * Two curtains instead of one: the signal band leads the ink surface in, and trails it out. The
+ * panel itself carries no background, so neither state can paint a full orange screen.
+ */
 .site-menu__wipe {
   position: absolute;
   inset: 0;
-  background: var(--ink);
   clip-path: polygon(0 0, 0 0, 0 100%, 0 100%);
   transition: clip-path 700ms cubic-bezier(0.83, 0, 0.17, 1);
 }
+
+.site-menu__wipe--signal { background: var(--signal); transition-delay: 160ms; }
+.site-menu__wipe--ink { background: var(--ink); }
+.site-nav.is-open .site-menu__wipe--signal { transition-delay: 0s; }
+.site-nav.is-open .site-menu__wipe--ink { transition-delay: 160ms; }
 
 .site-menu__header,
 .site-menu__footer,
@@ -256,4 +263,5 @@
   .site-menu__header,
   .site-menu__footer,
   .site-menu__links a { transition-duration: 1ms; }
+  .site-menu__wipe { transition-delay: 0s !important; }
 }

@@ -4,11 +4,10 @@ import {
   gsap,
   HEADLINE_SCRUB,
   navigationEdgeScrollPosition,
-  ScrollTrigger,
   settleHeadlineReveal,
 } from '../motion'
+import { useAutoAdvance } from '../useAutoAdvance'
 
-const PROCESS_SCROLL_PROGRESS = [0.08, 0.34, 0.6, 0.86] as const
 const PROCESS_CROSSFADE_MS = 480
 
 const DIAGNOSIS_EVIDENCE = [
@@ -137,20 +136,10 @@ export function Process() {
     current: number
     previous: number | null
   }>({ current: 0, previous: null })
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches,
-  )
-  const [openDiagram, setOpenDiagram] = useState<number | null>(null)
+  const [hovered, setHovered] = useState(false)
   const rootRef = useRef<HTMLElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const query = window.matchMedia('(max-width: 900px)')
-    const update = () => setIsMobile(query.matches)
-    update()
-    query.addEventListener('change', update)
-    return () => query.removeEventListener('change', update)
-  }, [])
+  const pointerRef = useRef<{ x: number, y: number } | null>(null)
 
   useEffect(() => {
     if (previousStep === null) return
@@ -174,13 +163,47 @@ export function Process() {
     ))
   }, [])
 
+  const deferAutoAdvance = useAutoAdvance(
+    stageRef,
+    useCallback(() => {
+      setProcessState((state) => ({
+        current: (state.current + 1) % PROCESS_STEPS.length,
+        previous: state.current,
+      }))
+    }, []),
+    hovered,
+  )
+
+  /*
+   * Hover follows movement, not position. Scrolling a method under a resting cursor fires enter
+   * and move events at unchanged coordinates, and that must not steal the state from the timer.
+   */
+  const holdOnStep = (index: number) => ({
+    onPointerMove: (event: { clientX: number, clientY: number, pointerType: string }) => {
+      if (event.pointerType !== 'mouse') return
+      const previous = pointerRef.current
+      pointerRef.current = { x: event.clientX, y: event.clientY }
+      if (!previous || (previous.x === event.clientX && previous.y === event.clientY)) return
+      setHovered(true)
+      setActiveStep(index)
+    },
+    onPointerLeave: (event: { pointerType: string }) => {
+      if (event.pointerType !== 'mouse') return
+      pointerRef.current = null
+      setHovered(false)
+      deferAutoAdvance()
+    },
+    onClick: () => {
+      setActiveStep(index)
+      deferAutoAdvance()
+    },
+  })
+
   useLayoutEffect(() => {
     const root = rootRef.current
-    const stage = stageRef.current
     if (!root || navigator.userAgent.includes('jsdom')) return
 
     const headlineLines = root.querySelectorAll<HTMLElement>('.process-intro__line > span')
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const context = gsap.context(() => {
       gsap.fromTo(
         headlineLines,
@@ -201,25 +224,10 @@ export function Process() {
           },
         },
       )
-
-      if (stage && !reduced && !isMobile) {
-        ScrollTrigger.create({
-          id: 'process-pin',
-          trigger: stage,
-          start: 'top top',
-          end: '+=300%',
-          pin: true,
-          scrub: true,
-          anticipatePin: 1,
-          onUpdate: ({ progress }) => {
-            setActiveStep(Math.min(PROCESS_STEPS.length - 1, Math.floor(progress * PROCESS_STEPS.length)))
-          },
-        })
-      }
     }, root)
 
     return () => context.revert()
-  }, [isMobile, setActiveStep])
+  }, [])
 
   const processLayers = previousStep === null
     ? [{ index: activeStep, state: 'current' as const }]
@@ -246,89 +254,58 @@ export function Process() {
         <p className="process-intro__aside">Four disciplined moves. One system your team can trust, use and improve.</p>
       </header>
 
-      {isMobile ? (
-        <div className="process-mobile" aria-label="Process stages">
-          {PROCESS_STEPS.map((step, index) => (
-            <article
-              className="process-mobile__scene"
-              data-scroll-waypoint-mobile={`process-0${index + 1}`}
-              key={step.number}
-            >
-              <div className="process-mobile__copy">
-                <span>{step.number} / 04</span>
-                <h3>{step.title}</h3>
-                <p>{step.copy}</p>
-              </div>
+      <div
+        ref={stageRef}
+        className="process-stage"
+        data-scroll-frame="viewport"
+        data-scroll-waypoint="process-stage"
+      >
+        <div className="process-stage__rail">
+          <p className="eyebrow">// The method</p>
+          <div className="process-tabs" role="group" aria-label="Process stages">
+            {PROCESS_STEPS.map((step, index) => (
               <button
                 type="button"
-                className="process-diagram-toggle"
-                aria-expanded={openDiagram === index}
-                onClick={() => setOpenDiagram(openDiagram === index ? null : index)}
+                key={step.number}
+                className={activeStep === index ? 'is-active' : ''}
+                aria-pressed={activeStep === index}
+                aria-label={`${step.number} ${step.title}`}
+                {...holdOnStep(index)}
               >
-                <span>{step.number} / 04</span>
-                <strong>{openDiagram === index ? 'Hide diagram' : 'View diagram'}</strong>
-                <i aria-hidden="true"><b /><b /></i>
+                <span>{step.number}</span>
+                <strong>{step.title}</strong>
+                <i aria-hidden="true" />
               </button>
-              {openDiagram === index && (
-                <div className="process-mobile__display">
-                  <ProcessVisual index={index} />
-                </div>
-              )}
-            </article>
-          ))}
-        </div>
-      ) : (
-        <div ref={stageRef} className="process-stage process-stage--desktop">
-          <div className="process-stage__rail">
-            <p className="eyebrow">// The method</p>
-            <div className="process-tabs" role="group" aria-label="Process stages">
-              {PROCESS_STEPS.map((step, index) => (
-                <button
-                  type="button"
-                  key={step.number}
-                  className={activeStep === index ? 'is-active' : ''}
-                  aria-pressed={activeStep === index}
-                  aria-label={`${step.number} ${step.title}`}
-                  data-scroll-virtual={`process-0${index + 1}`}
-                  data-scroll-trigger="process-pin"
-                  data-scroll-progress={PROCESS_SCROLL_PROGRESS[index]}
-                  onClick={() => setActiveStep(index)}
-                >
-                  <span>{step.number}</span>
-                  <strong>{step.title}</strong>
-                  <i aria-hidden="true" />
-                </button>
-              ))}
-            </div>
-            <div className="process-stage__copy-stack">
-              {processLayers.map(({ index, state }) => (
-                <div
-                  className="process-stage__copy"
-                  data-process-copy-layer={state}
-                  aria-hidden={state === 'leaving' ? true : undefined}
-                  key={`copy-${index}`}
-                >
-                  <span>{PROCESS_STEPS[index].number} / 04</span>
-                  <p>{PROCESS_STEPS[index].copy}</p>
-                </div>
-              ))}
-            </div>
+            ))}
           </div>
-          <div className="process-stage__display-stack">
+          <div className="process-stage__copy-stack">
             {processLayers.map(({ index, state }) => (
               <div
-                className="process-stage__display"
-                data-process-visual-layer={state}
+                className="process-stage__copy"
+                data-process-copy-layer={state}
                 aria-hidden={state === 'leaving' ? true : undefined}
-                key={`visual-${index}`}
+                key={`copy-${index}`}
               >
-                <ProcessVisual index={index} />
+                <span>{PROCESS_STEPS[index].number} / 04</span>
+                <p>{PROCESS_STEPS[index].copy}</p>
               </div>
             ))}
           </div>
-          <div className="process-stage__progress" aria-hidden="true"><i style={{ transform: `scaleX(${(activeStep + 1) / 4})` }} /></div>
         </div>
-      )}
+        <div className="process-stage__display-stack">
+          {processLayers.map(({ index, state }) => (
+            <div
+              className="process-stage__display"
+              data-process-visual-layer={state}
+              aria-hidden={state === 'leaving' ? true : undefined}
+              key={`visual-${index}`}
+            >
+              <ProcessVisual index={index} />
+            </div>
+          ))}
+        </div>
+        <div className="process-stage__progress" aria-hidden="true"><i style={{ transform: `scaleX(${(activeStep + 1) / 4})` }} /></div>
+      </div>
     </section>
   )
 }

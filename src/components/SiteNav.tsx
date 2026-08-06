@@ -164,7 +164,8 @@ export function SiteNav() {
         aria-hidden={!menuOpen}
         inert={!menuOpen}
       >
-        <div className="site-menu__wipe" aria-hidden="true" />
+        <div className="site-menu__wipe site-menu__wipe--signal" aria-hidden="true" />
+        <div className="site-menu__wipe site-menu__wipe--ink" aria-hidden="true" />
         <div className="site-menu__header" data-menu-fade>
           <span>Navigation / 2026</span>
           <span>London → Worldwide</span>
