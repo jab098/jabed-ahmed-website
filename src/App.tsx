@@ -19,8 +19,8 @@ export default function App() {
       <SiteNav />
       <main id="main-content">
         <Hero />
-        <Metrics />
         <Capabilities />
+        <Metrics />
         <Process />
         <SystemsShowcase />
         <Faq />

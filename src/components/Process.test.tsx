@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { expect, it, vi } from 'vitest'
 import { Process } from './Process'
+import { AUTO_ADVANCE_MS, RESUME_DELAY_MS } from '../useAutoAdvance'
 
 it('renders four selectable process states and updates the active decision visual', async () => {
   const user = userEvent.setup()
@@ -15,8 +16,13 @@ it('renders four selectable process states and updates the active decision visua
     'data-scroll-waypoint',
     'process-heading',
   )
-  expect(document.querySelectorAll('[data-scroll-virtual]')).toHaveLength(4)
-  expect(first).toHaveAttribute('data-scroll-trigger', 'process-pin')
+  expect(document.querySelector('.process-stage')).toHaveAttribute(
+    'data-scroll-waypoint',
+    'process-stage',
+  )
+  expect(document.querySelector('.process-stage')).toHaveAttribute('data-scroll-frame', 'viewport')
+  expect(document.querySelectorAll('[data-scroll-virtual]')).toHaveLength(0)
+  expect(document.querySelectorAll('[data-scroll-waypoint-mobile]')).toHaveLength(0)
 
   expect(first).toHaveAttribute('aria-pressed', 'true')
   await user.click(fourth)
@@ -34,7 +40,7 @@ it('renders four selectable process states and updates the active decision visua
   expect(release).toHaveTextContent('Owner')
 })
 
-it('renders all four process scenes as physical mobile stops instead of a hidden tab state', () => {
+it('renders the same auto-advancing stage at mobile widths', () => {
   const originalMatchMedia = window.matchMedia
   window.matchMedia = vi.fn().mockImplementation((query: string) => ({
     matches: query === '(max-width: 900px)',
@@ -50,12 +56,98 @@ it('renders all four process scenes as physical mobile stops instead of a hidden
   try {
     const { container } = render(<Process />)
 
-    expect(container.querySelectorAll('[data-scroll-waypoint-mobile^="process-"]')).toHaveLength(4)
-    expect(screen.queryByRole('group', { name: 'Process stages' })).not.toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Diagnose the decision.' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Enable and improve.' })).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Process stages' })).toBeInTheDocument()
+    expect(screen.getAllByRole('button')).toHaveLength(4)
+    expect(container.querySelector('.process-mobile')).not.toBeInTheDocument()
+    expect(container.querySelectorAll('[data-scroll-waypoint-mobile]')).toHaveLength(0)
   } finally {
     window.matchMedia = originalMatchMedia
+  }
+})
+
+it('advances the method on a timer while the stage is on screen, and holds while hovered', () => {
+  vi.useFakeTimers()
+  const OriginalIntersectionObserver = globalThis.IntersectionObserver
+  class VisibleObserver {
+    callback: IntersectionObserverCallback
+    constructor(callback: IntersectionObserverCallback) {
+      this.callback = callback
+    }
+    observe(target: Element) {
+      this.callback(
+        [{ isIntersecting: true, target } as IntersectionObserverEntry],
+        this as unknown as IntersectionObserver,
+      )
+    }
+    unobserve() {}
+    disconnect() {}
+  }
+  vi.stubGlobal('IntersectionObserver', VisibleObserver)
+
+  try {
+    render(<Process />)
+    const step = (name: string) => screen.getByRole('button', { name })
+
+    expect(step('01 Diagnose the decision.')).toHaveAttribute('aria-pressed', 'true')
+    act(() => vi.advanceTimersByTime(AUTO_ADVANCE_MS))
+    expect(step('02 Architect the system.')).toHaveAttribute('aria-pressed', 'true')
+    act(() => vi.advanceTimersByTime(AUTO_ADVANCE_MS))
+    expect(step('03 Build and validate.')).toHaveAttribute('aria-pressed', 'true')
+
+    const fourth = step('04 Enable and improve.')
+    fireEvent.pointerMove(fourth, { pointerType: 'mouse', clientX: 40, clientY: 300 })
+    fireEvent.pointerMove(fourth, { pointerType: 'mouse', clientX: 62, clientY: 316 })
+    expect(fourth).toHaveAttribute('aria-pressed', 'true')
+    act(() => vi.advanceTimersByTime(AUTO_ADVANCE_MS * 4))
+    expect(fourth).toHaveAttribute('aria-pressed', 'true')
+
+    fireEvent.pointerLeave(fourth, { pointerType: 'mouse' })
+    act(() => vi.advanceTimersByTime(AUTO_ADVANCE_MS))
+    expect(fourth).toHaveAttribute('aria-pressed', 'true')
+    act(() => vi.advanceTimersByTime(RESUME_DELAY_MS - AUTO_ADVANCE_MS))
+    expect(step('01 Diagnose the decision.')).toHaveAttribute('aria-pressed', 'true')
+  } finally {
+    vi.stubGlobal('IntersectionObserver', OriginalIntersectionObserver)
+    vi.useRealTimers()
+  }
+})
+
+it('ignores a method that scrolls under a resting cursor', () => {
+  vi.useFakeTimers()
+  const OriginalIntersectionObserver = globalThis.IntersectionObserver
+  class VisibleObserver {
+    callback: IntersectionObserverCallback
+    constructor(callback: IntersectionObserverCallback) {
+      this.callback = callback
+    }
+    observe(target: Element) {
+      this.callback(
+        [{ isIntersecting: true, target } as IntersectionObserverEntry],
+        this as unknown as IntersectionObserver,
+      )
+    }
+    unobserve() {}
+    disconnect() {}
+  }
+  vi.stubGlobal('IntersectionObserver', VisibleObserver)
+
+  try {
+    render(<Process />)
+    const third = screen.getByRole('button', { name: '03 Build and validate.' })
+
+    // A scroll under a stationary mouse still fires enter and move at unchanged coordinates.
+    fireEvent.pointerEnter(third, { pointerType: 'mouse' })
+    fireEvent.pointerMove(third, { pointerType: 'mouse', clientX: 120, clientY: 480 })
+    fireEvent.pointerMove(third, { pointerType: 'mouse', clientX: 120, clientY: 480 })
+
+    expect(third).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('button', { name: '01 Diagnose the decision.' })).toHaveAttribute('aria-pressed', 'true')
+
+    act(() => vi.advanceTimersByTime(AUTO_ADVANCE_MS))
+    expect(screen.getByRole('button', { name: '02 Architect the system.' })).toHaveAttribute('aria-pressed', 'true')
+  } finally {
+    vi.stubGlobal('IntersectionObserver', OriginalIntersectionObserver)
+    vi.useRealTimers()
   }
 })
 

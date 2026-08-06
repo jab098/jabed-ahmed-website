@@ -61,14 +61,17 @@ export function Capabilities() {
         </h2>
         <p>Six connected capabilities. No black boxes.</p>
       </header>
-      <div className="capabilities-grid">
+      <div
+        className="capabilities-grid"
+        data-scroll-frame="viewport"
+        data-scroll-waypoint="capabilities-grid"
+      >
         {CAPABILITIES.map((capability, index) => (
           <article
             className="capability-card"
             data-open={openCard === index ? 'true' : undefined}
             key={capability.number}
             tabIndex={0}
-            data-scroll-waypoint-desktop={`capability-0${index + 1}`}
             data-scroll-waypoint-mobile={`capability-0${index + 1}`}
           >
             <button

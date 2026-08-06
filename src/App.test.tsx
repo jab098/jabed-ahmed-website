@@ -12,8 +12,8 @@ it('renders the approved v2 chapter order', () => {
   expect(container.querySelectorAll('[data-scroll-scene]')).toHaveLength(8)
   expect([...container.querySelectorAll('main > section')].map((node) => node.id)).toEqual([
     'home',
-    'proof',
     'capabilities',
+    'proof',
     'process',
     'systems',
     'faq',

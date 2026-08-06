@@ -16,7 +16,10 @@ it('renders the six-part measurement system grid', () => {
     'data-scroll-waypoint',
     'capabilities-heading',
   )
-  expect(container.querySelectorAll('[data-scroll-waypoint-desktop^="capability-"]')).toHaveLength(6)
+  const grid = container.querySelector('.capabilities-grid')
+  expect(grid).toHaveAttribute('data-scroll-waypoint', 'capabilities-grid')
+  expect(grid).toHaveAttribute('data-scroll-frame', 'viewport')
+  expect(container.querySelectorAll('[data-scroll-waypoint-desktop]')).toHaveLength(0)
   expect(container.querySelectorAll('[data-scroll-waypoint-mobile^="capability-"]')).toHaveLength(6)
 })
 

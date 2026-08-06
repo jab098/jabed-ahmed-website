@@ -1,7 +1,8 @@
-import { render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { expect, it, vi } from 'vitest'
 import { SystemsShowcase } from './SystemsShowcase'
+import { AUTO_ADVANCE_MS, RESUME_DELAY_MS } from '../useAutoAdvance'
 
 it('frames four representative systems without presenting them as client case studies', () => {
   const { container } = render(<SystemsShowcase />)
@@ -19,38 +20,59 @@ it('frames four representative systems without presenting them as client case st
     'data-scroll-waypoint',
     'systems-heading',
   )
-  expect(container.querySelector('.systems-track')).toHaveAttribute('data-scroll-track')
-  expect(container.querySelector('.systems-track')).toHaveAttribute(
-    'data-scroll-trigger',
-    'systems-pin',
+  expect(container.querySelector('.systems-stage')).toHaveAttribute(
+    'data-scroll-waypoint',
+    'systems-stage',
   )
-  expect(container.querySelectorAll('[data-scroll-track-waypoint]')).toHaveLength(5)
-  expect(container.querySelectorAll('[data-scroll-waypoint-mobile]')).toHaveLength(5)
+  expect(container.querySelector('.systems-stage')).toHaveAttribute('data-scroll-frame', 'viewport')
+  expect(container.querySelectorAll('[data-scroll-track-waypoint]')).toHaveLength(0)
+  expect(container.querySelectorAll('[data-scroll-waypoint-mobile]')).toHaveLength(0)
 })
 
-it('rebuilds its pinned scene when the desktop/mobile breakpoint changes', () => {
-  const originalMatchMedia = window.matchMedia
-  const addEventListener = vi.fn()
-  const removeEventListener = vi.fn()
-  window.matchMedia = vi.fn().mockImplementation((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addEventListener,
-    removeEventListener,
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  }))
+it('cycles the track through every card and the bridge, and defers after a selection', () => {
+  vi.useFakeTimers()
+  const OriginalIntersectionObserver = globalThis.IntersectionObserver
+  class VisibleObserver {
+    callback: IntersectionObserverCallback
+    constructor(callback: IntersectionObserverCallback) {
+      this.callback = callback
+    }
+    observe(target: Element) {
+      this.callback(
+        [{ isIntersecting: true, target } as IntersectionObserverEntry],
+        this as unknown as IntersectionObserver,
+      )
+    }
+    unobserve() {}
+    disconnect() {}
+  }
+  vi.stubGlobal('IntersectionObserver', VisibleObserver)
 
   try {
-    const { unmount } = render(<SystemsShowcase />)
-    expect(window.matchMedia).toHaveBeenCalledWith('(max-width: 900px)')
-    expect(addEventListener).toHaveBeenCalledWith('change', expect.any(Function))
-    unmount()
-    expect(removeEventListener).toHaveBeenCalledWith('change', expect.any(Function))
+    const { container } = render(<SystemsShowcase />)
+    const active = () => container.querySelector('[data-active]')
+    const tick = () => act(() => vi.advanceTimersByTime(AUTO_ADVANCE_MS))
+
+    expect(active()).toHaveTextContent('Measurement architecture')
+    tick()
+    expect(active()).toHaveTextContent('Experimentation readout')
+
+    tick()
+    tick()
+    tick()
+    expect(active()).toHaveClass('systems-track__end')
+    tick()
+    expect(active()).toHaveTextContent('Measurement architecture')
+
+    fireEvent.click(screen.getByRole('heading', { name: 'Executive decision dashboard' }))
+    expect(active()).toHaveTextContent('Executive decision dashboard')
+    act(() => vi.advanceTimersByTime(AUTO_ADVANCE_MS))
+    expect(active()).toHaveTextContent('Executive decision dashboard')
+    act(() => vi.advanceTimersByTime(RESUME_DELAY_MS - AUTO_ADVANCE_MS))
+    expect(active()).toHaveClass('systems-track__end')
   } finally {
-    window.matchMedia = originalMatchMedia
+    vi.stubGlobal('IntersectionObserver', OriginalIntersectionObserver)
+    vi.useRealTimers()
   }
 })
 
@@ -72,19 +94,14 @@ it('observes every system card for its own fade entrance', () => {
   }
 })
 
-it('keeps observer-applied visibility when a card is expanded on mobile', async () => {
+it('selects a neighbouring card from the keyboard', async () => {
   const user = userEvent.setup()
-  render(<SystemsShowcase />)
+  const { container } = render(<SystemsShowcase />)
 
-  const card = screen.getByRole('heading', { name: 'Executive decision dashboard' }).closest('article')!
-  card.classList.add('is-visible')
-  const toggle = screen.getByRole('button', { name: 'Executive decision dashboard — details' })
+  const card = screen.getByRole('heading', { name: 'Consent and server-side pipeline' }).closest('article')!
+  card.focus()
+  await user.keyboard('{Enter}')
 
-  await user.click(toggle)
-  expect(card).toHaveAttribute('data-open')
-  expect(card).toHaveClass('is-visible')
-
-  await user.click(toggle)
-  expect(card).not.toHaveAttribute('data-open')
-  expect(card).toHaveClass('is-visible')
+  expect(card).toHaveAttribute('data-active', 'true')
+  expect(container.querySelectorAll('[data-active]')).toHaveLength(1)
 })

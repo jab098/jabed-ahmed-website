@@ -47,8 +47,6 @@
 .process-stage {
   position: relative;
   display: grid;
-  min-height: 100svh;
-  padding-top: 4.25rem;
   overflow: hidden;
   background: var(--paper);
   grid-template-columns: 43% 57%;
@@ -151,10 +149,17 @@
   text-transform: uppercase;
 }
 
+/* Desktop: the stage owns exactly one nav-adjusted frame, so the diagram fills what is left. */
+@media (min-width: 901px) {
+  .process-stage { grid-template-rows: minmax(0, 1fr); }
+  .process-stage__rail,
+  .process-stage__display-stack,
+  .process-stage__display,
+  .process-visual { min-height: 0; }
+}
+
 .process-stage__progress { position: absolute; right: 0; bottom: 0; left: 0; height: 0.25rem; background: #c5c2bd; }
 .process-stage__progress i { display: block; width: 100%; height: 100%; background: var(--signal); transform-origin: left; transition: transform 500ms ease; }
-
-.process-mobile { display: none; }
 
 .diagnosis-visual {
   position: absolute;
@@ -320,35 +325,27 @@
 @keyframes release-dot-in { from { opacity: 0; transform: scale(0); } }
 @keyframes release-rise-in { from { opacity: 0; transform: translateY(0.8rem); } }
 
+/* Mobile mirrors the desktop stage: rail on top, one auto-advancing diagram below. */
 @media (max-width: 900px) {
   .process-intro { min-height: 70svh; padding-inline: 1.2rem; }
   .process-intro > .eyebrow { left: 1.2rem; }
   .process-intro h2 { font-size: clamp(3.5rem, 13vw, 7rem); }
   .process-intro__aside { position: static; width: min(32rem, 90%); margin-top: 2rem; }
-  .process-stage--desktop { display: none; }
-  .process-mobile { display: block; }
-  .process-mobile__scene { padding: 2rem 1.2rem 1.2rem; border-bottom: 1px solid var(--ink); }
-  .process-mobile__copy { display: grid; align-content: start; padding: 1rem 0 1.5rem; grid-template-columns: 3.2rem 1fr; }
-  .process-diagram-toggle { display: flex; width: 100%; min-height: 3.6rem; align-items: center; margin-bottom: 1.2rem; padding: 0 1rem; border: 1px solid var(--ink); color: inherit; background: transparent; cursor: pointer; gap: 1rem; font: 600 0.6rem 'JetBrains Mono', monospace; letter-spacing: 0.07em; text-transform: uppercase; }
-  .process-diagram-toggle strong { margin-right: auto; font-weight: 600; }
-  .process-diagram-toggle > i { position: relative; width: 0.9rem; height: 0.9rem; }
-  .process-diagram-toggle b { position: absolute; top: 50%; left: 0; width: 100%; height: 1px; background: currentColor; transition: transform 400ms ease; }
-  .process-diagram-toggle b:last-child { transform: rotate(90deg); }
-  .process-diagram-toggle[aria-expanded='true'] b:last-child { transform: rotate(0deg); }
-  .process-mobile__copy > span { padding-top: 0.4rem; font: 600 0.58rem 'JetBrains Mono', monospace; }
-  .process-mobile__copy h3 { max-width: 12ch; margin: 0; font-size: clamp(2.5rem, 9vw, 4.5rem); font-weight: 500; letter-spacing: -0.06em; line-height: 0.92; }
-  .process-mobile__copy p { max-width: 34rem; margin: 1.5rem 0 0; grid-column: 2; font-size: 1rem; line-height: 1.5; }
-  .process-mobile__display { min-height: 68svh; }
-  .process-visual { min-height: 65svh; }
+  .process-stage { padding-top: 3.7rem; grid-template-columns: 1fr; grid-template-rows: auto auto; }
+  .process-stage__rail { padding: 1.2rem 1.2rem 1.4rem; border-right: 0; border-bottom: 1px solid var(--ink); }
+  .process-stage__rail > .eyebrow { margin-bottom: 1rem; }
+  .process-tabs button { min-height: 3.1rem; }
+  .process-stage__copy-stack { margin-top: 1.2rem; }
+  .process-stage__copy p { font-size: 0.95rem; }
+  .process-stage__display { padding: 1rem 1.2rem 1.4rem; }
+  .process-visual { min-height: 41svh; }
 }
 
 @media (max-width: 560px) {
   .process-intro h2 { font-size: clamp(3.15rem, 15vw, 5rem); }
   .process-tabs button { grid-template-columns: 2.2rem 1fr 2.5rem; }
   .process-tabs button strong { font-size: 1.15rem; }
-  .process-mobile__copy { grid-template-columns: 2.5rem 1fr; }
-  .process-mobile__display { min-height: 34rem; }
-  .process-visual { min-height: 32rem; }
+  .process-visual { min-height: 38svh; }
   .architecture-visual__node { width: 5rem; height: 5rem; }
   .architecture-visual__node b { font-size: 0.48rem; }
   .matrix-visual { inset: 14% 3% 8%; }
