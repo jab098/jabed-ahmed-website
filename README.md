@@ -1,7 +1,72 @@
 # Jabed Ahmed — Data systems consultancy
 
-V2 portfolio site for measurement architecture, experimentation and decision systems.
+V2 portfolio site for measurement architecture, experimentation, and decision systems.
 
-## Design language
+## About the site
 
-- [Scroll choreography](docs/design-language/scroll-choreography.md) — waypoint declarations, one-gesture navigation, responsive behavior, and release checks.
+This site presents Jabed Ahmed’s work across:
+
+- Measurement architecture and tag management
+- Server-side tracking and privacy-compliant data pipelines
+- Conversion-rate optimisation and experimentation
+- Analytics systems that support clearer business decisions
+
+Visitors can explore capabilities, proof points, working methods, systems thinking, FAQs, and contact options.
+
+## Experience
+
+The desktop experience uses authored narrative scroll choreography. Each wheel or trackpad gesture advances by at most one intentional composition, so sections are not skipped accidentally.
+
+Touch-first devices retain native browser scrolling. The site also respects reduced-motion preferences and includes keyboard-accessible navigation, a skip link, semantic landmarks, and focus-aware animated scenes.
+
+See [docs/design-language/scroll-choreography.md](docs/design-language/scroll-choreography.md) for the interaction contract and implementation guidance.
+
+## Technology
+
+- React 19
+- TypeScript
+- Vite
+- GSAP
+- CSS
+- Vitest and Testing Library
+- Cloudflare Pages-compatible static output
+
+## Local development
+
+```bash
+npm install
+npm run dev
+```
+
+Available scripts:
+
+```bash
+npm run build    # Type-check and create a production build
+npm run test     # Run the test suite
+npm run lint     # Run Oxlint
+npm run preview  # Preview the production build locally
+```
+
+## Project structure
+
+- `src/` — React components, content, motion, styles, and tests
+- `public/` — public assets
+- `cloudflare/_headers` — production security headers
+- `privacy.html` — privacy notice
+- `docs/` — design and implementation documentation
+
+## Privacy and security
+
+The site includes a dedicated privacy notice and a restrictive production security-header configuration, including Content Security Policy, HSTS, clickjacking protection, MIME sniffing protection, and referrer-policy controls.
+
+Contact is handled through email and an external booking link rather than an in-site form.
+
+## Deployment
+
+Build the site with:
+
+```bash
+npm run build
+```
+
+The generated production output can then be deployed through the project’s Cloudflare Pages workflow.
