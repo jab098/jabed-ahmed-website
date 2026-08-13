@@ -31,6 +31,14 @@ See [docs/design-language/scroll-choreography.md](docs/design-language/scroll-ch
 - Vitest and Testing Library
 - Cloudflare Pages-compatible static output
 
+## Copyright and reuse
+
+© 2026 Jabed Ahmed. All rights reserved.
+
+This repository is published as a project portfolio. No permission is granted to copy,
+modify, redistribute, or reuse the code, design, content, or assets without written
+permission.
+
 ## Local development
 
 ```bash
