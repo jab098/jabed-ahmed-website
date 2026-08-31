@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { getCanvasBackingStore } from '../canvasBudget'
+import { useReducedMotion } from '../useReducedMotion'
 
 const GLYPHS = ['0', '1', '+', '/', ':', '=', '%', '·', '#']
 const COLOURS = ['#ff5a1f', '#f1f0ec', '#11100f']
@@ -16,8 +17,13 @@ export function FooterGlyphStream() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const pointerRef = useRef({ x: -999, y: -999, active: false })
   const paletteRef = useRef(0)
+  const clockRef = useRef(0)
   const [palette, setPalette] = useState(0)
   const [canvasReady, setCanvasReady] = useState(false)
+  const reducedMotion = useReducedMotion()
+  const [paused, setPaused] = useState(false)
+  const still = reducedMotion || paused
+  const staticPalette = still ? palette : 0
 
   useEffect(() => { paletteRef.current = palette }, [palette])
 
@@ -40,6 +46,7 @@ export function FooterGlyphStream() {
     let frame = 0
     let resizeFrame = 0
     let intersecting = true
+    let lastFrame = 0
 
     const resize = () => {
       const bounds = host.getBoundingClientRect()
@@ -58,11 +65,13 @@ export function FooterGlyphStream() {
       resizeFrame = window.requestAnimationFrame(() => {
         resizeFrame = 0
         resize()
+        start()
       })
     }
 
     const shouldAnimate = () => intersecting && !document.hidden
     const stop = () => {
+      lastFrame = 0
       if (!frame) return
       window.cancelAnimationFrame(frame)
       frame = 0
@@ -75,6 +84,11 @@ export function FooterGlyphStream() {
     const draw = (time: number) => {
       frame = 0
       if (!shouldAnimate()) return
+      if (!still) {
+        if (lastFrame) clockRef.current += Math.min(time - lastFrame, 40)
+        lastFrame = time
+      }
+      time = clockRef.current
       context.clearRect(0, 0, width, height)
       context.font = `600 ${Math.max(8, Math.min(12, width / 130))}px "JetBrains Mono", monospace`
       context.textAlign = 'center'
@@ -90,7 +104,7 @@ export function FooterGlyphStream() {
         let y = progress * height
         x += Math.sin(progress * 18 + particle.stream * 1.7 + time * 0.0008) * (5 + 13 * (1 - convergence))
 
-        if (pointer.active) {
+        if (pointer.active && !still) {
           const dx = x - pointer.x
           const dy = y - pointer.y
           const distance = Math.sqrt(dx * dx + dy * dy)
@@ -106,7 +120,7 @@ export function FooterGlyphStream() {
         context.fillText(particle.glyph, x, y)
       }
       context.globalAlpha = 1
-      frame = window.requestAnimationFrame(draw)
+      if (!still) frame = window.requestAnimationFrame(draw)
     }
 
     resize()
@@ -133,9 +147,10 @@ export function FooterGlyphStream() {
       window.cancelAnimationFrame(resizeFrame)
       window.cancelAnimationFrame(frame)
     }
-  }, [])
+  }, [still, staticPalette])
 
   const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (still || event.pointerType === 'touch') return
     const bounds = event.currentTarget.getBoundingClientRect()
     pointerRef.current = { x: event.clientX - bounds.left, y: event.clientY - bounds.top, active: true }
   }
@@ -161,15 +176,26 @@ export function FooterGlyphStream() {
         <ellipse cx="700" cy="465" rx="165" ry="84" fill="url(#footer-glyph-pattern)" />
       </svg>
       <div className="footer-glyphs__core" aria-hidden="true"><span>DECISION</span><strong>01</strong></div>
-      <button
-        type="button"
-        className="footer-colour-control"
-        aria-label="Change colour"
-        data-palette={palette}
-        onClick={() => setPalette((value) => (value + 1) % COLOURS.length)}
-      >
-        <kbd>C</kbd><span>Change colour</span>
-      </button>
+      <div className="footer-artwork-header">
+        <div className="signal-footer__top">
+          <span>JA / DATA</span>
+          <span>Signals into decisions</span>
+        </div>
+        <div className="footer-artwork-controls">
+          <button type="button" className="footer-motion-control" disabled={reducedMotion}
+            aria-label={still ? 'Play footer artwork' : 'Pause footer artwork'}
+            onClick={() => setPaused(value => !value)}>{reducedMotion ? 'Still' : paused ? 'Play' : 'Pause'}</button>
+          <button
+            type="button"
+            className="footer-colour-control"
+            aria-label="Change colour"
+            data-palette={palette}
+            onClick={() => setPalette((value) => (value + 1) % COLOURS.length)}
+          >
+            <kbd>C</kbd><span>Change colour</span>
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

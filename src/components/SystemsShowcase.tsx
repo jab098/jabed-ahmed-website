@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
-import { ArrowUpRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { SYSTEMS } from '../data'
 import {
   gsap,
@@ -8,16 +8,18 @@ import {
   settleHeadlineReveal,
 } from '../motion'
 import { useAutoAdvance } from '../useAutoAdvance'
+import { useReducedMotion } from '../useReducedMotion'
 
 /** Four cards plus the `Build yours.` bridge, which stays in the rotation. */
 const SLIDE_COUNT = SYSTEMS.length + 1
 const TRACK_INSET_RATIO = 0.04
 
 function SystemGraphic({ index }: { index: number }) {
+  const reducedMotion = useReducedMotion()
   if (index === 0) {
     return (
       <div className="system-graphic measurement-map" data-measurement-architecture aria-hidden="true">
-        <div className="measurement-map__head"><span>MEASUREMENT ARCHITECTURE / 42 EVENTS</span><span>LIVE</span></div>
+        <div className="measurement-map__head"><span>MEASUREMENT ARCHITECTURE / 42 EVENTS</span><span>DEMO</span></div>
         <svg viewBox="0 0 700 500" preserveAspectRatio="none">
           <g className="measurement-map__grid"><path d="M0 100H700M0 200H700M0 300H700M0 400H700" /><path d="M140 0V500M280 0V500M420 0V500M560 0V500" /></g>
           <g className="measurement-map__routes">
@@ -25,8 +27,10 @@ function SystemGraphic({ index }: { index: number }) {
             <path d="M351 247L520 111" /><path d="M351 247L520 247" /><path d="M351 247L520 385" />
             <path d="M281 247H351" />
           </g>
-          <circle className="measurement-map__packet packet-1" cx="0" cy="0" r="7"><animateMotion dur="3.2s" repeatCount="indefinite" path="M105 126L281 247H351L520 111" /></circle>
-          <circle className="measurement-map__packet packet-2" cx="0" cy="0" r="5"><animateMotion begin="1.2s" dur="3.2s" repeatCount="indefinite" path="M105 374L281 247H351L520 385" /></circle>
+          {!reducedMotion && <>
+            <circle className="measurement-map__packet packet-1" cx="0" cy="0" r="7"><animateMotion dur="3.2s" repeatCount="indefinite" path="M105 126L281 247H351L520 111" /></circle>
+            <circle className="measurement-map__packet packet-2" cx="0" cy="0" r="5"><animateMotion begin="1.2s" dur="3.2s" repeatCount="indefinite" path="M105 374L281 247H351L520 385" /></circle>
+          </>}
         </svg>
         <div className="measurement-map__node node-product"><span>01</span><b>PRODUCT</b><small>WEB / APP</small></div>
         <div className="measurement-map__node node-crm"><span>02</span><b>CRM</b><small>IDENTITY</small></div>
@@ -60,9 +64,9 @@ function SystemGraphic({ index }: { index: number }) {
             <path d="M250 140V304" /><path d="M410 140V304" /><path d="M430 326H574" />
           </g>
           <path className="pipeline-graphic__route-active" d="M86 112H410V326H574" />
-          <circle className="pipeline-graphic__packet" cx="0" cy="0" r="7">
+          {!reducedMotion && <circle className="pipeline-graphic__packet" cx="0" cy="0" r="7">
             <animateMotion dur="2.8s" repeatCount="indefinite" path="M86 112H410V326H574" />
-          </circle>
+          </circle>}
         </svg>
         <div className="pipeline-graphic__node node-browser"><span>01</span><b>BROWSER</b><small>EVENT</small></div>
         <div className="pipeline-graphic__node node-consent"><span>02</span><b>CONSENT</b><small>POLICY GATE</small></div>
@@ -78,7 +82,7 @@ function SystemGraphic({ index }: { index: number }) {
 
   return (
     <div className="system-graphic dashboard-graphic" aria-hidden="true">
-      <div className="dashboard-graphic__head"><span>OUTCOME LAYER</span><span>LIVE / 16 MARKETS</span></div>
+      <div className="dashboard-graphic__head"><span>OUTCOME LAYER</span><span>DEMO / 16 MARKETS</span></div>
       <div className="dashboard-graphic__metric"><span>CONVERSION VALUE</span><strong>€2.04M</strong><i>↑ 12.8%</i></div>
       <div className="dashboard-graphic__bars">
         {[44, 68, 52, 81, 74, 94, 62, 88].map((value) => <i key={value} style={{ '--height': `${value}%` } as CSSProperties} />)}
@@ -94,15 +98,16 @@ export function SystemsShowcase() {
   const rootRef = useRef<HTMLElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
+  const swipeRef = useRef<{ x: number, y: number } | null>(null)
 
-  const deferAutoAdvance = useAutoAdvance(
+  const playback = useAutoAdvance(
     stageRef,
     useCallback(() => setActiveSlide((slide) => (slide + 1) % SLIDE_COUNT), []),
   )
 
   const selectSlide = (slide: number) => {
-    setActiveSlide(slide)
-    deferAutoAdvance()
+    setActiveSlide((slide + SLIDE_COUNT) % SLIDE_COUNT)
+    playback.pause()
   }
 
   useLayoutEffect(() => {
@@ -185,15 +190,41 @@ export function SystemsShowcase() {
         className="systems-stage"
         data-scroll-frame="viewport"
         data-scroll-waypoint="systems-stage"
+        role="region"
+        aria-roledescription="carousel"
+        aria-label="System demonstrations"
       >
         <div className="systems-stage__topline">
-          <span>AUTO-ADVANCING — SELECT ANY CARD</span>
-          <span>0{activeSlide + 1} / 0{SLIDE_COUNT}</span>
+          <span aria-live={playback.paused ? 'polite' : 'off'}>{activeSlide === SYSTEMS.length ? 'FINALE' : `EXAMPLE 0${activeSlide + 1} / 0${SYSTEMS.length}`}</span>
+          <div className="systems-stage__controls">
+            <button type="button" aria-label="Previous example" onClick={() => selectSlide(activeSlide - 1)}><ChevronLeft aria-hidden="true" /></button>
+            <button type="button" data-sequence-control disabled={playback.reducedMotion}
+              aria-label={playback.paused ? 'Resume examples' : 'Pause examples'}
+              onClick={playback.paused ? playback.resume : playback.pause}>
+              {playback.reducedMotion ? 'Manual' : playback.paused ? 'Play' : 'Pause'}
+            </button>
+            <button type="button" aria-label="Next example" onClick={() => selectSlide(activeSlide + 1)}><ChevronRight aria-hidden="true" /></button>
+          </div>
         </div>
         <div
           ref={trackRef}
           className="systems-track"
           style={{ transform: `translate3d(${-trackOffset}px, 0, 0)` }}
+          onPointerDown={(event) => {
+            if (event.pointerType === 'mouse') return
+            swipeRef.current = { x: event.clientX, y: event.clientY }
+          }}
+          onPointerCancel={() => { swipeRef.current = null }}
+          onPointerUp={(event) => {
+            const start = swipeRef.current
+            swipeRef.current = null
+            if (!start) return
+            const dx = event.clientX - start.x
+            const dy = event.clientY - start.y
+            if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+              selectSlide(activeSlide + (dx < 0 ? 1 : -1))
+            }
+          }}
         >
           {SYSTEMS.map((system, index) => (
             <article
@@ -201,30 +232,33 @@ export function SystemsShowcase() {
               data-active={activeSlide === index ? 'true' : undefined}
               aria-current={activeSlide === index ? 'true' : undefined}
               key={system.number}
-              tabIndex={0}
-              onClick={() => selectSlide(index)}
-              onKeyDown={(event) => {
-                if (event.key !== 'Enter' && event.key !== ' ') return
-                event.preventDefault()
-                selectSlide(index)
-              }}
+              aria-roledescription="slide"
+              aria-label={`${index + 1} of ${SYSTEMS.length}: ${system.title}`}
+              inert={activeSlide !== index}
             >
               <div className="system-card__visual"><SystemGraphic index={index} /></div>
               <div className="system-card__body">
                 <span className="system-card__number">{system.number}</span>
+                <span className="system-card__demo">SIMULATED DATA</span>
                 <h3>{system.title}</h3>
                 <strong className="system-card__metric">{system.metric}</strong>
                 <p>{system.summary}</p>
                 <div className="system-card__tags">{system.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>
-                <ArrowUpRight className="system-card__arrow" aria-hidden="true" />
               </div>
             </article>
           ))}
           <div
             className="systems-track__end"
             data-active={activeSlide === SYSTEMS.length ? 'true' : undefined}
-            onClick={() => selectSlide(SYSTEMS.length)}
-          ><span>NEXT</span><strong>Build <em data-scroll-flash="early-tight">yours.</em></strong></div>
+            inert={activeSlide !== SYSTEMS.length}
+          ><span>NEXT</span><strong>Build <em data-scroll-flash="early-tight">yours.</em></strong><a href="#contact">Start a conversation →</a></div>
+        </div>
+        <div className="systems-stage__selector" role="group" aria-label="Choose example">
+          {SYSTEMS.map((system, index) => <button key={system.number} type="button"
+            aria-label={`Show ${system.title}`} aria-pressed={activeSlide === index}
+            onClick={() => selectSlide(index)}>{system.number}</button>)}
+          <button type="button" aria-label="Show finale" aria-pressed={activeSlide === SYSTEMS.length}
+            onClick={() => selectSlide(SYSTEMS.length)}>END</button>
         </div>
       </div>
     </section>

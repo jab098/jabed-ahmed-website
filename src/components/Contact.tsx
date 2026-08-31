@@ -84,10 +84,6 @@ export function Contact() {
         data-scroll-waypoint="footer"
       >
         <FooterGlyphStream />
-        <div className="signal-footer__top">
-          <span>JA / DATA</span>
-          <span>Signals into decisions</span>
-        </div>
         <div className="signal-footer__wordmark" aria-hidden="true">JA<span>.</span>DATA</div>
         <div className="signal-footer__bottom">
           <p>© {new Date().getFullYear()} Jabed Ahmed</p>

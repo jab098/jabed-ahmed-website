@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowUpRight } from 'lucide-react'
 import { CAPABILITIES } from '../data'
 
 function CapabilityMotif({ index }: { index: number }) {
@@ -71,13 +70,13 @@ export function Capabilities() {
             className="capability-card"
             data-open={openCard === index ? 'true' : undefined}
             key={capability.number}
-            tabIndex={0}
             data-scroll-waypoint-mobile={`capability-0${index + 1}`}
           >
             <button
               type="button"
               className="card-toggle"
               aria-expanded={openCard === index}
+              aria-controls={`capability-copy-${capability.number} capability-stack-${capability.number}`}
               aria-label={`${capability.title} — details`}
               onClick={() => setOpenCard(openCard === index ? null : index)}
             >
@@ -89,11 +88,10 @@ export function Capabilities() {
               <span>{capability.discipline}</span>
             </div>
             <h3>{capability.title}</h3>
-            <p>{capability.copy}</p>
-            <div className="capability-card__stack">
+            <p id={`capability-copy-${capability.number}`}>{capability.copy}</p>
+            <div className="capability-card__stack" id={`capability-stack-${capability.number}`}>
               {capability.stack.map((item) => <span key={item}>{item}</span>)}
             </div>
-            <ArrowUpRight className="capability-card__arrow" aria-hidden="true" />
           </article>
         ))}
       </div>

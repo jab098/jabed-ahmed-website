@@ -69,13 +69,13 @@ A chapter with several internal states may own one authored stop and cycle those
 
 `useAutoAdvance` owns that contract for every such scene:
 
-- `4000ms` between states, `5000ms` before the timer resumes after the visitor takes over.
+- `4000ms` between states; `5000ms` after a temporary hover/focus hold ends. Manual selection pauses indefinitely until Play is chosen.
 - The timer only runs while the scene is at least `40%` on screen, and never under `prefers-reduced-motion: reduce`.
-- Keyboard focus inside the scene holds the timer and releases it on blur, which is the pause mechanism required by WCAG 2.2.2. A pointer press that incidentally moves focus does not hold, because a visitor selecting a state wants the resume delay rather than a permanent stop.
+- Keyboard focus inside the scene temporarily holds the timer. Explicit Pause/Play controls remain available; focusing Play must not prevent it from restarting the sequence. Hidden browser tabs also suspend playback.
 - Callers may add their own hold. Process holds while a mouse pointer rests on a method row; Systems does not, because its neighbouring cards can be selected but not hovered into view.
 - A pointer hold must follow movement, never position. Scrolling a composition under a resting cursor fires `pointerover`, `pointerenter` and even `pointermove` at unchanged coordinates, so a hold may only engage once two move events report different coordinates, and the recorded position clears on `pointerleave`. Otherwise a visitor who parked the cursor over a method row would freeze the scene the moment it arrived, and on a state they never chose.
 
-Selection is always available on both pointer and touch: Process methods are buttons, Systems cards are focusable and respond to click and `Enter`/`Space`. Mobile mirrors the desktop composition rather than restating it as a stack, so a tap replaces the hover and earns the same resume delay.
+Selection is always available on pointer, keyboard and touch: Process methods are buttons; Systems has previous/next and numbered selection buttons, plus horizontal swipes that yield to vertical scrolling. Inactive examples are inert so their offscreen links cannot steal focus. A selection remains paused until Play. Short screens give the cards natural content height rather than clipping them into a viewport.
 
 ## Pinned scenes
 
@@ -140,7 +140,7 @@ Capabilities uses the mobile half of that pattern. Desktop shows all six pillars
 
 Mobile content must be structurally present in narrative order. A self-advancing scene satisfies that by rendering the same composition at every width and cycling it on the same timer, not by hiding states behind a control the visitor must find: Process and Systems each keep one stage, and a tap selects a state exactly as a click does on desktop.
 
-A scene that still restates itself as a stack must mark each complete stacked item as a mobile destination. The current inventory includes the hero report, proof metrics, six capability cards, every FAQ row, Contact, and the full Footer composition.
+A scene that still restates itself as a stack must mark each complete stacked item as a mobile destination. The current inventory includes proof metrics, six capability cards, every FAQ row, Contact, and the full Footer composition. The mobile hero artwork is integrated into the opening and is not a separate destination.
 
 Here, `mobile` describes responsive layout width, not input ownership. These declarations still serve narrow fine-pointer windows and the structural story inventory. A touch-first device may render the same stacked layout, but it ignores every narrative waypoint because the director does not mount.
 
@@ -264,7 +264,7 @@ Responsive text and font loading may move an already-reached destination by a fe
 | Proof digits replay, reel, or stop short of the source value. | The observer disconnects after first visibility, the counter writes the exact final string, and reduced motion bypasses counting. |
 | FAQ hover or expansion moves a stationary viewport or re-lands the same row. | Hover transforms are layout-neutral; passive rebuilds preserve `window.scrollY` and the last settled semantic identity. |
 | A breakpoint change leaves desktop destinations active on mobile. | The `900px` media-query lifecycle rebuilds the active waypoint inventory; self-advancing scenes render one composition at every width, so nothing to tear down. |
-| A self-advancing scene keeps cycling while a visitor reads it, or cannot be stopped at all. | Hover holds Process, keyboard focus holds both, a selection buys the `8000ms` resume delay, and reduced motion never starts the timer. |
+| A self-advancing scene keeps cycling while a visitor reads it, or cannot be stopped at all. | Hover holds Process; keyboard focus temporarily holds both. Manual selection and Pause stop playback until Play. Reduced motion never starts the timer. |
 | A self-advancing scene burns timers off screen. | The timer is gated on a `40%` IntersectionObserver threshold for its own stage. |
 | A phone, tablet, or other touch-first device snaps finger scrolling or rolls back a short swipe. | The capability gate requires touch points plus a coarse, non-hovering primary pointer and returns before every narrative side effect. Never replace it with a width or user-agent check. |
 
@@ -300,8 +300,8 @@ A missing required scene must fail a structural test rather than silently disapp
 - Confirm Proof reaches the complete Process headline without a label-only frame.
 - Confirm every chapter transition skips standalone eyebrow and running-label frames.
 - Confirm one desktop gesture crosses the whole Process stage, and one more crosses the whole Systems stage.
-- Watch both self-advancing scenes idle: states change every four seconds, hovering a Process method holds it, and leaving or selecting resumes eight seconds later.
-- Select a peeking Systems card on both pointer and touch; the track must centre it on the same inset and hold before resuming.
+- Watch both self-advancing scenes idle: states change every four seconds; hovering a Process method holds it and leaving resumes after five seconds. Manual selection stays paused until Play.
+- Select each Systems example with buttons and a horizontal swipe; the track must align to the same inset and stay paused. Vertical gestures must remain scrolling gestures.
 - Confirm Contact reaches the full Footer without a `JA / DATA`-only stop.
 - Verify one small and one extreme wheel gesture with a mouse, plus a high-resolution trackpad flick and its momentum tail.
 - Hold one long pixel stream through the final approach and landing; it must stop at exactly one adjacent composition.

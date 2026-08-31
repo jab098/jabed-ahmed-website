@@ -56,7 +56,7 @@ export function SiteNav() {
     let frame = 0
     const update = () => {
       frame = 0
-      const keepVisible = isViewportFramedLanding(
+      const keepVisible = navRef.current?.contains(document.activeElement) || isViewportFramedLanding(
         navRef.current?.getBoundingClientRect().height ?? 0,
         window.innerWidth,
       )
@@ -108,11 +108,15 @@ export function SiteNav() {
     }
 
     document.body.style.overflow = 'hidden'
+    const background = document.querySelector('main')
+    const previousInert = background?.inert ?? false
+    if (background) background.inert = true
     document.addEventListener('keydown', onKeyDown)
     return () => {
       window.cancelAnimationFrame(frame)
       document.removeEventListener('keydown', onKeyDown)
       document.body.style.overflow = previousOverflow
+      if (background) background.inert = previousInert
       trigger?.focus()
     }
   }, [menuOpen])
@@ -125,7 +129,7 @@ export function SiteNav() {
       className={`site-nav${hidden && !menuOpen ? ' is-hidden' : ''}${menuOpen ? ' is-open' : ''}`}
       aria-label="Primary navigation"
     >
-      <a className="site-wordmark" href="#home" aria-label="Jabed Ahmed — home" onClick={closeMenu}>
+      <a className="site-wordmark" href="#home" aria-label="Jabed Ahmed — home" onClick={closeMenu} inert={menuOpen}>
         <span className="site-wordmark__monogram">JA</span>
         <span className="site-wordmark__name">Jabed Ahmed</span>
       </a>
@@ -134,7 +138,7 @@ export function SiteNav() {
         <span /> Independent data consultancy
       </div>
 
-      <a className="site-nav__call" href={CALENDLY_URL} target="_blank" rel="noopener noreferrer">
+      <a className="site-nav__call" href={CALENDLY_URL} target="_blank" rel="noopener noreferrer" inert={menuOpen}>
         <span>Schedule a call</span>
         <ArrowUpRight size={17} strokeWidth={1.6} />
       </a>
@@ -146,6 +150,7 @@ export function SiteNav() {
         aria-label="Menu"
         aria-controls="site-menu"
         aria-expanded={menuOpen}
+        tabIndex={menuOpen ? -1 : 0}
         onClick={() => setMenuOpen((value) => !value)}
       >
         <span className="site-menu-toggle__label" key={menuOpen ? 'close' : 'menu'}>
@@ -169,6 +174,7 @@ export function SiteNav() {
         <div className="site-menu__header" data-menu-fade>
           <span>Navigation / 2026</span>
           <span>London → Worldwide</span>
+          <button type="button" className="site-menu__close" aria-label="Close menu" onClick={closeMenu}>CLOSE ×</button>
         </div>
         <div className="site-menu__links">
           {NAV_LINKS.map((link) => (

@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { expect, it, vi } from 'vitest'
 import { SystemsShowcase } from './SystemsShowcase'
-import { AUTO_ADVANCE_MS, RESUME_DELAY_MS } from '../useAutoAdvance'
+import { AUTO_ADVANCE_MS } from '../useAutoAdvance'
 
 it('frames four representative systems without presenting them as client case studies', () => {
   const { container } = render(<SystemsShowcase />)
@@ -29,7 +29,7 @@ it('frames four representative systems without presenting them as client case st
   expect(container.querySelectorAll('[data-scroll-waypoint-mobile]')).toHaveLength(0)
 })
 
-it('cycles the track through every card and the bridge, and defers after a selection', () => {
+it('cycles through all examples and stays paused after selection until explicitly resumed', () => {
   vi.useFakeTimers()
   const OriginalIntersectionObserver = globalThis.IntersectionObserver
   class VisibleObserver {
@@ -64,11 +64,14 @@ it('cycles the track through every card and the bridge, and defers after a selec
     tick()
     expect(active()).toHaveTextContent('Measurement architecture')
 
-    fireEvent.click(screen.getByRole('heading', { name: 'Executive decision dashboard' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Show Executive decision dashboard' }))
     expect(active()).toHaveTextContent('Executive decision dashboard')
     act(() => vi.advanceTimersByTime(AUTO_ADVANCE_MS))
     expect(active()).toHaveTextContent('Executive decision dashboard')
-    act(() => vi.advanceTimersByTime(RESUME_DELAY_MS - AUTO_ADVANCE_MS))
+    act(() => vi.advanceTimersByTime(AUTO_ADVANCE_MS * 10))
+    expect(active()).toHaveTextContent('Executive decision dashboard')
+    fireEvent.click(screen.getByRole('button', { name: 'Resume examples' }))
+    tick()
     expect(active()).toHaveClass('systems-track__end')
   } finally {
     vi.stubGlobal('IntersectionObserver', OriginalIntersectionObserver)
@@ -99,9 +102,30 @@ it('selects a neighbouring card from the keyboard', async () => {
   const { container } = render(<SystemsShowcase />)
 
   const card = screen.getByRole('heading', { name: 'Consent and server-side pipeline' }).closest('article')!
-  card.focus()
+  screen.getByRole('button', { name: 'Show Consent and server-side pipeline' }).focus()
   await user.keyboard('{Enter}')
 
   expect(card).toHaveAttribute('data-active', 'true')
   expect(container.querySelectorAll('[data-active]')).toHaveLength(1)
+})
+
+it('provides explicit previous and next controls and labels simulated data', () => {
+  const { container } = render(<SystemsShowcase />)
+  expect(screen.getAllByText('SIMULATED DATA')).toHaveLength(4)
+  fireEvent.click(screen.getByRole('button', { name: 'Next example' }))
+  expect(container.querySelector('[data-active]')).toHaveTextContent('Experimentation readout')
+  expect(screen.getByRole('button', { name: 'Resume examples' })).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Previous example' }))
+  expect(container.querySelector('[data-active]')).toHaveTextContent('Measurement architecture')
+})
+
+it('supports horizontal swipes without treating vertical scrolling as slide selection', () => {
+  const { container } = render(<SystemsShowcase />)
+  const track = container.querySelector('.systems-track')!
+  fireEvent.pointerDown(track, { pointerType: 'touch', clientX: 200, clientY: 100 })
+  fireEvent.pointerUp(track, { pointerType: 'touch', clientX: 190, clientY: 220 })
+  expect(container.querySelector('[data-active]')).toHaveTextContent('Measurement architecture')
+  fireEvent.pointerDown(track, { pointerType: 'touch', clientX: 200, clientY: 100 })
+  fireEvent.pointerUp(track, { pointerType: 'touch', clientX: 80, clientY: 110 })
+  expect(container.querySelector('[data-active]')).toHaveTextContent('Experimentation readout')
 })

@@ -1,10 +1,23 @@
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, expect, it, vi } from 'vitest'
 import { SiteNav } from './SiteNav'
 
 afterEach(() => {
   vi.useRealTimers()
+})
+
+it('puts a close control inside the dialog and restores focus after closing', async () => {
+  const user = userEvent.setup()
+  render(<SiteNav />)
+  const trigger = screen.getByRole('button', { name: 'Menu' })
+  await user.click(trigger)
+  const dialog = screen.getByRole('dialog', { name: 'Site menu' })
+  const close = within(dialog).getByRole('button', { name: 'Close menu' })
+  close.focus()
+  await user.keyboard('{Enter}')
+  expect(trigger).toHaveAttribute('aria-expanded', 'false')
+  expect(trigger).toHaveFocus()
 })
 
 it('opens an accessible full-screen menu and closes it with Escape', async () => {
@@ -23,6 +36,20 @@ it('opens an accessible full-screen menu and closes it with Escape', async () =>
   expect(trigger).toHaveAttribute('aria-expanded', 'false')
   expect(document.body.style.overflow).toBe('')
   expect(trigger).toHaveFocus()
+})
+
+it('keeps keyboard focus inside the open menu, including its close control', async () => {
+  const user = userEvent.setup()
+  render(<SiteNav />)
+  await user.click(screen.getByRole('button', { name: 'Menu' }))
+  const dialog = screen.getByRole('dialog', { name: 'Site menu' })
+  const close = within(dialog).getByRole('button', { name: 'Close menu' })
+  const email = within(dialog).getByRole('link', { name: 'consulting@jabed.co.uk' })
+  close.focus()
+  await user.tab({ shift: true })
+  expect(email).toHaveFocus()
+  await user.tab()
+  expect(close).toHaveFocus()
 })
 
 it('contains the approved navigation and consulting action', () => {

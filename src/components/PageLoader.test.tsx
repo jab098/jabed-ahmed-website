@@ -12,6 +12,22 @@ afterEach(() => {
   vi.useRealTimers()
   document.documentElement.className = ''
   document.body.style.overflow = ''
+  history.replaceState(null, '', '/')
+})
+
+it('keeps the two-stage entrance and lands on a directly requested section afterward', () => {
+  history.replaceState(null, '', '/#systems')
+  const target = document.createElement('section')
+  target.id = 'systems'
+  target.scrollIntoView = vi.fn()
+  document.body.append(target)
+  const { container } = render(<PageLoader />)
+  expect(container.querySelectorAll('.loader-plane')).toHaveLength(2)
+  expect(document.documentElement).toHaveClass('is-loading')
+  act(() => vi.advanceTimersByTime(4100))
+  expect(location.hash).toBe('#systems')
+  expect(target.scrollIntoView).toHaveBeenCalledWith({ behavior: 'instant', block: 'start' })
+  target.remove()
 })
 
 it('completes the loading contract and unlocks the page once', () => {

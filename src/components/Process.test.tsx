@@ -57,7 +57,8 @@ it('renders the same auto-advancing stage at mobile widths', () => {
     const { container } = render(<Process />)
 
     expect(screen.getByRole('group', { name: 'Process stages' })).toBeInTheDocument()
-    expect(screen.getAllByRole('button')).toHaveLength(4)
+    expect(screen.getAllByRole('button')).toHaveLength(5)
+    expect(screen.getByRole('button', { name: 'Pause process animation' })).toBeInTheDocument()
     expect(container.querySelector('.process-mobile')).not.toBeInTheDocument()
     expect(container.querySelectorAll('[data-scroll-waypoint-mobile]')).toHaveLength(0)
   } finally {

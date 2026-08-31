@@ -19,6 +19,10 @@ The desktop experience uses authored narrative scroll choreography. Each wheel o
 
 Touch-first devices retain native browser scrolling. The site also respects reduced-motion preferences and includes keyboard-accessible navigation, a skip link, semantic landmarks, and focus-aware animated scenes.
 
+The hero features a rotating, glyph-built data sculpture with three open-sheet formations: **Crystal**, **Weave**, and **Stream**. A minimal control strip offers Reshape and Pause, without explanatory captions or comparison buttons. On narrow screens the artwork sits between the headline and introduction, fading away as it passes behind the navigation. Offscreen artwork is hidden and inactive; scrolling back restores the selected formation and playback state. Reduced motion skips the gradual fade. Desktop behaviour, the orange/ink/paper identity and the two-stage entrance remain unchanged.
+
+Process and example sequences have explicit playback controls; manual selection stays paused until Play is chosen. Examples also support previous/next, numbered selection and horizontal swipes. Illustrative figures are labelled as simulated data. Shared section links and native Back/Forward restoration are preserved.
+
 See [docs/design-language/scroll-choreography.md](docs/design-language/scroll-choreography.md) for the interaction contract and implementation guidance.
 
 ## Technology

@@ -1,0 +1,23 @@
+.hero-artwork { position: absolute; inset: 0; color: var(--ink); }
+.hero-artwork__exit { position: absolute; inset: 0; background: var(--signal); }
+.hero-artwork button:focus-visible { outline-color: var(--paper); outline-offset: -4px; box-shadow: 0 0 0 2px var(--ink); }
+.signal-field { position: absolute; inset: 0; }
+.signal-field__surface { position: absolute; inset: 1.2rem 0 4.25rem; overflow: hidden; }
+.signal-field__surface canvas, .signal-field__fallback { position: absolute; inset: 0; width: 100%; height: 100%; }
+.signal-field__surface canvas { opacity: 0; transition: opacity 700ms ease; }
+.signal-field[data-ready='true'] canvas { opacity: 1; }
+.signal-field[data-ready='true'] .signal-field__fallback { opacity: 0; }
+.signal-field__fallback { fill: none; stroke: var(--ink); stroke-width: 1.2; stroke-dasharray: 1 6; opacity: 0.6; }
+.signal-field__controls { position: absolute; inset: auto 1.2rem 1rem; display: flex; align-items: center; border-top: 1px solid var(--ink); }
+.signal-field__formation { flex: 1; font: 600 0.6rem 'JetBrains Mono', monospace; }
+.signal-field__controls button { display: flex; align-items: center; justify-content: center; gap: 0.45rem; min-width: 2.75rem; min-height: 2.75rem; padding: 0.4rem 0.65rem; color: var(--ink); background: transparent; cursor: pointer; font: 600 0.55rem 'JetBrains Mono', monospace; text-transform: uppercase; }
+.signal-field__controls button:hover { background: var(--ink); color: var(--signal); }
+.signal-field__controls button:disabled { cursor: default; }
+@media (min-width: 901px) { .signal-field__controls { left: 6rem; } }
+
+@media (max-width: 900px) {
+  .signal-field__surface { inset: 0.7rem 0 3.25rem; }
+  .signal-field__controls { bottom: 0; }
+  .signal-field__formation { font-size: 0.52rem; }
+}
+@media (prefers-reduced-motion: reduce) { .signal-field__surface canvas { transition: none; } }

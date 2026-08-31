@@ -163,7 +163,7 @@ export function Process() {
     ))
   }, [])
 
-  const deferAutoAdvance = useAutoAdvance(
+  const playback = useAutoAdvance(
     stageRef,
     useCallback(() => {
       setProcessState((state) => ({
@@ -180,7 +180,7 @@ export function Process() {
    */
   const holdOnStep = (index: number) => ({
     onPointerMove: (event: { clientX: number, clientY: number, pointerType: string }) => {
-      if (event.pointerType !== 'mouse') return
+      if (event.pointerType !== 'mouse' || playback.paused) return
       const previous = pointerRef.current
       pointerRef.current = { x: event.clientX, y: event.clientY }
       if (!previous || (previous.x === event.clientX && previous.y === event.clientY)) return
@@ -191,11 +191,11 @@ export function Process() {
       if (event.pointerType !== 'mouse') return
       pointerRef.current = null
       setHovered(false)
-      deferAutoAdvance()
+      playback.defer()
     },
     onClick: () => {
       setActiveStep(index)
-      deferAutoAdvance()
+      playback.pause()
     },
   })
 
@@ -262,6 +262,14 @@ export function Process() {
       >
         <div className="process-stage__rail">
           <p className="eyebrow">// The method</p>
+          <div className="sequence-controls">
+            <span>SIMULATION / {String(activeStep + 1).padStart(2, '0')} OF 04</span>
+            <button type="button" data-sequence-control disabled={playback.reducedMotion}
+              aria-label={playback.paused ? 'Resume process animation' : 'Pause process animation'}
+              onClick={playback.paused ? playback.resume : playback.pause}>
+              {playback.reducedMotion ? 'Manual' : playback.paused ? 'Play sequence' : 'Pause sequence'}
+            </button>
+          </div>
           <div className="process-tabs" role="group" aria-label="Process stages">
             {PROCESS_STEPS.map((step, index) => (
               <button

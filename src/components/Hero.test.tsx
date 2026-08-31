@@ -11,40 +11,18 @@ it('presents the approved data consultancy proposition and next action', () => {
   expect(screen.getByText('I build tracking and data-collection systems.')).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'See how I work' })).toHaveAttribute('href', '#process')
   expect(container.querySelector('#home')).toHaveAttribute('data-scroll-waypoint', 'home')
-  expect(container.querySelector('.hero-visual')).toHaveAttribute(
-    'data-scroll-waypoint-mobile',
-    'hero-report',
-  )
+  expect(container.querySelector('.hero-visual')).not.toHaveAttribute('data-scroll-waypoint-mobile')
 })
 
-it('keeps the glyph interaction on the report and cycles its colour palette', () => {
+it('offers the sculpture with reshape and playback controls', () => {
   render(<Hero />)
-
-  const report = screen.getByRole('button', {
-    name: 'Interactive analytics report. Activate to change colour',
-  })
-  expect(report).toHaveAttribute('data-palette', '0')
-  expect(report).toHaveAttribute('data-palette-transition', 'smooth')
-  expect(report).toHaveAttribute('data-glyph-density', 'high')
-  expect(report).toHaveAttribute('data-glyph-spacing', '8')
-  expect(report).toHaveAttribute('data-ambient-divisor', '3')
-  expect(report).toHaveAttribute('data-pointer-mode', 'parallax-morph')
-  const structure = report.querySelector('[data-analytics-structure]')
-  const probe = report.querySelector('[data-analytics-probe]')
-  expect(structure).toBeInTheDocument()
-  expect(probe).toBeInTheDocument()
-  expect(structure?.querySelectorAll('text')).toHaveLength(0)
-  expect(structure?.querySelectorAll('.glyph-report__line')).toHaveLength(0)
-  expect(structure?.querySelectorAll('[data-signal-piece]').length).toBeGreaterThanOrEqual(24)
-  expect(probe?.querySelector('b, small')).not.toBeInTheDocument()
-  expect(report.querySelector('.glyph-report__index')).not.toBeInTheDocument()
-  expect(report.querySelector('.glyph-report__hint')).not.toBeInTheDocument()
-
-  fireEvent.click(report)
-  expect(report).toHaveAttribute('data-palette', '1')
-
-  fireEvent.keyDown(report, { key: 'Enter' })
-  expect(report).toHaveAttribute('data-palette', '2')
+  expect(screen.getAllByRole('button')).toHaveLength(2)
+  expect(screen.getByRole('button', { name: 'Next formation' })).toBeInTheDocument()
+  expect(screen.getByText('CRYSTAL / 01')).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Next formation' }))
+  expect(screen.getByText('WEAVE / 02')).toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Pause artwork' }))
+  expect(screen.getByRole('button', { name: 'Play artwork' })).toBeInTheDocument()
 })
 
 it('primes every headline line for the two-colour horizontal reveal', () => {

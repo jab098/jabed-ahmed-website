@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import { ArrowDown, ArrowUpRight } from 'lucide-react'
 import { CALENDLY_URL } from '../data'
 import { gsap } from '../motion'
-import { GlyphReport } from './GlyphReport'
+import { HeroArtwork } from './HeroArtwork'
 
 const HERO_LINES = [
   ['Build data systems', ''],
@@ -38,7 +38,7 @@ export function Hero() {
         y: 18,
       })
       gsap.set('.hero-visual', { clipPath: 'inset(0 100% 0 0)', opacity: 0 })
-      gsap.set('.glyph-report', { opacity: 0 })
+      gsap.set('.hero-artwork', { opacity: 0 })
 
       if (reduced) {
         gsap.set('.hero-reveal__text', { clipPath: 'inset(0)', visibility: 'visible' })
@@ -48,7 +48,7 @@ export function Hero() {
           y: 0,
         })
         gsap.set('.hero-visual', { clipPath: 'inset(0)', opacity: 1 })
-        gsap.set('.glyph-report', { opacity: 1 })
+        gsap.set('.hero-artwork', { opacity: 1 })
         setReportActive(true)
         hasRevealed = true
         return
@@ -85,7 +85,7 @@ export function Hero() {
           0.7,
         )
         .call(() => setReportActive(true), [], 0.98)
-        .to('.glyph-report', { opacity: 1, duration: 0.8, ease: 'power3.out' }, 1.02)
+        .to('.hero-artwork', { opacity: 1, duration: 0.8, ease: 'power3.out' }, 1.02)
     }, root)
 
     const reveal = () => {
@@ -145,9 +145,8 @@ export function Hero() {
       <div
         className="hero-visual"
         data-hero-visual-entrance="soft"
-        data-scroll-waypoint-mobile="hero-report"
       >
-        <GlyphReport active={reportActive} />
+        <HeroArtwork active={reportActive} />
       </div>
       <a className="hero-scroll" href="#proof" aria-label="Scroll to proof">
         <span>SCROLL</span><ArrowDown aria-hidden="true" />

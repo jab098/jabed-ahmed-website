@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import { getCanvasBackingStore, getCappedGlyphGrid } from '../canvasBudget'
+import { useReducedMotion } from '../useReducedMotion'
 
 const GLYPHS = ['+', '/', '0', '1', '=', ':', '%', '#', '·']
 const GLYPH_FIELD_CONFIG = Object.freeze({
@@ -81,6 +82,8 @@ export function GlyphReport({ active = true }: { active?: boolean }) {
   const paletteTransitionRef = useRef({ from: PALETTES[0], to: PALETTES[0], started: 0 })
   const [palette, setPalette] = useState(0)
   const [canvasReady, setCanvasReady] = useState(false)
+  const reducedMotion = useReducedMotion()
+  const staticPalette = reducedMotion ? palette : 0
 
   useEffect(() => {
     paletteTransitionRef.current = {
@@ -109,7 +112,6 @@ export function GlyphReport({ active = true }: { active?: boolean }) {
     let parallaxY = 0
     let resizeFrame = 0
     let intersecting = true
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
     const rebuild = () => {
       const bounds = host.getBoundingClientRect()
@@ -162,6 +164,7 @@ export function GlyphReport({ active = true }: { active?: boolean }) {
       resizeFrame = window.requestAnimationFrame(() => {
         resizeFrame = 0
         rebuild()
+        start()
       })
     }
 
@@ -183,7 +186,7 @@ export function GlyphReport({ active = true }: { active?: boolean }) {
       lastTime = time
       const transition = paletteTransitionRef.current
       const rawProgress = Math.min(Math.max((time - transition.started) / 680, 0), 1)
-      const paletteProgress = 1 - Math.pow(1 - rawProgress, 3)
+      const paletteProgress = reducedMotion ? 1 : 1 - Math.pow(1 - rawProgress, 3)
       const activePalette = mixPalette(transition.from, transition.to, paletteProgress)
       livePaletteRef.current = activePalette
       const pointer = pointerRef.current
@@ -242,7 +245,7 @@ export function GlyphReport({ active = true }: { active?: boolean }) {
         context.fillText(point.glyph, point.x, point.y)
       }
       context.globalAlpha = 1
-      frame = window.requestAnimationFrame(draw)
+      if (!reducedMotion) frame = window.requestAnimationFrame(draw)
     }
 
     rebuild()
@@ -269,11 +272,11 @@ export function GlyphReport({ active = true }: { active?: boolean }) {
       window.cancelAnimationFrame(resizeFrame)
       window.cancelAnimationFrame(frame)
     }
-  }, [active])
+  }, [active, reducedMotion, staticPalette])
 
   const cyclePalette = () => setPalette((value) => (value + 1) % PALETTES.length)
   const updatePointer = (event: ReactPointerEvent<HTMLButtonElement>) => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    if (reducedMotion || event.pointerType === 'touch') return
     const bounds = event.currentTarget.getBoundingClientRect()
     const x = event.clientX - bounds.left
     const y = event.clientY - bounds.top

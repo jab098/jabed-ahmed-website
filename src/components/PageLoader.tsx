@@ -35,8 +35,13 @@ export function PageLoader({ onComplete }: PageLoaderProps) {
       document.documentElement.classList.remove('is-loading')
       document.documentElement.classList.add('loader-complete')
       document.body.style.overflow = ''
-      window.scrollTo(0, 0)
       window.dispatchEvent(new Event('site:loader-complete'))
+      const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined
+      if (location.hash && navigation?.type !== 'back_forward') {
+        try {
+          document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView({ behavior: 'instant', block: 'start' })
+        } catch { /* An invalid fragment must not block the entrance. */ }
+      }
       onComplete?.()
     }
 

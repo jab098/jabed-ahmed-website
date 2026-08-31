@@ -42,7 +42,8 @@
 .systems-track {
   display: flex;
   width: max-content;
-  height: calc(100svh - 7.55rem);
+  min-height: calc(100svh - 10.8rem);
+  height: auto;
   padding: 2.2rem 4vw 2.8rem;
   gap: 1.25rem;
   transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -53,7 +54,8 @@
   display: grid;
   width: min(76vw, 74rem);
   min-width: min(76vw, 74rem);
-  height: 100%;
+  height: auto;
+  min-height: 30rem;
   overflow: hidden;
   color: var(--ink);
   background: var(--paper);
@@ -67,10 +69,19 @@
 .system-card:focus-visible { outline: 2px solid var(--signal); outline-offset: 4px; }
 /* Off-centre slides read as selectable neighbours, not as the current one. */
 .system-card.is-visible:not([data-active]),
-.systems-track__end:not([data-active]) { cursor: pointer; opacity: 0.42; }
+.systems-track__end:not([data-active]) { opacity: 0.42; }
 .system-card__visual { position: relative; overflow: hidden; border-right: 1px solid currentColor; }
 .system-card__body { position: relative; display: flex; padding: 1.5rem; container-type: inline-size; flex-direction: column; }
 .system-card__number { font: 600 0.62rem 'JetBrains Mono', monospace; }
+.system-card__demo { margin: 0.7rem 0 1.5rem; font: 500 0.5rem 'JetBrains Mono', monospace; letter-spacing: 0.06em; }
+.systems-track { touch-action: pan-y pinch-zoom; }
+.systems-stage__controls, .systems-stage__selector { display: flex; align-items: center; gap: 0.25rem; }
+.systems-stage__controls button, .systems-stage__selector button { display: grid; place-items: center; min-width: 44px; min-height: 44px; padding: 0 0.75rem; color: var(--paper); background: transparent; font: 600 0.6rem 'JetBrains Mono', monospace; cursor: pointer; }
+.systems-stage__controls svg { width: 1rem; }
+.systems-stage__selector { justify-content: center; padding-bottom: 0.5rem; }
+.systems-stage__selector button[aria-pressed='true'] { color: var(--ink); background: var(--signal); }
+.systems-stage__controls button:focus-visible, .systems-stage__selector button:focus-visible { outline: 2px solid var(--paper); outline-offset: -3px; }
+.systems-track__end a { color: inherit; margin-top: 2rem; padding-block: 0.85rem; font: 600 0.7rem 'JetBrains Mono', monospace; }
 .system-card h3 { max-width: 100%; margin: auto 0 1.3rem; font-size: clamp(2.35rem, 12.5cqi, 5.25rem); font-weight: 500; letter-spacing: -0.07em; line-height: 0.9; }
 .system-card:nth-child(2) h3 { padding-right: 0.35em; font-size: clamp(1.95rem, 9.4cqi, 3.65rem); }
 .system-card:nth-child(3) h3,
@@ -180,10 +191,10 @@
   .systems-header > .eyebrow { left: 1.2rem; }
   .systems-header h2 { font-size: clamp(4.5rem, 18vw, 8rem); }
   .systems-header > p:last-child { right: 1.2rem; bottom: 2rem; }
-  .systems-stage { padding-top: 3.7rem; }
+  .systems-stage { padding-top: 0; }
   .systems-stage__topline { padding-inline: 1.2rem; font-size: 0.5rem; }
-  .systems-track { height: calc(100svh - 7rem); padding: 1rem 4vw 1.4rem; gap: 0.9rem; }
-  .system-card { width: 86vw; min-width: 86vw; grid-template-columns: 1fr; grid-template-rows: minmax(0, 1.1fr) minmax(0, 1fr); }
+  .systems-track { min-height: 0; height: auto; padding: 1rem 4vw 1.4rem; gap: 0.9rem; }
+  .system-card { width: 86vw; min-width: 86vw; grid-template-columns: 1fr; grid-template-rows: clamp(17rem, 44vw, 25rem) auto; }
   .system-card__visual { border-right: 0; border-bottom: 1px solid currentColor; }
   .system-card__body { padding: 1.1rem; }
   .system-card h3 { margin-bottom: 0.9rem; }
@@ -194,9 +205,9 @@
 }
 
 @media (max-width: 560px) {
-  .system-card { grid-template-rows: minmax(0, 0.85fr) minmax(0, 1.25fr); }
+  .system-card { grid-template-rows: 17rem auto; }
   .system-card__body { padding: 0.9rem; }
-  .system-card h3 { margin-bottom: 0.7rem; font-size: 1.75rem; }
+  .system-card h3, .system-card:nth-child(n) h3 { margin: 0 0 0.7rem; font-size: 1.75rem; }
   .system-card__metric { margin-bottom: 0.7rem; padding-top: 0.6rem; font-size: 0.62rem; }
   .system-card__body > p { margin-bottom: 0.7rem; font-size: 0.78rem; line-height: 1.35; }
   .system-card__tags span { padding: 0.3rem 0.38rem; }
