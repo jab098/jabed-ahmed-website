@@ -20,29 +20,17 @@ function CountUpValue({ value, isVisible, from = 0, decimals = 0 }: CountUpValue
 
   useEffect(() => {
     if (!isVisible || hasAnimated.current) return
-
-    if (reducedMotion) {
-      hasAnimated.current = true
-      setDisplayValue(value)
-      return
-    }
-
     let frame = 0
     const startedAt = performance.now()
     const update = (timestamp: number) => {
       const progress = Math.min((timestamp - startedAt) / COUNT_UP_DURATION, 1)
       setDisplayValue(formatMetricCount(value, progress, from, decimals))
-
-      if (progress < 1) {
-        frame = window.requestAnimationFrame(update)
-      } else {
-        hasAnimated.current = true
-      }
+      if (progress < 1) frame = window.requestAnimationFrame(update)
+      else hasAnimated.current = true
     }
-
     frame = window.requestAnimationFrame(update)
     return () => window.cancelAnimationFrame(frame)
-  }, [decimals, from, isVisible, reducedMotion, value])
+  }, [decimals, from, isVisible, value])
 
   return (
     <span className="static-value" data-static-metric aria-hidden="true">
@@ -59,51 +47,29 @@ export function Metrics() {
     const root = rootRef.current
     if (!root) return
     const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        setIsVisible(true)
-        observer.disconnect()
-      }
+      if (!entry.isIntersecting) return
+      setIsVisible(true)
+      observer.disconnect()
     }, { threshold: 0.25 })
     observer.observe(root)
     return () => observer.disconnect()
   }, [])
 
   return (
-    <section
-      ref={rootRef}
-      id="proof"
-      className={`proof-section${isVisible ? ' is-visible' : ''}`}
-      aria-labelledby="proof-title"
-      data-scroll-scene="proof"
-      data-scroll-frame="viewport"
-      data-scroll-waypoint="proof"
-    >
-      <div className="proof-art">
-        <div className="proof-art__grid" aria-hidden="true">
-          {Array.from({ length: 49 }, (_, index) => <i key={index} />)}
-        </div>
-        <div className="proof-art__content" data-proof-content-band>
-          <p className="eyebrow">// Evidence</p>
-          <h2 id="proof-title">Proof in the system.</h2>
-        </div>
+    <section ref={rootRef} id="proof" className={`evidence-strip${isVisible ? ' is-visible' : ''}`} aria-labelledby="proof-title">
+      <div className="evidence-strip__intro">
+        <p className="eyebrow">// Evidence</p>
+        <h3 id="proof-title">Proof in the system.</h3>
       </div>
-      {METRICS.map((metric, index) => (
-        <article
-          key={metric.label}
-          className="proof-metric"
-          aria-label={`${metric.value} ${metric.label}`}
-          data-scroll-waypoint-mobile={`proof-metric-0${index + 1}`}
-        >
-          <span className="proof-metric__number">0{index + 1}</span>
-          <div className="proof-metric__content" data-proof-content-band>
-            <CountUpValue
-              value={metric.value}
-              isVisible={isVisible}
-              from={'from' in metric ? metric.from : undefined}
-              decimals={'decimals' in metric ? metric.decimals : undefined}
-            />
-            <p>{metric.label}</p>
-          </div>
+      {METRICS.map((metric) => (
+        <article className="evidence-strip__metric" aria-label={`${metric.value} ${metric.label}`} key={metric.label}>
+          <CountUpValue
+            value={metric.value}
+            isVisible={isVisible}
+            from={'from' in metric ? metric.from : undefined}
+            decimals={'decimals' in metric ? metric.decimals : undefined}
+          />
+          <p>{metric.label}</p>
         </article>
       ))}
     </section>

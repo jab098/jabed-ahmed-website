@@ -90,50 +90,78 @@ export const SYSTEMS = [
   },
 ] as const
 
+export type CapabilityDemoSlug =
+  | 'front-end-instrumentation'
+  | 'tag-management'
+  | 'server-side-tracking'
+  | 'cro-testing'
+  | 'consent-privacy'
+  | 'bi-data-modelling'
+
 export const CAPABILITIES = [
   {
     number: '01',
-    title: 'Tag Management',
-    discipline: 'Implementation',
-    copy: 'GTM and Tealium ecosystems, dataLayer specifications, documentation and QA standards that remain consistent at scale.',
-    stack: ['GTM', 'Tealium iQ', 'Snowplow'],
-  },
-  {
-    number: '02',
-    title: 'Server-Side Tracking',
-    discipline: 'Infrastructure',
-    copy: 'Behavioural pipelines spanning browser capture, collectors, enrichment and dependable warehouse delivery.',
-    stack: ['sGTM', 'GA4', 'EventStream'],
-  },
-  {
-    number: '03',
-    title: 'CRO & Testing',
-    discipline: 'Experimentation',
-    copy: 'A/B testing and personalisation programmes with hypotheses, clean evaluation and measurable commercial outcomes.',
-    stack: ['Adobe Target', 'A/B testing', 'Personalisation'],
-  },
-  {
-    number: '04',
-    title: 'Consent & Privacy',
-    discipline: 'Compliance',
-    copy: 'GDPR-aligned consent architecture across markets, including Consent Mode, ATT and SKAdNetwork requirements.',
-    stack: ['OneTrust', 'Consent Mode v2', 'GDPR'],
-  },
-  {
-    number: '05',
-    title: 'BI & Data Modelling',
-    discipline: 'Reporting',
-    copy: 'Stakeholder-ready reporting built on governed models and reliable definitions instead of fragile dashboard logic.',
-    stack: ['Power BI', 'Looker', 'SQL'],
-  },
-  {
-    number: '06',
     title: 'Front-End Instrumentation',
     discipline: 'Engineering',
     copy: 'Custom JavaScript event tracking with structured validation and release-quality implementation discipline.',
     stack: ['JavaScript', 'Event tracking', 'QA'],
+    demo: 'front-end-instrumentation',
+    layout: 'front-end-instrumentation',
   },
-] as const
+  {
+    number: '02',
+    title: 'Tag Management',
+    discipline: 'Implementation',
+    copy: 'GTM and Tealium ecosystems, dataLayer specifications, documentation and QA standards that remain consistent at scale.',
+    stack: ['GTM', 'Tealium iQ', 'Snowplow'],
+    demo: 'tag-management',
+    layout: 'tag-management',
+  },
+  {
+    number: '03',
+    title: 'Server-Side Tracking',
+    discipline: 'Infrastructure',
+    copy: 'Behavioural pipelines spanning browser capture, collectors, enrichment and dependable warehouse delivery.',
+    stack: ['sGTM', 'GA4', 'EventStream'],
+    demo: 'server-side-tracking',
+    layout: 'server-side-tracking',
+  },
+  {
+    number: '04',
+    title: 'CRO & Testing',
+    discipline: 'Experimentation',
+    copy: 'A/B testing and personalisation programmes with hypotheses, clean evaluation and measurable commercial outcomes.',
+    stack: ['Adobe Target', 'A/B testing', 'Personalisation'],
+    demo: 'cro-testing',
+    layout: 'cro-testing',
+  },
+  {
+    number: '05',
+    title: 'Consent & Privacy',
+    discipline: 'Compliance',
+    copy: 'GDPR-aligned consent architecture across markets, including Consent Mode, ATT and SKAdNetwork requirements.',
+    stack: ['OneTrust', 'Consent Mode v2', 'GDPR'],
+    demo: 'consent-privacy',
+    layout: 'consent-privacy',
+  },
+  {
+    number: '06',
+    title: 'BI & Data Modelling',
+    discipline: 'Reporting',
+    copy: 'Stakeholder-ready reporting built on governed models and reliable definitions instead of fragile dashboard logic.',
+    stack: ['Power BI', 'Looker', 'SQL'],
+    demo: 'bi-data-modelling',
+    layout: 'bi-data-modelling',
+  },
+] as const satisfies ReadonlyArray<{
+  number: string
+  title: string
+  discipline: string
+  copy: string
+  stack: readonly string[]
+  demo: CapabilityDemoSlug
+  layout: CapabilityDemoSlug
+}>
 
 export const FAQS = [
   {

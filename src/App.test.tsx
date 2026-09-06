@@ -13,12 +13,13 @@ it('renders the approved v2 chapter order', () => {
   expect([...container.querySelectorAll('main > section')].map((node) => node.id)).toEqual([
     'home',
     'capabilities',
-    'proof',
+    'capability-system',
     'process',
     'systems',
     'faq',
     'contact',
   ])
+  expect(container.querySelector('#proof')).not.toBeInTheDocument()
 })
 
 it('links the permanent scroll choreography contract', () => {

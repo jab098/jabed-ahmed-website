@@ -30,7 +30,7 @@ Every top-level narrative chapter declares a stable scene boundary:
 <section id="services" data-scroll-scene="services">...</section>
 ```
 
-The current page owns eight scenes: Home, Proof, Process, Systems, Capabilities, FAQ, Contact, and Footer. New top-level sections must add their own `data-scroll-scene` identifier and update the structural inventory test.
+The current page owns eight scenes: Home, Capabilities Intro, Capability System, Process, Systems, FAQ, Contact, and Footer. The capability chapter deliberately separates its editorial headline from the interactive selector and technical canvas. New top-level sections must add their own `data-scroll-scene` identifier and update the structural inventory test.
 
 `data-scroll-scene` records semantic chapter ownership only. It is not a scroll destination, and its height or boundaries never generate stops.
 
@@ -131,7 +131,7 @@ Use breakpoint-specific declarations when desktop and mobile tell the story diff
 </article>
 ```
 
-Capabilities uses the mobile half of that pattern. Desktop shows all six pillars inside one viewport-framed grid that owns a single `capabilities-grid` stop, so per-card desktop destinations would split a complete composition in two. The stacked mobile layout keeps `capability-01..06`.
+Capabilities Intro owns the `capabilities-heading` waypoint, followed by the Capability System's `capabilities` waypoint at every width. Desktop presents six selectors beside one active technical canvas. At `900px` and below, the selectors become one horizontally scrollable control above the same canvas; they do not turn into six vertically stacked stops.
 
 - `data-scroll-waypoint-desktop` is active above `900px`.
 - `data-scroll-waypoint-mobile` is active at `900px` and below.
@@ -140,7 +140,7 @@ Capabilities uses the mobile half of that pattern. Desktop shows all six pillars
 
 Mobile content must be structurally present in narrative order. A self-advancing scene satisfies that by rendering the same composition at every width and cycling it on the same timer, not by hiding states behind a control the visitor must find: Process and Systems each keep one stage, and a tap selects a state exactly as a click does on desktop.
 
-A scene that still restates itself as a stack must mark each complete stacked item as a mobile destination. The current inventory includes proof metrics, six capability cards, every FAQ row, Contact, and the full Footer composition. The mobile hero artwork is integrated into the opening and is not a separate destination.
+A scene that still restates itself as a stack must mark each complete stacked item as a mobile destination. The current inventory includes every FAQ row, Contact, and the full Footer composition. The mobile hero artwork is integrated into the opening and is not a separate destination. Capability System remains one interactive composition, so its capability selectors are not individual scroll destinations.
 
 Here, `mobile` describes responsive layout width, not input ownership. These declarations still serve narrow fine-pointer windows and the structural story inventory. A touch-first device may render the same stacked layout, but it ignores every narrative waypoint because the director does not mount.
 
@@ -149,12 +149,12 @@ Here, `mobile` describes responsive layout width, not input ownership. These dec
 `data-scroll-frame="viewport"` declares that a desktop composition owns the available viewport beneath the fixed navigation:
 
 ```tsx
-<section data-scroll-frame="viewport" data-scroll-waypoint="proof">...</section>
+<section data-scroll-frame="viewport" data-scroll-waypoint="capabilities">...</section>
 ```
 
 Above `900px`, the shared frame rule supplies `min-height: calc(100svh - var(--nav-height))`. It is a layout contract, not a waypoint: the element still needs an authored physical declaration, and content may grow beyond the minimum when it genuinely needs more room. At `900px` and below, content returns to its natural stacked height and its mobile waypoints define the story.
 
-Proof, the Capabilities grid, the Process stage, the Systems stage and FAQ are the current viewport-framed compositions. The Process and Systems stages replaced pinned scroll scenes, so they carry no nav-height padding of their own; the frame contract supplies their height and their rail, diagram and card track shrink into it. The Capabilities grid stretches its two rows to equal heights inside that frame so all six pillars read as one desktop landing rather than a two-stage scroll; its headline keeps a viewport-height cap so wide, short desktops cannot push card copy out of a row. Their desktop landings must read as isolated, complete compositions without a strip of the following section showing. FAQ owns `faq-heading` at the section boundary so its sticky heading and question list arrive as one frame. Proof uses one stretching grid row so all evidence tiles share the available height, while the title and three metric blocks are vertically centred on a shared line at `60%` of that frame. This horizontal content band removes the bottom-heavy diagonal of empty space without shortening the frame or changing its waypoint. Between `901px` and `1200px`, Proof uses a compact metric type clamp so decimal count-up states remain inside their quarter-width tiles. At `900px` and below, Proof returns to its existing bottom-aligned stacked cards and per-card stops. Laptop-height desktop viewports at or below `940px` compact FAQ padding, row height and type scale so all six closed questions remain inside the nav-adjusted authored frame; the threshold uses the raw browser viewport and therefore includes the fixed `4.25rem` navigation. Opening an answer may then grow the section naturally.
+Capability System, the Process stage, the Systems stage and FAQ are the current viewport-framed compositions. The Process and Systems stages replaced pinned scroll scenes, so they carry no nav-height padding of their own; the frame contract supplies their height and their rail, diagram and card track shrink into it. Capabilities Intro is a separate editorial composition with the same scale and line-reveal grammar as the Process intro. Capability System then gives one desktop frame to the six selectors and active canvas. Viewports at or below `760px` high compact the panel type and selector rows so the complete workspace remains visible without clipping. At `900px` and below it returns to natural document height, with the capability selector contained as a horizontal control above the canvas. FAQ owns `faq-heading` at the section boundary so its sticky heading and question list arrive as one frame. Laptop-height desktop viewports at or below `940px` compact FAQ padding, row height and type scale so all six closed questions remain inside the nav-adjusted authored frame; the threshold uses the raw browser viewport and therefore includes the fixed `4.25rem` navigation. Opening an answer may then grow the section naturally.
 
 ## Gesture epochs
 
@@ -197,9 +197,10 @@ Direct preview writes are never applied through a transformed virtual-scroll sur
 
 Spatial motion belongs to the scroll handoff. Local component motion supports the composition without competing with it:
 
-- Proof metrics keep their clipped rise and count once when Proof first intersects. Numeric text follows `1 - (1 - progress)^3` for `2400ms`, preserves prefixes, suffixes and configured decimals, and writes the exact source string at completion. The visible digits use tabular numerals; the metric article keeps the final value in its accessible label. There are no digit reels.
+- The dormant Metrics component retains its clipped rise and count-up implementation for possible future restoration, but no evidence strip is rendered in the current page sequence.
 - Process retains the previous and current copy/visual layers for a symmetric `480ms` opacity crossfade. Cleanup timers are cancelled when another state wins, preventing stale layers from deleting the current state. The transition adds no translation, skew, or blur.
-- System and Capability cards reveal individually with opacity as each card enters the viewport; a section-wide reveal must not finish while later cards are still offscreen. A System card counts as entered once any sliver of it is on screen, so the peeking neighbour is revealed and then dimmed rather than left blank.
+- System cards reveal individually with opacity as each card enters the viewport. A System card counts as entered once any sliver of it is on screen, so the peeking neighbour is revealed and then dimmed rather than left blank. In Capability System, selecting a capability wipes signal orange across its selector and changes the complete canvas composition with the same restrained `480ms` state timing used by Process. The outgoing composition remains visual and inert for that interval while the current composition enters along its own authored vector; stale cleanup timers are cancelled when a newer selection wins.
+- Each Capability System canvas contains a capability-specific simulated schematic rather than a generic ambient graph: Front-End Instrumentation validates a captured interaction payload and is the initial `01` state; Tag Management routes a contracted event to destinations; Server-Side Tracking carries an event through collection and enrichment; CRO compares control and variant; Consent branches granted and quarantined routes; and BI traces source lineage into a governed metric. Stable demo slugs keep that artwork independent of list order. The six desktop states vary frame bounds, copy anchor and signal rail while preserving the diagrams' internal content. Mobile returns every state to the same schematic-above-copy stack, and reduced motion removes the local transition while retaining the final composition.
 - The Systems track moves on `transform` alone over `900ms`, never on document scroll. Each slide lands its left edge on the same `4vw` inset the track already used, and the last slide clamps to the end of the track so the bridge arrives without empty space behind it. Off-centre slides hold at `0.42` opacity so they read as selectable neighbours.
 - Reduced motion shows final metric values immediately, completes Process layer transitions in `1ms`, renders cards and masked headlines in their final state, and leaves document scrolling native because the narrative director is not mounted.
 
@@ -258,10 +259,10 @@ Responsive text and font loading may move an already-reached destination by a fe
 | --- | --- |
 | A momentum tail or dense line-wheel burst advances twice. | One epoch owns one landing token; all events remain absorbed until verified quiet, with no animation-position promotion. |
 | A fresh gesture resolves from an obsolete preview coordinate. | Pending preview writes are cancelled before handoff, and the one-slot queue stores semantic direction and intent rather than pixels. |
-| Proof or FAQ reveals part of the next chapter on an awkward desktop height. | `data-scroll-frame="viewport"` supplies a nav-adjusted desktop minimum while the authored section waypoint owns the full composition. FAQ enters its compact composition at a raw `940px` viewport height so the fixed navigation cannot push its sixth row below the landing. |
+| Capability System or FAQ reveals part of the next chapter on an awkward desktop height. | `data-scroll-frame="viewport"` supplies a nav-adjusted desktop minimum. Capability System compacts its selector and panel type at `760px`; FAQ enters its compact composition at a raw `940px` viewport height. |
 | A masked orange headline leaves fragments after landing in Safari. | Exact shared scrub, `0.999` transform cleanup, `overflow: hidden`, and `contain: paint` settle all three headline scenes. |
 | A Process state flashes, slides, or is removed by an old timer. | Stable previous/current layers crossfade with opacity only; effect cleanup cancels stale `480ms` timers. |
-| Proof digits replay, reel, or stop short of the source value. | The observer disconnects after first visibility, the counter writes the exact final string, and reduced motion bypasses counting. |
+| Evidence digits replay, reel, or stop short of the source value. | The nested strip observer disconnects after first visibility, the counter writes the exact final string, and reduced motion bypasses counting. |
 | FAQ hover or expansion moves a stationary viewport or re-lands the same row. | Hover transforms are layout-neutral; passive rebuilds preserve `window.scrollY` and the last settled semantic identity. |
 | A breakpoint change leaves desktop destinations active on mobile. | The `900px` media-query lifecycle rebuilds the active waypoint inventory; self-advancing scenes render one composition at every width, so nothing to tear down. |
 | A self-advancing scene keeps cycling while a visitor reads it, or cannot be stopped at all. | Hover holds Process; keyboard focus temporarily holds both. Manual selection and Pause stop playback until Play. Reduced motion never starts the timer. |
@@ -272,7 +273,7 @@ Responsive text and font loading may move an already-reached destination by a fe
 
 Any section addition, removal, breakpoint change, or pinned-state change must update tests in the same change.
 
-- Structural component tests assert every required desktop and mobile waypoint and the eight-scene inventory.
+- Structural component tests assert every required desktop and mobile waypoint and the seven-scene inventory.
 - `NarrativeScroll.test.tsx` covers physical, virtual, track, responsive, authored-only gap, preview follower, handoff ease, nested-scroll behavior, the touch-first early lifecycle gate, and the narrow fine-pointer control.
 - `narrativeScroll.test.ts` covers delta normalization, damping, raw commitment, one-stop clamping, mode selection, momentum absorption, one-slot follow-on wheel and touch intent, reversal, sub-threshold return, touch classification and cancellation, rebuild ownership, and nearby unvisited stops.
 - `App.test.tsx` protects chapter order, director mount, and the permanent README link to this document.
@@ -290,14 +291,14 @@ A missing required scene must fail a structural test rather than silently disapp
   | `1512x839` | 14-inch Safari content viewport: all six closed FAQ rows remain visible below the fixed navigation. |
   | `1499x886` | Awkward desktop height: no clipped copy, partial following surface, or duplicate stop. |
   | `2554x1425` | Large-display Safari regression: no orange headline fragments after Process, Systems, or Contact settles. |
-  | `1455x1279` | Tall desktop frame: Proof and FAQ remain isolated and Process content stays balanced. |
+  | `1455x1279` | Tall desktop frame: Capabilities Intro, Capability System and FAQ remain isolated and Process content stays balanced. |
   | `390x844` | Wide touch-first mobile: no active narrative class, continuous native finger scrolling, and complete stacked content. |
   | `375x812` | Baseline touch-first mobile: native momentum, FAQ open/close, anchors, Contact, and Footer remain reachable. |
   | `320x568` | Small touch-first mobile: native scrolling with no snap/rollback, overflow, hidden required copy, or unreachable content. |
 
 - Walk the resolved authored stop IDs in both directions; do not judge only by total scroll distance.
-- Confirm one desktop gesture moves from the Capabilities headline to all six pillars, and the next reaches Proof.
-- Confirm Proof reaches the complete Process headline without a label-only frame.
+- Confirm one desktop gesture reaches Capabilities Intro, the next reaches the complete Capability System composition, and the next reaches the Process headline.
+- Confirm no evidence strip is rendered between Capability System and Process.
 - Confirm every chapter transition skips standalone eyebrow and running-label frames.
 - Confirm one desktop gesture crosses the whole Process stage, and one more crosses the whole Systems stage.
 - Watch both self-advancing scenes idle: states change every four seconds; hovering a Process method holds it and leaving resumes after five seconds. Manual selection stays paused until Play.
@@ -314,8 +315,8 @@ A missing required scene must fail a structural test rather than silently disapp
 - Hover every FAQ question and open, close, and switch answers without any unsolicited change to `window.scrollY`.
 - On an explicitly tested hybrid fine-primary touchscreen only, retain the secondary-touch one-gesture safety behaviour; this must not be used as the phone/tablet acceptance path.
 - Keep the pointer stationary and continue the same wheel stream through and after landing; verify it remains on that landing until a real quiet boundary, with no hover or click reset involved.
-- Confirm Process states and every System and Capability card fade into their own composition without a pre-animation flash.
-- Confirm all three Proof metrics count once to their exact strings, Process transitions keep only the current and previous layers, and reduced motion shows every final state immediately.
+- Confirm Process states and every System card fade into their own composition without a pre-animation flash; capability selection updates one technical canvas.
+- Confirm Process transitions keep only the current and previous layers, and reduced motion shows every final state immediately.
 - Leave the pointer stationary at the end of Process, Systems, and Contact headline reveals; inspect at normal scale and zoom for fractional transforms or retained orange mask fragments.
 - Test loader completion, resize and orientation changes, and reduced-motion mode.
 - Confirm there are no console errors, Vite overlays, or horizontal page overflow before release.

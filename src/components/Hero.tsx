@@ -148,7 +148,7 @@ export function Hero() {
       >
         <HeroArtwork active={reportActive} />
       </div>
-      <a className="hero-scroll" href="#proof" aria-label="Scroll to proof">
+      <a className="hero-scroll" href="#capabilities" aria-label="Scroll to system capabilities">
         <span>SCROLL</span><ArrowDown aria-hidden="true" />
       </a>
     </section>

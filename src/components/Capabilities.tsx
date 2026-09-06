@@ -1,99 +1,109 @@
 import { useEffect, useRef, useState } from 'react'
 import { CAPABILITIES } from '../data'
-
-function CapabilityMotif({ index }: { index: number }) {
-  const number = String(index + 1).padStart(2, '0')
-  return (
-    <div
-      className={`capability-motif capability-motif--${index + 1}`}
-      data-capability-motif={number}
-      aria-hidden="true"
-    >
-      {Array.from({ length: index === 3 ? 18 : 9 }, (_, cell) => <i key={cell} />)}
-      <span className="capability-motif__number">{number}</span>
-    </div>
-  )
-}
+import { CapabilityDemonstration } from './CapabilityDemonstration'
 
 export function Capabilities() {
   const rootRef = useRef<HTMLElement>(null)
-  const [openCard, setOpenCard] = useState<number | null>(null)
+  const transitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [activeCapability, setActiveCapability] = useState(0)
+  const [previousCapability, setPreviousCapability] = useState<number | null>(null)
 
-  useEffect(() => {
-    const root = rootRef.current
-    if (!root) return
-    const headerObserver = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        root.classList.add('is-visible')
-        headerObserver.disconnect()
-      }
-    }, { threshold: 0.1 })
-    const cardObserver = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return
-        entry.target.classList.add('is-visible')
-        cardObserver.unobserve(entry.target)
-      })
-    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.16 })
-
-    headerObserver.observe(root)
-    root.querySelectorAll('.capabilities-grid article').forEach((card) => cardObserver.observe(card))
-    return () => {
-      headerObserver.disconnect()
-      cardObserver.disconnect()
-    }
+  useEffect(() => () => {
+    if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current)
   }, [])
+
+  const selectCapability = (nextIndex: number) => {
+    if (nextIndex === activeCapability) return
+    if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current)
+
+    setPreviousCapability(activeCapability)
+    setActiveCapability(nextIndex)
+    transitionTimerRef.current = setTimeout(() => {
+      setPreviousCapability(null)
+      transitionTimerRef.current = null
+    }, 480)
+  }
+
+  const moveCapabilityFocus = (index: number, direction: -1 | 1) => {
+    const nextIndex = (index + direction + CAPABILITIES.length) % CAPABILITIES.length
+    selectCapability(nextIndex)
+    rootRef.current
+      ?.querySelector<HTMLButtonElement>(`#capability-tab-${CAPABILITIES[nextIndex].number}`)
+      ?.focus()
+  }
 
   return (
     <section
       ref={rootRef}
-      id="capabilities"
+      id="capability-system"
       className="capabilities-section"
-      aria-labelledby="capabilities-title"
+      aria-label="Connected measurement capabilities"
       data-scroll-scene="capabilities"
+      data-scroll-frame="viewport"
+      data-scroll-waypoint="capabilities"
     >
-      <header className="capabilities-header" data-scroll-waypoint="capabilities-heading">
-        <p className="eyebrow">// Inside the system</p>
-        <h2 id="capabilities-title" aria-label="What's in a reliable measurement system?">
-          <span>What’s in a reliable</span>
-          <span>measurement system?</span>
-        </h2>
-        <p>Six connected capabilities. No black boxes.</p>
-      </header>
-      <div
-        className="capabilities-grid"
-        data-scroll-frame="viewport"
-        data-scroll-waypoint="capabilities-grid"
-      >
-        {CAPABILITIES.map((capability, index) => (
-          <article
-            className="capability-card"
-            data-open={openCard === index ? 'true' : undefined}
-            key={capability.number}
-            data-scroll-waypoint-mobile={`capability-0${index + 1}`}
-          >
+      <div className="capabilities-workspace">
+        <div className="capability-selector" role="tablist" aria-label="Measurement capabilities">
+          {CAPABILITIES.map((capability, index) => (
             <button
               type="button"
-              className="card-toggle"
-              aria-expanded={openCard === index}
-              aria-controls={`capability-copy-${capability.number} capability-stack-${capability.number}`}
-              aria-label={`${capability.title} — details`}
-              onClick={() => setOpenCard(openCard === index ? null : index)}
+              role="tab"
+              id={`capability-tab-${capability.number}`}
+              aria-controls={`capability-panel-${capability.number}`}
+              aria-label={`${capability.number} ${capability.title}`}
+              aria-selected={activeCapability === index}
+              tabIndex={activeCapability === index ? 0 : -1}
+              className={activeCapability === index ? 'is-active' : ''}
+              onClick={() => selectCapability(index)}
+              onKeyDown={(event) => {
+                if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+                event.preventDefault()
+                moveCapabilityFocus(index, event.key === 'ArrowRight' ? 1 : -1)
+              }}
+              key={capability.number}
             >
-              <i aria-hidden="true"><b /><b /></i>
-            </button>
-            <CapabilityMotif index={index} />
-            <div className="capability-card__top">
               <span>{capability.number}</span>
-              <span>{capability.discipline}</span>
-            </div>
-            <h3>{capability.title}</h3>
-            <p id={`capability-copy-${capability.number}`}>{capability.copy}</p>
-            <div className="capability-card__stack" id={`capability-stack-${capability.number}`}>
-              {capability.stack.map((item) => <span key={item}>{item}</span>)}
-            </div>
-          </article>
-        ))}
+              <strong>{capability.title}</strong>
+              <i aria-hidden="true" />
+            </button>
+          ))}
+        </div>
+
+        <div className="capability-panels">
+          {CAPABILITIES.map((capability, index) => {
+            const isCurrent = activeCapability === index
+            const isOutgoing = previousCapability === index
+            const panelState = isCurrent ? 'current' : isOutgoing ? 'outgoing' : 'inactive'
+
+            return (
+              <div
+                role="tabpanel"
+                id={`capability-panel-${capability.number}`}
+                aria-labelledby={`capability-tab-${capability.number}`}
+                aria-hidden={isCurrent ? undefined : true}
+                className="capability-panel"
+                data-active={isCurrent ? 'true' : undefined}
+                data-layout={capability.layout}
+                data-panel-state={panelState}
+                hidden={!isCurrent && !isOutgoing}
+                key={capability.number}
+              >
+                <CapabilityDemonstration demo={capability.demo} />
+                <div className="capability-panel__top">
+                  <span>{capability.number} / {capability.discipline}</span>
+                  <span><i aria-hidden="true" />Signal live</span>
+                </div>
+                <div className="capability-panel__copy">
+                  <h3>{capability.title}</h3>
+                  <p>{capability.copy}</p>
+                  <div className="capability-panel__stack">
+                    {capability.stack.map((item) => <span key={item}>{item}</span>)}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
       </div>
     </section>
   )
