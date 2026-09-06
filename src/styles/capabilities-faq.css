@@ -82,6 +82,7 @@
   --demo-right: 4%;
   --demo-top: 8%;
   --demo-width: 59%;
+  --rail-left: 0;
   --rail-top: 42%;
   --rail-width: 42%;
   position: relative;
@@ -94,7 +95,7 @@
   flex-direction: column;
 }
 .capability-panel::before { position: absolute; z-index: 0; inset: 0; opacity: 0.12; background-image: linear-gradient(rgba(241, 240, 236, 0.55) 1px, transparent 1px), linear-gradient(90deg, rgba(241, 240, 236, 0.55) 1px, transparent 1px); background-size: clamp(3rem, 5vw, 5.2rem) clamp(3rem, 5vw, 5.2rem); content: ''; }
-.capability-panel::after { position: absolute; z-index: 1; top: var(--rail-top); left: 0; width: var(--rail-width); height: 1px; background: var(--signal); box-shadow: 0 0 0.8rem rgba(255, 79, 31, 0.32); content: ''; transform-origin: left; }
+.capability-panel::after { position: absolute; z-index: 1; top: var(--rail-top); left: var(--rail-left); width: var(--rail-width); height: 1px; background: var(--signal); box-shadow: 0 0 0.8rem rgba(255, 79, 31, 0.32); content: ''; transform-origin: left; }
 .capability-panel[hidden] { display: none; }
 .capability-panel[data-panel-state="current"] { z-index: 2; }
 .capability-panel[data-panel-state="outgoing"] { z-index: 1; pointer-events: none; }
@@ -147,8 +148,9 @@
   --copy-enter-x: 2.8rem;
   --copy-enter-y: 1.5rem;
   --copy-exit-x: -2rem;
+  --rail-left: 4%;
   --rail-top: 61%;
-  --rail-width: 74%;
+  --rail-width: 70%;
 }
 
 .capability-panel[data-layout="tag-management"] {
@@ -167,8 +169,9 @@
   --copy-enter-x: -2.8rem;
   --copy-enter-y: 1rem;
   --copy-exit-x: 2rem;
+  --rail-left: 43%;
   --rail-top: 70%;
-  --rail-width: 43%;
+  --rail-width: 53%;
 }
 
 .capability-panel[data-layout="server-side-tracking"] {
@@ -190,18 +193,19 @@
   --copy-enter-x: -2.5rem;
   --copy-enter-y: -1.5rem;
   --copy-exit-x: 2rem;
+  --rail-left: 4%;
   --rail-top: 51%;
-  --rail-width: 27%;
+  --rail-width: 19%;
 }
 
 .capability-panel[data-layout="cro-testing"] {
-  --demo-top: 14%;
+  --demo-top: 13%;
   --demo-right: auto;
   --demo-left: 4%;
   --demo-width: 56%;
-  --demo-height: 68%;
+  --demo-height: 62%;
   --copy-right: 4%;
-  --copy-bottom: 8%;
+  --copy-bottom: 12%;
   --copy-left: auto;
   --copy-width: 34%;
   --demo-enter-x: -4rem;
@@ -210,21 +214,22 @@
   --copy-enter-x: 3rem;
   --copy-enter-y: 1.5rem;
   --copy-exit-x: -2rem;
+  --rail-left: 61%;
   --rail-top: 42%;
-  --rail-width: 63%;
+  --rail-width: 35%;
 }
 
 .capability-panel[data-layout="consent-privacy"] {
-  --demo-top: 24%;
+  --demo-top: 22%;
   --demo-right: 4%;
   --demo-left: auto;
-  --demo-width: 68%;
-  --demo-height: 55%;
-  --copy-top: 16%;
+  --demo-width: 62%;
+  --demo-height: 52%;
+  --copy-top: 20%;
   --copy-right: auto;
   --copy-bottom: auto;
   --copy-left: 4%;
-  --copy-width: 23%;
+  --copy-width: 29%;
   --demo-enter-x: 4rem;
   --demo-enter-y: 2.5rem;
   --demo-exit-x: -3rem;
@@ -232,22 +237,23 @@
   --copy-enter-x: -2.5rem;
   --copy-enter-y: -1rem;
   --copy-exit-x: 2rem;
+  --rail-left: 34%;
   --rail-top: 21%;
-  --rail-width: 35%;
+  --rail-width: 62%;
 }
 
 .capability-panel[data-layout="bi-data-modelling"] {
   --demo-top: auto;
   --demo-right: auto;
-  --demo-bottom: 6%;
+  --demo-bottom: 10%;
   --demo-left: 4%;
-  --demo-width: 64%;
-  --demo-height: 55%;
-  --copy-top: 17%;
+  --demo-width: 61%;
+  --demo-height: 50%;
+  --copy-top: 22%;
   --copy-right: 4%;
   --copy-bottom: auto;
   --copy-left: auto;
-  --copy-width: 28%;
+  --copy-width: 29%;
   --demo-enter-x: -3.5rem;
   --demo-enter-y: 3rem;
   --demo-exit-x: 2.5rem;
@@ -255,8 +261,9 @@
   --copy-enter-x: 2.5rem;
   --copy-enter-y: -1.5rem;
   --copy-exit-x: -2rem;
-  --rail-top: 49%;
-  --rail-width: 71%;
+  --rail-left: 4%;
+  --rail-top: 18%;
+  --rail-width: 92%;
 }
 .capability-demo::before { position: absolute; inset: 0; opacity: 0.18; background-image: radial-gradient(circle, rgba(241, 240, 236, 0.8) 1px, transparent 1px); background-size: 1.4rem 1.4rem; content: ''; }
 .capability-demo__head,
@@ -490,8 +497,9 @@
     --demo-right: 1.2rem;
     --demo-top: 3.3rem;
     --demo-width: auto;
-    --rail-top: 3.3rem;
-    --rail-width: 1.2rem;
+    --rail-left: 1.2rem;
+    --rail-top: 2.8rem;
+    --rail-width: calc(100% - 2.4rem);
   }
   .capability-panel { padding: 1.2rem; }
   .capability-panel__copy { position: relative; top: auto; right: auto; bottom: auto; left: auto; width: var(--copy-width); margin-top: auto; }
@@ -509,7 +517,7 @@
   .capabilities-intro h2 { font-size: clamp(3.15rem, 15vw, 5rem); }
   .capabilities-intro__meta { font-size: 0.48rem; }
   .capability-selector button { flex-basis: 76vw; }
-  .capability-panels { min-height: 38rem; }
+  .capability-panels { min-height: 40rem; }
   .capability-panel__top { font-size: 0.48rem; }
   .capability-panel__copy { width: 92%; }
   .capability-panel h3 { font-size: clamp(3rem, 13vw, 4.8rem); }

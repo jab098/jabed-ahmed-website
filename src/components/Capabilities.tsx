@@ -52,6 +52,7 @@ export function Capabilities() {
               aria-controls={`capability-panel-${capability.number}`}
               aria-label={`${capability.number} ${capability.title}`}
               aria-selected={activeCapability === index}
+              data-scroll-virtual="capabilities"
               tabIndex={activeCapability === index ? 0 : -1}
               className={activeCapability === index ? 'is-active' : ''}
               onClick={() => selectCapability(index)}

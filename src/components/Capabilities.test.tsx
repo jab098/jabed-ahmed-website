@@ -38,6 +38,14 @@ it('uses the capability selector to update the readable technical canvas', async
   expect(screen.getByRole('tabpanel')).toHaveTextContent('Adobe Target')
 })
 
+it('returns every desktop selection to the authored capability viewport frame', () => {
+  render(<Capabilities />)
+
+  screen.getAllByRole('tab').forEach((tab) => {
+    expect(tab).toHaveAttribute('data-scroll-virtual', 'capabilities')
+  })
+})
+
 it('keeps all capability content in the document without creating six mobile scroll stops', () => {
   const { container } = render(<Capabilities />)
 
